@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import {
   FileText,
@@ -251,6 +251,119 @@ export default function Home() {
   const [agendaFilter, setAgendaFilter] = useState<"all" | "keluar" | "masuk">("all");
   const [residentDusunFilter, setResidentDusunFilter] = useState<string>("all");
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+
+  // GSAP Animations Effect
+  useEffect(() => {
+    let ctx: any;
+    const initGsap = async () => {
+      try {
+        const { gsap } = await import("gsap");
+        const { ScrollTrigger } = await import("gsap/ScrollTrigger");
+        gsap.registerPlugin(ScrollTrigger);
+
+        ctx = gsap.context(() => {
+          // Hero Timeline Entrance
+          const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+          tl.fromTo(
+            "#hero-badge",
+            { opacity: 0, y: -20 },
+            { opacity: 1, y: 0, duration: 0.7 }
+          )
+            .fromTo(
+              "#hero-title",
+              { opacity: 0, y: 30 },
+              { opacity: 1, y: 0, duration: 0.8 },
+              "-=0.4"
+            )
+            .fromTo(
+              "#hero-desc",
+              { opacity: 0, y: 20 },
+              { opacity: 1, y: 0, duration: 0.7 },
+              "-=0.5"
+            )
+            .fromTo(
+              "#hero-actions",
+              { opacity: 0, y: 20 },
+              { opacity: 1, y: 0, duration: 0.7 },
+              "-=0.5"
+            )
+            .fromTo(
+              "#hero-gate-card",
+              { opacity: 0, scale: 0.94, y: 30 },
+              { opacity: 1, scale: 1, y: 0, duration: 1 },
+              "-=0.6"
+            );
+
+          // APBDes ScrollTrigger Animation
+          const apbdesEl = document.getElementById("apbdes");
+          if (apbdesEl) {
+            ScrollTrigger.create({
+              trigger: apbdesEl,
+              start: "top 75%",
+              once: true,
+              onEnter: () => {
+                // Animate progress bar
+                gsap.fromTo(
+                  "#apbdes-progress-bar",
+                  { width: "0%" },
+                  { width: "82.4%", duration: 1.6, ease: "power2.out" }
+                );
+
+                // Animate numbers
+                const pObj = { val: 0 };
+                gsap.to(pObj, {
+                  val: 1485240000,
+                  duration: 2,
+                  ease: "power2.out",
+                  onUpdate: () => {
+                    const el = document.getElementById("apbdes-pendapatan-val");
+                    if (el) el.innerText = "Rp " + Math.floor(pObj.val).toLocaleString("id-ID");
+                  },
+                });
+
+                const bObj = { val: 0 };
+                gsap.to(bObj, {
+                  val: 1462800000,
+                  duration: 2,
+                  ease: "power2.out",
+                  onUpdate: () => {
+                    const el = document.getElementById("apbdes-belanja-val");
+                    if (el) el.innerText = "Rp " + Math.floor(bObj.val).toLocaleString("id-ID");
+                  },
+                });
+
+                const sObj = { val: 0 };
+                gsap.to(sObj, {
+                  val: 82.4,
+                  duration: 2,
+                  ease: "power2.out",
+                  onUpdate: () => {
+                    const el = document.getElementById("apbdes-serapan-val");
+                    if (el) el.innerText = sObj.val.toFixed(1) + "%";
+                  },
+                });
+
+                // Animate 5 bidang cards
+                gsap.fromTo(
+                  ".apbdes-bidang-card",
+                  { opacity: 0, y: 20 },
+                  { opacity: 1, y: 0, stagger: 0.1, duration: 0.7, ease: "power2.out" }
+                );
+              },
+            });
+          }
+        });
+      } catch (err) {
+        console.error("GSAP load error:", err);
+      }
+    };
+
+    initGsap();
+
+    return () => {
+      if (ctx) ctx.revert();
+    };
+  }, []);
 
   // Handlers
   const handleSearchResident = (val: string) => {
@@ -778,31 +891,57 @@ export default function Home() {
       {/* =================================================================== */}
       {view === "public" ? (
         <main className="flex-1">
-          {/* HERO SECTION */}
+          {/* HERO SECTION DENGAN ORNAMEN GERBANG KUNINGAN & NARASI ELEGAN */}
           <section
             id="beranda"
-            className="min-h-[calc(100vh-120px)] flex items-center relative overflow-hidden bg-gradient-to-b from-slate-900 via-[#003733] to-[#002220] text-white py-16 lg:py-24"
+            className="min-h-[calc(100vh-120px)] flex items-center relative overflow-hidden bg-gradient-to-b from-slate-900 via-[#003733] to-[#002220] text-white py-16 lg:py-20"
           >
+            {/* Background Grid Pattern */}
             <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#eda50c_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none"></div>
 
+            {/* Subtle Watermark Gerbang Kuningan di Background Pojok Kanan Bawah */}
+            <div className="absolute -right-10 -bottom-8 opacity-10 pointer-events-none hidden xl:block w-[540px] h-[200px] select-none">
+              <Image
+                src="/kuningan-gate-transparent.png"
+                alt="Watermark Gerbang Kuningan"
+                width={540}
+                height={200}
+                className="object-contain filter brightness-150"
+              />
+            </div>
+
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
-                <div className="lg:col-span-8">
-                  <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#009388]/30 border border-[#009388]/40 text-[#eda50c] text-xs font-bold mb-6">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+                {/* Kolom Kiri: Narasi Kepemimpinan & Pelayanan (Col 7) */}
+                <div className="lg:col-span-7">
+                  {/* Badge Identitas */}
+                  <div
+                    id="hero-badge"
+                    className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#009388]/30 border border-[#009388]/40 text-[#eda50c] text-xs font-bold mb-6"
+                  >
                     <Building2 className="w-3.5 h-3.5 text-[#eda50c]" />
                     <span>Portal Resmi Desa Kadurama • Kecamatan Ciawigebang</span>
                   </div>
 
-                  <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight">
+                  {/* Headline Utama */}
+                  <h1
+                    id="hero-title"
+                    className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight"
+                  >
                     Tata Kelola Desa Modern, <br className="hidden sm:inline" />
                     <span className="text-[#eda50c]">Layanan Berintegritas</span> & Transparan
                   </h1>
 
-                  <p className="mt-5 text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed">
-                    Pusat keterbukaan informasi publik, transparansi APBDes, profil kepemimpinan desa, dan panduan lengkap persyaratan pengurusan berkas administrasi langsung di kantor balai desa.
+                  {/* Subtext Ringkas */}
+                  <p
+                    id="hero-desc"
+                    className="mt-5 text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed"
+                  >
+                    Pusat keterbukaan informasi publik, transparansi anggaran APBDes, profil kepemimpinan desa, dan panduan lengkap persyaratan pengurusan berkas administrasi langsung di kantor balai desa.
                   </p>
 
-                  <div className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                  {/* Tombol Aksi Hero */}
+                  <div id="hero-actions" className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
                     <a
                       href="#layanan-surat"
                       className="px-6 py-3.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-sm transition shadow-lg shadow-[#009388]/20 flex items-center justify-center gap-2 group"
@@ -819,6 +958,7 @@ export default function Home() {
                     </a>
                   </div>
 
+                  {/* Notice Box Wajib Datang Langsung ke Balai Desa */}
                   <div className="mt-8 p-4 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3.5 max-w-xl">
                     <Clock className="w-5 h-5 text-[#eda50c] flex-shrink-0 mt-0.5" />
                     <div className="text-xs text-slate-300 leading-relaxed">
@@ -827,24 +967,48 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="lg:col-span-4 space-y-4">
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/15 shadow-xl">
-                    <div className="text-xs font-bold uppercase tracking-wider text-[#eda50c]">
-                      Status Kemendesa PDTT
-                    </div>
-                    <div className="text-2xl font-extrabold text-white mt-1">Desa Mandiri</div>
-                    <div className="text-xs text-slate-300 mt-2">
-                      Indeks Desa Membangun (IDM): 0.8942 dengan tata kelola keuangan berbasis akuntabilitas penuh.
-                    </div>
-                  </div>
+                {/* Kolom Kanan: Card Showcase Ornamen Gerbang Kuningan Asri (Col 5) */}
+                <div className="lg:col-span-5 relative" id="hero-gate-card">
+                  {/* Subtle Ambient Glow */}
+                  <div className="absolute -inset-4 bg-gradient-to-r from-[#009388]/30 via-[#eda50c]/20 to-transparent rounded-3xl blur-2xl pointer-events-none"></div>
 
-                  <div className="bg-white/10 backdrop-blur-md rounded-2xl p-6 border border-white/15 shadow-xl">
-                    <div className="text-xs font-bold uppercase tracking-wider text-[#eda50c]">
-                      Wilayah Dusun Tradisional
+                  <div className="relative bg-gradient-to-b from-white/15 via-white/10 to-white/5 backdrop-blur-md rounded-3xl p-6 sm:p-7 border border-white/20 shadow-2xl overflow-hidden group">
+                    {/* Top Status Header */}
+                    <div className="flex items-center justify-between pb-4 border-b border-white/10">
+                      <div className="flex items-center gap-2">
+                        <span className="w-2.5 h-2.5 rounded-full bg-[#eda50c] animate-pulse"></span>
+                        <span className="text-xs font-bold uppercase tracking-wider text-[#eda50c]">
+                          Status IDM: Desa Mandiri
+                        </span>
+                      </div>
+                      <span className="text-[11px] font-mono text-emerald-200 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
+                        Skor 0.8942
+                      </span>
                     </div>
-                    <div className="text-2xl font-extrabold text-white mt-1">5 Dusun Khas Kuningan</div>
-                    <div className="text-xs text-slate-300 mt-2">
-                      Dusun Manis, Dusun Pahing, Dusun Puhun, Dusun Wage, dan Dusun Kliwon.
+
+                    {/* Landmark Gate Illustration with Golden Horses (Cropped & Precise) */}
+                    <div className="my-5 relative flex items-center justify-center overflow-hidden rounded-2xl bg-white/5 p-3 border border-white/10">
+                      <Image
+                        src="/kuningan-gate-transparent.png"
+                        alt="Gerbang Kehormatan Kuda Kuningan Asri"
+                        width={480}
+                        height={175}
+                        className="object-contain drop-shadow-xl group-hover:scale-105 transition-transform duration-700"
+                        priority
+                      />
+                    </div>
+
+                    {/* Card Footer Narrative */}
+                    <div className="pt-3 border-t border-white/10 text-center">
+                      <div className="text-xs font-bold text-white uppercase tracking-wider">
+                        Gerbang Kehormatan Kuningan Asri
+                      </div>
+                      <div className="text-[11px] text-[#eda50c] font-semibold mt-0.5 italic">
+                        "Melesat Ngudag Jaman, Ngakar Kuat Purwadaksi"
+                      </div>
+                      <p className="text-[11px] text-slate-300 mt-2 leading-relaxed">
+                        Simbol keteguhan dan kegigihan masyarakat Desa Kadurama dalam membangun kemandirian ekonomi dan pelayanan publik terdepan.
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -1351,7 +1515,7 @@ export default function Home() {
           </section>
 
           {/* =============================================================== */}
-          {/* SECTION 4: TRANSPARANSI APBDES 2026 (SESUAI INDEX.HTML)        */}
+          {/* SECTION 4: TRANSPARANSI APBDES 2026 (DENGAN ANIMASI GSAP)      */}
           {/* =============================================================== */}
           <section id="apbdes" className="py-20 bg-slate-50 border-b border-slate-200">
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1403,13 +1567,16 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* 3 Cockpit Cards Utama */}
+              {/* 3 Cockpit Cards Utama (GSAP Animated) */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 <div className="bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
                   <div className="text-xs font-bold uppercase tracking-wider text-[#009388]">
                     Total Pendapatan Desa
                   </div>
-                  <div className="text-2xl sm:text-3xl font-extrabold text-slate-950 mt-2">
+                  <div
+                    id="apbdes-pendapatan-val"
+                    className="text-2xl sm:text-3xl font-extrabold text-slate-950 mt-2 font-mono"
+                  >
                     Rp 1.485.240.000
                   </div>
                   <div className="text-xs text-slate-500 mt-2">
@@ -1421,7 +1588,10 @@ export default function Home() {
                   <div className="text-xs font-bold uppercase tracking-wider text-[#eda50c]">
                     Total Belanja Desa
                   </div>
-                  <div className="text-2xl sm:text-3xl font-extrabold text-slate-950 mt-2">
+                  <div
+                    id="apbdes-belanja-val"
+                    className="text-2xl sm:text-3xl font-extrabold text-slate-950 mt-2 font-mono"
+                  >
                     Rp 1.462.800.000
                   </div>
                   <div className="text-xs text-slate-500 mt-2">
@@ -1433,18 +1603,27 @@ export default function Home() {
                   <div className="text-xs font-bold uppercase tracking-wider text-slate-600">
                     Persentase Serapan
                   </div>
-                  <div className="text-2xl sm:text-3xl font-extrabold text-[#009388] mt-2">82.4%</div>
+                  <div
+                    id="apbdes-serapan-val"
+                    className="text-2xl sm:text-3xl font-extrabold text-[#009388] mt-2 font-mono"
+                  >
+                    82.4%
+                  </div>
                   <div className="w-full bg-slate-100 rounded-full h-2.5 mt-3 overflow-hidden">
-                    <div className="bg-[#009388] h-2.5 rounded-full" style={{ width: "82.4%" }}></div>
+                    <div
+                      id="apbdes-progress-bar"
+                      className="bg-[#009388] h-2.5 rounded-full transition-all"
+                      style={{ width: "82.4%" }}
+                    ></div>
                   </div>
                 </div>
               </div>
 
-              {/* Grid 5 Bidang Belanja & Unduh PDF (Sesuai index.html) */}
+              {/* Grid 5 Bidang Belanja & Unduh PDF (Sesuai index.html & Staggered GSAP) */}
               {(apbdesFilter === "all" || apbdesFilter === "belanja") && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {/* Bidang 1 */}
-                  <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <div className="apbdes-bidang-card p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
                     <div className="flex justify-between items-start">
                       <span className="text-[10px] font-bold text-[#009388] uppercase bg-[#e6f7f5] px-2 py-0.5 rounded">
                         Bidang 1
@@ -1460,7 +1639,7 @@ export default function Home() {
                   </div>
 
                   {/* Bidang 2 */}
-                  <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <div className="apbdes-bidang-card p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
                     <div className="flex justify-between items-start">
                       <span className="text-[10px] font-bold text-[#009388] uppercase bg-[#e6f7f5] px-2 py-0.5 rounded">
                         Bidang 2
@@ -1476,7 +1655,7 @@ export default function Home() {
                   </div>
 
                   {/* Bidang 3 */}
-                  <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <div className="apbdes-bidang-card p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
                     <div className="flex justify-between items-start">
                       <span className="text-[10px] font-bold text-[#009388] uppercase bg-[#e6f7f5] px-2 py-0.5 rounded">
                         Bidang 3
@@ -1492,7 +1671,7 @@ export default function Home() {
                   </div>
 
                   {/* Bidang 4 */}
-                  <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <div className="apbdes-bidang-card p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
                     <div className="flex justify-between items-start">
                       <span className="text-[10px] font-bold text-[#009388] uppercase bg-[#e6f7f5] px-2 py-0.5 rounded">
                         Bidang 4
@@ -1508,7 +1687,7 @@ export default function Home() {
                   </div>
 
                   {/* Bidang 5 */}
-                  <div className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <div className="apbdes-bidang-card p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
                     <div className="flex justify-between items-start">
                       <span className="text-[10px] font-bold text-[#009388] uppercase bg-[#e6f7f5] px-2 py-0.5 rounded">
                         Bidang 5
@@ -1524,7 +1703,7 @@ export default function Home() {
                   </div>
 
                   {/* Unduh Dokumen PDF */}
-                  <div className="p-5 rounded-2xl bg-[#003733] text-white flex flex-col justify-between shadow-2xs">
+                  <div className="apbdes-bidang-card p-5 rounded-2xl bg-[#003733] text-white flex flex-col justify-between shadow-2xs">
                     <div>
                       <span className="text-[10px] font-bold text-[#eda50c] uppercase tracking-wider">
                         Dokumen Publik
