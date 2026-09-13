@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 import {
   FileText,
@@ -226,6 +226,26 @@ export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<string | null>(null);
+
+  // Desktop Dropdown State with Intent-Aware Hover Timer (Eliminates Flickering & Deadzone Bugs)
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const dropdownTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleDropdownEnter = (id: string) => {
+    if (dropdownTimerRef.current) clearTimeout(dropdownTimerRef.current);
+    setActiveDropdown(id);
+  };
+
+  const handleDropdownLeave = () => {
+    dropdownTimerRef.current = setTimeout(() => {
+      setActiveDropdown(null);
+    }, 150);
+  };
+
+  const handleDropdownToggle = (id: string) => {
+    if (dropdownTimerRef.current) clearTimeout(dropdownTimerRef.current);
+    setActiveDropdown((prev) => (prev === id ? null : id));
+  };
 
   // Search & Public Filter
   const [siteSearchQuery, setSiteSearchQuery] = useState("");
@@ -505,38 +525,76 @@ export default function Home() {
         <div className="bg-[#009388] text-white hidden lg:block border-t border-[#007b71]">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <nav className="flex items-center justify-between h-11 text-xs font-semibold whitespace-nowrap">
-              <div className="flex items-center space-x-1">
+              <div className="flex items-center space-x-1 h-full">
                 {/* Home: HANYA ICON RUMAH TANPA TEXT */}
                 <a
                   href="#beranda"
                   title="Beranda"
-                  className="px-3 py-2 rounded-md hover:bg-[#007b71] transition flex items-center justify-center"
+                  className="px-3 h-full hover:bg-[#007b71] transition flex items-center justify-center"
                 >
                   <HomeIcon className="w-4 h-4 text-[#eda50c]" />
                 </a>
 
                 {/* Dropdown 1: Profil Desa */}
-                <div className="relative group">
-                  <button className="px-3.5 py-2 rounded-md hover:bg-[#007b71] transition flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold">
+                <div
+                  className="relative h-full flex items-center"
+                  onMouseEnter={() => handleDropdownEnter("profil")}
+                  onMouseLeave={handleDropdownLeave}
+                >
+                  <button
+                    onClick={() => handleDropdownToggle("profil")}
+                    className={`h-full px-3.5 flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold transition ${
+                      activeDropdown === "profil" ? "bg-[#007b71]" : "hover:bg-[#007b71]"
+                    }`}
+                  >
                     <span>PROFIL DESA</span>
-                    <ChevronDown className="w-3 h-3 text-[#eda50c] group-hover:rotate-180 transition-transform duration-200" />
+                    <ChevronDown
+                      className={`w-3 h-3 text-[#eda50c] transition-transform duration-200 ${
+                        activeDropdown === "profil" ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
-                  {/* Wrapper Bridge untuk Menghilangkan Deadzone Gap */}
-                  <div className="absolute left-0 top-full pt-1.5 hidden group-hover:block z-50">
-                    <div className="w-56 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-100 py-2 ring-1 ring-black/5 animate-in fade-in slide-in-from-top-1 duration-150">
-                      <a href="#profil" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                  {/* Dropdown Wrapper dengan Invisible Hover Bridge & Pointer Caret */}
+                  <div
+                    className={`absolute left-0 top-full pt-1.5 z-50 transition-all duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 ${
+                      activeDropdown === "profil" ? "block opacity-100 translate-y-0" : "hidden opacity-0 -translate-y-1"
+                    }`}
+                  >
+                    <div className="w-64 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-100 py-2 ring-1 ring-black/5 relative">
+                      <div className="absolute -top-1.5 left-5 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none"></div>
+                      <a
+                        href="#profil"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Sejarah Desa Kadurama
                       </a>
-                      <a href="#profil" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#profil"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Visi & Misi Kepala Desa
                       </a>
-                      <a href="#lokasi-kantor" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#lokasi-kantor"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Kondisi Geografis & Wilayah
                       </a>
-                      <a href="#perangkat-desa" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#perangkat-desa"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Struktur Organisasi Pemdes
                       </a>
-                      <a href="#apbdes" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#apbdes"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Program Kerja Prioritas
                       </a>
                     </div>
@@ -544,51 +602,123 @@ export default function Home() {
                 </div>
 
                 {/* Dropdown 2: Pemerintahan */}
-                <div className="relative group">
-                  <button className="px-3.5 py-2 rounded-md hover:bg-[#007b71] transition flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold">
+                <div
+                  className="relative h-full flex items-center"
+                  onMouseEnter={() => handleDropdownEnter("pemerintahan")}
+                  onMouseLeave={handleDropdownLeave}
+                >
+                  <button
+                    onClick={() => handleDropdownToggle("pemerintahan")}
+                    className={`h-full px-3.5 flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold transition ${
+                      activeDropdown === "pemerintahan" ? "bg-[#007b71]" : "hover:bg-[#007b71]"
+                    }`}
+                  >
                     <span>PEMERINTAHAN</span>
-                    <ChevronDown className="w-3 h-3 text-[#eda50c] group-hover:rotate-180 transition-transform duration-200" />
+                    <ChevronDown
+                      className={`w-3 h-3 text-[#eda50c] transition-transform duration-200 ${
+                        activeDropdown === "pemerintahan" ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
-                  <div className="absolute left-0 top-full pt-1.5 hidden group-hover:block z-50">
-                    <div className="w-56 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-100 py-2 ring-1 ring-black/5 animate-in fade-in slide-in-from-top-1 duration-150">
-                      <a href="#perangkat-desa" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                  <div
+                    className={`absolute left-0 top-full pt-1.5 z-50 transition-all duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 ${
+                      activeDropdown === "pemerintahan" ? "block opacity-100 translate-y-0" : "hidden opacity-0 -translate-y-1"
+                    }`}
+                  >
+                    <div className="w-64 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-100 py-2 ring-1 ring-black/5 relative">
+                      <div className="absolute -top-1.5 left-5 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none"></div>
+                      <a
+                        href="#perangkat-desa"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Pemerintahan Desa (Pamong)
                       </a>
-                      <a href="#perangkat-desa" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#perangkat-desa"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Badan Permusyawaratan Desa (BPD)
                       </a>
-                      <a href="#perangkat-desa" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#perangkat-desa"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Lembaga Pemberdayaan (LPM)
                       </a>
-                      <a href="#perangkat-desa" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#perangkat-desa"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Tim Penggerak PKK Desa
                       </a>
-                      <a href="#perangkat-desa" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs font-semibold text-[#009388]">
+                      <a
+                        href="#perangkat-desa"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs font-semibold text-[#009388] whitespace-nowrap"
+                      >
                         5 Kepala Dusun Kadurama
                       </a>
                     </div>
                   </div>
                 </div>
 
-                {/* Dropdown 3: LAYANAN (Disederhanakan dari Layanan Surat) */}
-                <div className="relative group">
-                  <button className="px-3.5 py-2 rounded-md hover:bg-[#007b71] transition flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold">
+                {/* Dropdown 3: LAYANAN */}
+                <div
+                  className="relative h-full flex items-center"
+                  onMouseEnter={() => handleDropdownEnter("layanan")}
+                  onMouseLeave={handleDropdownLeave}
+                >
+                  <button
+                    onClick={() => handleDropdownToggle("layanan")}
+                    className={`h-full px-3.5 flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold transition ${
+                      activeDropdown === "layanan" ? "bg-[#007b71]" : "hover:bg-[#007b71]"
+                    }`}
+                  >
                     <span>LAYANAN</span>
-                    <ChevronDown className="w-3 h-3 text-[#eda50c] group-hover:rotate-180 transition-transform duration-200" />
+                    <ChevronDown
+                      className={`w-3 h-3 text-[#eda50c] transition-transform duration-200 ${
+                        activeDropdown === "layanan" ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
-                  <div className="absolute left-0 top-full pt-1.5 hidden group-hover:block z-50">
-                    <div className="w-60 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-100 py-2 ring-1 ring-black/5 animate-in fade-in slide-in-from-top-1 duration-150">
-                      <a href="#layanan-surat" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                  <div
+                    className={`absolute left-0 top-full pt-1.5 z-50 transition-all duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 ${
+                      activeDropdown === "layanan" ? "block opacity-100 translate-y-0" : "hidden opacity-0 -translate-y-1"
+                    }`}
+                  >
+                    <div className="w-72 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-100 py-2 ring-1 ring-black/5 relative">
+                      <div className="absolute -top-1.5 left-5 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none"></div>
+                      <a
+                        href="#layanan-surat"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap font-medium"
+                      >
                         Surat Keterangan Usaha (SKU)
                       </a>
-                      <a href="#layanan-surat" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#layanan-surat"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap font-medium"
+                      >
                         Surat Keterangan Tidak Mampu (SKTM)
                       </a>
-                      <a href="#layanan-surat" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#layanan-surat"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap font-medium"
+                      >
                         Surat Keterangan Domisili
                       </a>
                       <div className="border-t border-slate-100 my-1"></div>
-                      <a href="#layanan-surat" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs font-semibold text-[#009388]">
+                      <a
+                        href="#layanan-surat"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs font-semibold text-[#009388] whitespace-nowrap"
+                      >
                         Alur 4 Langkah di Kantor Desa
                       </a>
                     </div>
@@ -596,23 +726,57 @@ export default function Home() {
                 </div>
 
                 {/* Dropdown 4: Statistik */}
-                <div className="relative group">
-                  <button className="px-3.5 py-2 rounded-md hover:bg-[#007b71] transition flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold">
+                <div
+                  className="relative h-full flex items-center"
+                  onMouseEnter={() => handleDropdownEnter("statistik")}
+                  onMouseLeave={handleDropdownLeave}
+                >
+                  <button
+                    onClick={() => handleDropdownToggle("statistik")}
+                    className={`h-full px-3.5 flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold transition ${
+                      activeDropdown === "statistik" ? "bg-[#007b71]" : "hover:bg-[#007b71]"
+                    }`}
+                  >
                     <span>STATISTIK</span>
-                    <ChevronDown className="w-3 h-3 text-[#eda50c] group-hover:rotate-180 transition-transform duration-200" />
+                    <ChevronDown
+                      className={`w-3 h-3 text-[#eda50c] transition-transform duration-200 ${
+                        activeDropdown === "statistik" ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
-                  <div className="absolute left-0 top-full pt-1.5 hidden group-hover:block z-50">
-                    <div className="w-56 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-100 py-2 ring-1 ring-black/5 animate-in fade-in slide-in-from-top-1 duration-150">
-                      <a href="#statistik" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                  <div
+                    className={`absolute left-0 top-full pt-1.5 z-50 transition-all duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 ${
+                      activeDropdown === "statistik" ? "block opacity-100 translate-y-0" : "hidden opacity-0 -translate-y-1"
+                    }`}
+                  >
+                    <div className="w-64 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-100 py-2 ring-1 ring-black/5 relative">
+                      <div className="absolute -top-1.5 left-5 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none"></div>
+                      <a
+                        href="#statistik"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Demografi 5 Dusun Kadurama
                       </a>
-                      <a href="#statistik" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#statistik"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Perbandingan Jenis Kelamin
                       </a>
-                      <a href="#statistik" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#statistik"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Kelompok Usia Penduduk
                       </a>
-                      <a href="#statistik" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#statistik"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Mata Pencaharian Utama
                       </a>
                     </div>
@@ -620,23 +784,57 @@ export default function Home() {
                 </div>
 
                 {/* Dropdown 5: Transparansi APBDes */}
-                <div className="relative group">
-                  <button className="px-3.5 py-2 rounded-md hover:bg-[#007b71] transition flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold">
+                <div
+                  className="relative h-full flex items-center"
+                  onMouseEnter={() => handleDropdownEnter("apbdes")}
+                  onMouseLeave={handleDropdownLeave}
+                >
+                  <button
+                    onClick={() => handleDropdownToggle("apbdes")}
+                    className={`h-full px-3.5 flex items-center gap-1 uppercase tracking-wider text-[11px] font-bold transition ${
+                      activeDropdown === "apbdes" ? "bg-[#007b71]" : "hover:bg-[#007b71]"
+                    }`}
+                  >
                     <span>APBDES 2026</span>
-                    <ChevronDown className="w-3 h-3 text-[#eda50c] group-hover:rotate-180 transition-transform duration-200" />
+                    <ChevronDown
+                      className={`w-3 h-3 text-[#eda50c] transition-transform duration-200 ${
+                        activeDropdown === "apbdes" ? "rotate-180" : ""
+                      }`}
+                    />
                   </button>
-                  <div className="absolute left-0 top-full pt-1.5 hidden group-hover:block z-50">
-                    <div className="w-64 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-100 py-2 ring-1 ring-black/5 animate-in fade-in slide-in-from-top-1 duration-150">
-                      <a href="#apbdes" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs font-semibold text-[#009388]">
+                  <div
+                    className={`absolute left-0 top-full pt-1.5 z-50 transition-all duration-150 before:content-[''] before:absolute before:-top-3 before:left-0 before:right-0 before:h-3 ${
+                      activeDropdown === "apbdes" ? "block opacity-100 translate-y-0" : "hidden opacity-0 -translate-y-1"
+                    }`}
+                  >
+                    <div className="w-72 bg-white text-slate-800 rounded-xl shadow-2xl border border-slate-100 py-2 ring-1 ring-black/5 relative">
+                      <div className="absolute -top-1.5 left-5 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none"></div>
+                      <a
+                        href="#apbdes"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs font-semibold text-[#009388] whitespace-nowrap"
+                      >
                         Realisasi Serapan Anggaran 82.4%
                       </a>
-                      <a href="#apbdes" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#apbdes"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Penyelenggaraan Pemerintahan Desa
                       </a>
-                      <a href="#apbdes" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#apbdes"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Pelaksanaan Pembangunan Desa
                       </a>
-                      <a href="#apbdes" className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs">
+                      <a
+                        href="#apbdes"
+                        onClick={() => setActiveDropdown(null)}
+                        className="block px-4 py-2 hover:bg-[#e6f7f5] hover:text-[#009388] transition text-xs whitespace-nowrap"
+                      >
                         Pembinaan & Pemberdayaan Warga
                       </a>
                     </div>
@@ -646,7 +844,7 @@ export default function Home() {
                 {/* Link Berita */}
                 <a
                   href="#berita"
-                  className="px-3.5 py-2 rounded-md hover:bg-[#007b71] transition uppercase tracking-wider text-[11px] font-bold"
+                  className="px-3.5 h-full hover:bg-[#007b71] transition uppercase tracking-wider text-[11px] font-bold flex items-center"
                 >
                   KABAR DESA
                 </a>
@@ -654,7 +852,7 @@ export default function Home() {
                 {/* Link Kontak */}
                 <a
                   href="#lokasi-kantor"
-                  className="px-3.5 py-2 rounded-md hover:bg-[#007b71] transition uppercase tracking-wider text-[11px] font-bold"
+                  className="px-3.5 h-full hover:bg-[#007b71] transition uppercase tracking-wider text-[11px] font-bold flex items-center"
                 >
                   KONTAK
                 </a>
@@ -891,24 +1089,30 @@ export default function Home() {
       {/* =================================================================== */}
       {view === "public" ? (
         <main className="flex-1">
-          {/* HERO SECTION DENGAN ORNAMEN GERBANG KUNINGAN & NARASI ELEGAN */}
+          {/* HERO SECTION DENGAN ORNAMEN GERBANG KUNINGAN (FULL 100VH BACKGROUND) & CIVIC COCKPIT */}
           <section
             id="beranda"
-            className="min-h-[calc(100vh-120px)] flex items-center relative overflow-hidden bg-gradient-to-b from-slate-900 via-[#003733] to-[#002220] text-white py-16 lg:py-20"
+            className="min-h-[calc(100vh-110px)] flex items-center relative overflow-hidden bg-gradient-to-b from-[#021815] via-[#003833] to-[#001715] text-white py-16 lg:py-24"
           >
-            {/* Background Grid Pattern */}
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#eda50c_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none"></div>
+            {/* 1. Golden Backlight & Ambient Radial Glow behind Landmark */}
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[1100px] h-[520px] bg-gradient-to-t from-[#eda50c]/25 via-[#009388]/20 to-transparent rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-1/4 left-1/3 -translate-x-1/2 w-[600px] h-[400px] bg-[#009388]/15 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Subtle Watermark Gerbang Kuningan di Background Pojok Kanan Bawah */}
-            <div className="absolute -right-10 -bottom-8 opacity-10 pointer-events-none hidden xl:block w-[540px] h-[200px] select-none">
-              <Image
-                src="/kuningan-gate-transparent.png"
-                alt="Watermark Gerbang Kuningan"
-                width={540}
-                height={200}
-                className="object-contain filter brightness-150"
+            {/* 2. Landmark Gerbang Kuningan 100vh Background (CSS Multiply: Zero White Noise, Preserves True Teal & Gold) */}
+            <div className="absolute inset-x-0 bottom-0 flex items-end justify-center mix-blend-multiply opacity-80 pointer-events-none select-none z-0">
+              <img
+                src="/kuningan-gate.png"
+                alt="Landmark Gerbang Kuningan Asri"
+                className="w-full max-w-5xl h-auto object-contain object-bottom filter brightness-105 contrast-120 select-none"
               />
             </div>
+
+            {/* 3. Gradient Overlay for Smooth Bottom Transition & Text Contrast */}
+            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#001715] to-transparent pointer-events-none z-0" />
+            <div className="absolute inset-0 bg-gradient-to-b from-[#021815]/80 via-transparent to-[#001715]/70 pointer-events-none z-0" />
+
+            {/* 4. Subtle Civic Dot Matrix Grid */}
+            <div className="absolute inset-0 bg-[radial-gradient(#eda50c_1px,transparent_1px)] [background-size:24px_24px] opacity-10 pointer-events-none z-0" />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
@@ -967,7 +1171,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Kolom Kanan: Card Showcase Ornamen Gerbang Kuningan Asri (Col 5) */}
+                {/* Kolom Kanan: Civic Information & Cockpit Panel (Bukan Gambar Card) */}
                 <div className="lg:col-span-5 relative" id="hero-gate-card">
                   {/* Subtle Ambient Glow */}
                   <div className="absolute -inset-4 bg-gradient-to-r from-[#009388]/30 via-[#eda50c]/20 to-transparent rounded-3xl blur-2xl pointer-events-none"></div>
@@ -986,29 +1190,60 @@ export default function Home() {
                       </span>
                     </div>
 
-                    {/* Landmark Gate Illustration with Golden Horses (Cropped & Precise) */}
-                    <div className="my-5 relative flex items-center justify-center overflow-hidden rounded-2xl bg-white/5 p-3 border border-white/10">
-                      <Image
-                        src="/kuningan-gate-transparent.png"
-                        alt="Gerbang Kehormatan Kuda Kuningan Asri"
-                        width={480}
-                        height={175}
-                        className="object-contain drop-shadow-xl group-hover:scale-105 transition-transform duration-700"
-                        priority
-                      />
+                    {/* Informasi Operasional Pelayanan Balai Desa */}
+                    <div className="my-5 space-y-4 text-xs">
+                      <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
+                        <Clock className="w-4 h-4 text-[#eda50c] flex-shrink-0 mt-0.5" />
+                        <div>
+                          <div className="font-bold text-white uppercase tracking-wider text-[11px]">
+                            Jam Operasional Pelayanan Loket
+                          </div>
+                          <div className="text-slate-300 mt-0.5">
+                            Senin - Jumat: 08.00 - 15.00 WIB
+                          </div>
+                          <div className="text-[10px] text-emerald-300 mt-0.5">
+                            Pelayanan tatap muka di Kantor Balai Desa Kadurama
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
+                        <MapPin className="w-4 h-4 text-[#eda50c] flex-shrink-0 mt-0.5" />
+                        <div>
+                          <div className="font-bold text-white uppercase tracking-wider text-[11px]">
+                            Alamat Balai Desa Kadurama
+                          </div>
+                          <div className="text-slate-300 mt-0.5">
+                            Jl. Raya Ciawigebang No. 12, Kadurama, Kec. Ciawigebang, Kab. Kuningan 45591
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Metrik Kunci Ringkas */}
+                      <div className="grid grid-cols-3 gap-2.5 pt-1">
+                        <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
+                          <div className="text-base font-extrabold text-white">3.420</div>
+                          <div className="text-[10px] text-slate-400 uppercase tracking-wider">Jiwa Warga</div>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
+                          <div className="text-base font-extrabold text-[#eda50c]">5 Dusun</div>
+                          <div className="text-[10px] text-slate-400 uppercase tracking-wider">Kewilayahan</div>
+                        </div>
+                        <div className="p-2.5 rounded-xl bg-white/5 border border-white/10 text-center">
+                          <div className="text-base font-extrabold text-white">142 Ha</div>
+                          <div className="text-[10px] text-slate-400 uppercase tracking-wider">Luas Wilayah</div>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Card Footer Narrative */}
                     <div className="pt-3 border-t border-white/10 text-center">
-                      <div className="text-xs font-bold text-white uppercase tracking-wider">
-                        Gerbang Kehormatan Kuningan Asri
-                      </div>
-                      <div className="text-[11px] text-[#eda50c] font-semibold mt-0.5 italic">
+                      <div className="text-[11px] text-[#eda50c] font-semibold italic">
                         "Melesat Ngudag Jaman, Ngakar Kuat Purwadaksi"
                       </div>
-                      <p className="text-[11px] text-slate-300 mt-2 leading-relaxed">
-                        Simbol keteguhan dan kegigihan masyarakat Desa Kadurama dalam membangun kemandirian ekonomi dan pelayanan publik terdepan.
-                      </p>
+                      <div className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider">
+                        Portal Informasi Resmi Terverifikasi Pemkab Kuningan
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1019,8 +1254,11 @@ export default function Home() {
           {/* =============================================================== */}
           {/* SECTION 1: PANDUAN SYARAT LAYANAN (3 JENIS SURAT SEMENTARA)     */}
           {/* =============================================================== */}
-          <section id="layanan-surat" className="py-20 bg-white border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section id="layanan-surat" className="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
+            {/* Fine Civic Pattern */}
+            <div className="absolute inset-0 bg-[radial-gradient(#009388_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.06] pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:48px_48px] pointer-events-none" />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
               <div className="max-w-2xl mb-12">
                 <span className="text-xs font-bold uppercase tracking-wider text-[#009388] bg-[#e6f7f5] px-3 py-1 rounded-full border border-[#009388]/20">
                   Pelayanan Administrasi Loket
@@ -1176,8 +1414,11 @@ export default function Home() {
           {/* =============================================================== */}
           {/* SECTION 2: DATA & STATISTIK KEPENDUDUKAN (SECTION TERSENDIRI)  */}
           {/* =============================================================== */}
-          <section id="statistik" className="py-20 bg-slate-50 border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section id="statistik" className="py-20 bg-slate-50 border-b border-slate-200 relative overflow-hidden">
+            {/* Fine Technical Civic Dot & Grid */}
+            <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.18] pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#f8fafc_1px,transparent_1px),linear-gradient(to_bottom,#f8fafc_1px,transparent_1px)] bg-[size:36px_36px] pointer-events-none" />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
               <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#009388] bg-[#e6f7f5] px-3 py-1 rounded-full border border-[#009388]/20">
@@ -1310,8 +1551,11 @@ export default function Home() {
           {/* =============================================================== */}
           {/* SECTION 3: APARATUR PEMERINTAHAN DESA (PERSIS DARI INDEX.HTML)  */}
           {/* =============================================================== */}
-          <section id="perangkat-desa" className="py-20 bg-white border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section id="perangkat-desa" className="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
+            {/* Fine Civic Texture Pattern */}
+            <div className="absolute inset-0 bg-[radial-gradient(#009388_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.06] pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
               <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#009388] bg-[#e6f7f5] px-3 py-1 rounded-full border border-[#009388]/20">
@@ -1517,8 +1761,11 @@ export default function Home() {
           {/* =============================================================== */}
           {/* SECTION 4: TRANSPARANSI APBDES 2026 (DENGAN ANIMASI GSAP)      */}
           {/* =============================================================== */}
-          <section id="apbdes" className="py-20 bg-slate-50 border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section id="apbdes" className="py-20 bg-slate-50 border-b border-slate-200 relative overflow-hidden">
+            {/* Fine Civic Data Texture Pattern */}
+            <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.16] pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#f8fafc_1px,transparent_1px),linear-gradient(to_bottom,#f8fafc_1px,transparent_1px)] bg-[size:48px_48px] pointer-events-none" />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
               <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#009388] bg-[#e6f7f5] px-3 py-1 rounded-full border border-[#009388]/20">
@@ -1731,8 +1978,11 @@ export default function Home() {
           {/* =============================================================== */}
           {/* SECTION 5: KABAR & BERITA DESA KADURAMA (SESUAI INDEX.HTML)     */}
           {/* =============================================================== */}
-          <section id="berita" className="py-20 bg-white border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section id="berita" className="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
+            {/* Fine Civic Pattern */}
+            <div className="absolute inset-0 bg-[radial-gradient(#009388_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.06] pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:36px_36px] pointer-events-none" />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
               <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#009388] bg-[#e6f7f5] px-3 py-1 rounded-full border border-[#009388]/20">
@@ -1835,8 +2085,11 @@ export default function Home() {
           {/* =============================================================== */}
           {/* SECTION 6: JADWAL & LOKASI KANTOR DESA (SESUAI INDEX.HTML)      */}
           {/* =============================================================== */}
-          <section id="lokasi-kantor" className="py-20 bg-slate-50 border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section id="lokasi-kantor" className="py-20 bg-slate-50 border-b border-slate-200 relative overflow-hidden">
+            {/* Fine Civic Texture Pattern */}
+            <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:20px_20px] opacity-[0.16] pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#f8fafc_1px,transparent_1px),linear-gradient(to_bottom,#f8fafc_1px,transparent_1px)] bg-[size:40px_40px] pointer-events-none" />
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
               <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 shadow-sm grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
                 <div>
                   <span className="text-xs font-bold uppercase tracking-wider text-[#009388] bg-[#e6f7f5] px-3 py-1 rounded-full border border-[#009388]/20">
@@ -1965,7 +2218,9 @@ export default function Home() {
         /* =================================================================== */
         /* VIEW 2: BACKPANEL LOKET PERSURATAN & BUKU AGENDA (DESKTOP PANEL)   */
         /* =================================================================== */
-        <div className="flex-1 bg-slate-100 flex">
+        <div className="flex-1 bg-slate-100 flex relative overflow-hidden">
+          {/* Subtle Technical Civic Pattern */}
+          <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.20] pointer-events-none" />
           {/* Sidebar Backpanel */}
           <aside className="no-print w-64 bg-[#003733] text-white flex-shrink-0 min-h-screen flex flex-col justify-between border-r border-[#005851]">
             <div>
@@ -2041,7 +2296,7 @@ export default function Home() {
           </aside>
 
           {/* Konten Utama Backpanel */}
-          <main className="flex-1 p-6 lg:p-8 max-w-[1400px]">
+          <main className="flex-1 p-6 lg:p-8 max-w-[1400px] relative z-10">
             {/* ============================================================ */}
             {/* TAB 1: GENERATOR PERSURATAN (3 SURAT SEMENTARA: SKU, SKTM, DOM) */}
             {/* ============================================================ */}

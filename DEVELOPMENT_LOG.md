@@ -69,6 +69,15 @@
    - Penyesuaian jenis surat sementara menjadi tepat 3 jenis: SKU, SKTM, DOMISILI (SKCK dihapus).
    - Navbar 2-baris presisi rata kiri-kanan, ikon rumah tunggal untuk beranda, label "LAYANAN", hover dropdown bridge tanpa celah, dan tombol panel admin murni ikon (tersembunyi di mobile).
    - Penyusunan panduan wawancara SDLC komprehensif di [PANDUAN_WAWANCARA_DESA.md](file:///home/jrilym/Projects/Next/desa/PANDUAN_WAWANCARA_DESA.md) untuk persiapan rapat dengan perangkat desa.
+7. Hero 100vh Gate Landmark Background, Navbar Hover Fix & Tekstur Grid/Dot Sivik:
+   - Background Hero: Menggunakan [frontend/public/kuningan-gate.png](file:///home/jrilym/Projects/Next/desa/frontend/public/kuningan-gate.png) penuh di latar belakang Hero section (100vh) dipadukan dengan teknik CSS `mix-blend-multiply`, radial glow emas `#eda50c`, dan gradien gelap Kuningan teal. Menghilangkan noise/artefak penghapusan putih sepenuhnya dan menghasilkan visual landmark megah.
+   - Hero Foreground Panel: Menghapus gambar dari dalam card dan menggantinya dengan Civic Information Cockpit berlatar glassmorphism (Status IDM Desa Mandiri 0.8942, jam operasional balai desa, alamat kantor, dan metrik kunci wilayah).
+   - Perbaikan Menyeluruh Bug Hover Navbar:
+     - Mengintegrasikan state React `activeDropdown` dengan timer tenggang (*grace period* 150ms) untuk mencegah menu tertutup tiba-tiba atau berkedip (*flicker*).
+     - Invisible bridge (`before:content-[''] before:absolute before:-top-3 ...`) menjembatani tombol dan dropdown menu tanpa *deadzone*.
+     - Menambah lebar dropdown `w-72` pada menu Layanan dan menerapkan `whitespace-nowrap` pada seluruh link sehingga teks "Surat Keterangan Tidak Mampu (SKTM)" tidak terpotong.
+     - Menambahkan segitiga penunjuk (*pointer caret*) di atas dropdown card untuk presisi visual.
+   - Tekstur Latar Belakang Non-Plain: Menerapkan pola dot matrix sivik halus (`radial-gradient`) dan kisi arsitektural (`linear-gradient`) transparan pada seluruh section (Section 1 s.d. Section 6 dan workspace Backpanel Loket), sehingga tidak ada area putih atau abu-abu yang terkesan datar (*plain*).
 
 ---
 
