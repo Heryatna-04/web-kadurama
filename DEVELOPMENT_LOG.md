@@ -48,8 +48,14 @@
    - [DEVELOPMENT_LOG.md](file:///home/jrilym/Projects/Next/desa/DEVELOPMENT_LOG.md)
 3. Bedah & Adaptasi Desain Referensi `https://kadugede.godesa.id` (Phase 2 SDLC):
    - Menganalisis konten lokal Kabupaten Kuningan: 5 Dusun tradisional (Manis, Pahing, Puhun, Wage, Kliwon), susunan pamong desa, data demografi, jadwal loket, transparansi APBDes, rekapitulasi surat keluar, dan status IDM/SDGs.
-   - Mengimplementasikan seluruh komponen tersebut ke dalam prototipe visual interaktif di [mockups/index.html](file:///home/jrilym/Projects/Next/desa/mockups/index.html) dengan peningkatan standar modern (*Modern Emerald Civic Tech*, clean bento layout, tipografi jernih *Plus Jakarta Sans*, dan anti-slop).
-4. Inisialisasi Repository GitHub:
+   - Mengimplementasikan seluruh komponen tersebut ke dalam prototipe visual interaktif di [mockups/index.html](file:///home/jrilym/Projects/Next/desa/mockups/index.html).
+4. Penerapan Ketat Disiplin Anti-AI-Slop (Skill `design-taste-frontend`):
+   - Zero em-dash (`—`) dan en-dash (`–`) di seluruh teks antarmuka.
+   - Mengeliminasi emoji dari komponen fungsional dan menggantinya dengan semantic SVG glyphs.
+   - Mengunci palet warna Forest Emerald (`#064e3b` / `#059669`) dengan slate netral (WCAG AA).
+   - Membatasi headline hero <= 2 baris dan subtext <= 20 kata agar tidak terpotong viewport.
+   - Menggunakan tipografi sans-serif jernih (*Plus Jakarta Sans*) tanpa font dekoratif / marker.
+5. Inisialisasi Repository GitHub:
    - Membuat [README.md](file:///home/jrilym/Projects/Next/desa/README.md) dokumentasi lengkap proyek.
    - Mengatur branch `main` dan menghubungkan remote ke `https://github.com/timbubadibako/sistem-desa.git`.
    - Melakukan push perdana (`git push -u origin main`) berhasil.
