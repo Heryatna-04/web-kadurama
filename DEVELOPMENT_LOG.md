@@ -17,19 +17,18 @@
 - [x] **Phase 2: UI/UX Mockup via Interactive HTML Options & Design Spec**
   - [x] Pembuatan berkas mockup visual `.html` interaktif (`mockups/index.html`) untuk Landing Page & Backpanel Cetak Surat.
   - [x] Review spesifikasi desain (Modern Emerald Civic Tech), tipografi sans-serif jernih (Plus Jakarta Sans), dan palet warna.
-- [ ] **Phase 3: Arsitektur Monorepo, Shared Types, Backend & Frontend Implementation**
-  - [ ] Setup workspace monorepo (`packages/shared`, `apps/api`, `apps/web`).
-  - [ ] Implementasi Shared Interfaces & Zod Validation (`Resident`, `LetterTemplate`, `LetterRecord`).
-  - [ ] Implementasi Express REST API dengan Repository Pattern (mock in-memory dataset kependudukan & persuratan, Supabase-ready).
-  - [ ] Implementasi Web Portal Publik Next.js (Hero, Statistik Kependudukan, Panduan Syarat Surat, Berita, Aparatur Desa).
-  - [ ] Implementasi Backpanel Admin Next.js (Dashboard Overview, Live Search NIK Warga, Form Generator Surat, Printable Official Letter A4/F4).
-- [ ] **Phase 4: Empirical Testing & Verification Gate**
-  - [ ] Pengujian cetak surat (print preview, kerapian kop & barcode nomor surat).
-  - [ ] Pengujian API endpoints via test suite / script.
-  - [ ] Typecheck build (`tsc` & `next build`).
-- [ ] **Phase 5: Deployment Preparation, User Manual & Supabase Migration Guide**
-  - [ ] Konfigurasi environment variables & build pipeline.
-  - [ ] Panduan migrasi database Supabase PostgreSQL (DDL SQL script).
+- [x] **Phase 3: Frontend Next.js & Backend Express Implementation (Pitch-Ready)**
+  - [x] Setup direktori `frontend/` (Next.js 16.3.5 App Router, TypeScript, Tailwind CSS v4, Lucide React).
+  - [x] Setup direktori `backend/` (Express.js, TypeScript, TSX, Cors).
+  - [x] Ekstraksi palet warna resmi Pemkab Kuningan: Kuningan Teal (`#009388`) dan Kuningan Gold (`#eda50c`).
+  - [x] Implementasi Portal Publik Interaktif (Navbar tunggal bersih, Hero 100vh, Panduan Syarat Surat tanpa CTA buat online, Statistik Penduduk 5 Dusun, Pamong Desa Portrait Showcase, APBDes Cockpit, Berita Terkini, Lokasi & Jam Kantor).
+  - [x] Implementasi Backpanel Loket Persuratan & Pratinjau Kertas A4 Resmi (Kop Desa Kadurama, Auto-fill NIK/Nama, QR Verification, NIP/Tanda Tangan, cetak browser).
+  - [x] Verifikasi build produksi Next.js (`npm run build` via Turbopack lolos 100%) dan Express (`tsc` lolos 100%).
+- [ ] **Phase 4: Empirical Testing & Database Integration (Setelah Deal Klien)**
+  - [ ] Integrasi Supabase PostgreSQL (Database Auth, RLS, Table kependudukan & surat).
+  - [ ] Koneksi REST API antara `frontend` dan `backend`.
+- [ ] **Phase 5: Deployment Preparation & User Manual**
+  - [ ] Konfigurasi deployment hosting / VPS / Vercel.
   - [ ] Panduan operasional staf desa (*User Manual*).
 
 ---
@@ -38,32 +37,34 @@
 
 ### Task Selesai (`[x]`):
 1. Mengumpulkan preferensi teknis dan alur bisnis dari pengguna:
-   - Pola arsitektur: Monorepo terstruktur (`apps/web`, `apps/api`, `packages/shared`).
+   - Direktori `frontend/` untuk Next.js dan `backend/` untuk Express.
    - Alur surat: Pelayanan di kantor desa langsung oleh operator/staf.
    - Modul prioritas: Sistem Generator & Cetak Surat Resmi Otomatis + Master Data Kependudukan.
-   - Arah visual: Modern Emerald Civic Tech (identitas hijau asri pedesaan, tata kelola modern).
-2. Menyusun dokumen perencanaan SDLC Phase 1:
+   - Arah visual: Identitas resmi Pemkab Kuningan (Teal `#009388` & Gold `#eda50c`).
+2. Menyusun dokumen perencanaan SDLC:
    - [PRD.md](file:///home/jrilym/Projects/Next/desa/PRD.md)
    - [SRS.md](file:///home/jrilym/Projects/Next/desa/SRS.md)
    - [DEVELOPMENT_LOG.md](file:///home/jrilym/Projects/Next/desa/DEVELOPMENT_LOG.md)
-3. Bedah & Adaptasi Desain Referensi `https://kadugede.godesa.id` (Phase 2 SDLC):
-   - Menganalisis konten lokal Kabupaten Kuningan: 5 Dusun tradisional (Manis, Pahing, Puhun, Wage, Kliwon), susunan pamong desa, data demografi, jadwal loket, transparansi APBDes, rekapitulasi surat keluar, dan status IDM/SDGs.
-   - Mengimplementasikan seluruh komponen tersebut ke dalam prototipe visual interaktif di [mockups/index.html](file:///home/jrilym/Projects/Next/desa/mockups/index.html).
-4. Penerapan Ketat Disiplin Anti-AI-Slop & GSAP Motion (Skill `design-taste-frontend` & `gpt-taste`):
-   - Hero 100vh (`min-h-[calc(100vh-100px)]`) cinematic dengan tipografi lebar dan animasi entrance GSAP Timeline.
-   - Animated Counter angka penduduk dan KK menggunakan GSAP ScrollTrigger.
-   - Large Portrait Leadership Showcase (`aspect-[3/4]`, tinggi 380-440px) untuk foto profil pamong/aparatur desa (Kepala Desa spotlight, Sekdes, Kasi, Kaur, dan 5 Kadus Kuningan).
-   - Financial Cockpit APBDes 2026: Realisasi serapan (82.4%), tab filter dinamis (Semua/Pendapatan/Belanja), dan rincian lengkap 5 Bidang Belanja Wajib.
+3. Bedah & Adaptasi Desain Referensi `https://kadugede.godesa.id`:
+   - Konten lokal 5 Dusun tradisional Kuningan (Manis, Pahing, Puhun, Wage, Kliwon), jadwal loket, transparansi APBDes, rekapitulasi surat keluar, dan status IDM/SDGs.
+   - Diterapkan ke [mockups/index.html](file:///home/jrilym/Projects/Next/desa/mockups/index.html).
+4. Penerapan Ketat Disiplin Anti-AI-Slop & GSAP Motion:
+   - Single clean, unified navbar (tidak bertumpuk).
+   - Hero 100vh cinematic tanpa CTA buka loket online.
+   - Section tersendiri untuk Demografi & Statistik Kependudukan (5 Dusun).
+   - Large Portrait Leadership Showcase untuk pamong desa (Kades Suhendra, S.Sos, Sekdes Dadang Kurnia, Kasi, Kaur, 5 Kadus).
+   - Cockpit APBDes 2026 dengan tab filter dan rincian 5 bidang belanja.
+   - Section Kabar & Berita Desa Kadurama terkini.
    - Zero em-dash (`—`) dan en-dash (`–`) di seluruh teks antarmuka.
-   - Mengeliminasi emoji dari komponen fungsional dan menggantinya dengan semantic SVG glyphs.
-   - Mengunci palet warna Forest Emerald (`#064e3b` / `#059669`) dengan slate netral (WCAG AA).
-5. Inisialisasi Repository GitHub:
-   - Membuat [README.md](file:///home/jrilym/Projects/Next/desa/README.md) dokumentasi lengkap proyek.
-   - Mengatur branch `main` dan menghubungkan remote ke `https://github.com/timbubadibako/sistem-desa.git`.
-   - Melakukan push perdana (`git push -u origin main`) berhasil.
+   - Zero kata "ritual" di seluruh sistem.
+5. Setup & Migrasi UI ke Next.js 16 (`frontend/`) dan Express (`backend/`):
+   - Inisialisasi Next.js 16.3.5 App Router dengan Tailwind CSS v4 dan TypeScript.
+   - Migrasi dan rekayasa ulang seluruh UI ke [frontend/src/app/page.tsx](file:///home/jrilym/Projects/Next/desa/frontend/src/app/page.tsx) dengan status reaktif React (tab, live preview surat, switcher portal-backpanel, live print CSS).
+   - Inisialisasi Express server di [backend/src/index.ts](file:///home/jrilym/Projects/Next/desa/backend/src/index.ts).
+   - Validasi kedua build: `npm run build` di frontend dan backend sukses 0 error.
 
 ---
 
 ## 🎯 Pekerjaan Selanjutnya (Next Action)
-- [ ] Membuat Mockup HTML Interaktif (Phase 2 SDLC) untuk memvalidasi pratinjau visual landing page dan preview cetak surat resmi sebelum coding framework.
-- [ ] Menginisialisasi monorepo workspace (`npm` workspaces atau `pnpm`), mengonfigurasi Next.js, Express, dan shared package.
+- [ ] Presentasi pitch & demo prototipe aplikasi Next.js ke calon klien Desa Kadurama.
+- [ ] Setelah deal disepakati: Setup Supabase Database PostgreSQL & sambungkan API Express.

@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --color-kuningan-teal: #009388;
+  --color-kuningan-teal-hover: #007b71;
+  --color-kuningan-teal-dark: #005851;
+  --color-kuningan-teal-deep: #003733;
+  --color-kuningan-teal-light: #e6f7f5;
+  --color-kuningan-gold: #eda50c;
+  --color-kuningan-gold-hover: #d99407;
+  --color-kuningan-gold-light: #fef6e6;
+}
+
+@media print {
+  body * {
+    visibility: hidden;
+  }
+  #print-area, #print-area * {
+    visibility: visible;
+  }
+  #print-area {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+  }
+  .no-print {
+    display: none !important;
+  }
+}
