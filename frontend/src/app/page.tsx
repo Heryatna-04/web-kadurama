@@ -447,9 +447,10 @@ export default function Home() {
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
       {/* =================================================================== */}
-      {/* NAVBAR 2-BARIS (SEJAJAR & RATA PRESISI, HOME ICON ONLY, SINGLE-LINE) */}
+      {/* NAVBAR 2-BARIS (HANYA MUNCUL DI PORTAL PUBLIK, BUKAN DI PANEL ADMIN)*/}
       {/* =================================================================== */}
-      <header className="no-print sticky top-0 z-50 shadow-sm transition-all duration-200">
+      {view === "public" && (
+        <header className="no-print sticky top-0 z-50 shadow-sm transition-all duration-200">
         {/* BARIS 1: TOP HEADER BAR (Putih Bersih - Presisi Max-W 7XL) */}
         <div className="bg-white border-b border-slate-200">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
@@ -996,6 +997,7 @@ export default function Home() {
           </div>
         )}
       </header>
+      )}
 
       {/* =================================================================== */}
       {/* MODAL LOGIN APARATUR DESA (DESKTOP ONLY)                           */}
@@ -2218,12 +2220,13 @@ export default function Home() {
         /* =================================================================== */
         /* VIEW 2: BACKPANEL LOKET PERSURATAN & BUKU AGENDA (DESKTOP PANEL)   */
         /* =================================================================== */
-        <div className="flex-1 bg-slate-100 flex relative overflow-hidden">
+        <div className="fixed inset-0 overflow-hidden flex bg-slate-100 z-50">
           {/* Subtle Technical Civic Pattern */}
           <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.20] pointer-events-none" />
-          {/* Sidebar Backpanel */}
-          <aside className="no-print w-64 bg-[#003733] text-white flex-shrink-0 min-h-screen flex flex-col justify-between border-r border-[#005851]">
-            <div>
+          
+          {/* Sidebar Backpanel (Fixed / Full Height / Zero Scroll) */}
+          <aside className="no-print w-64 bg-[#003733] text-white flex-shrink-0 h-full flex flex-col justify-between border-r border-[#005851] z-20 select-none">
+            <div className="flex flex-col flex-1 overflow-y-auto">
               <div className="p-5 border-b border-[#005851] flex items-center gap-3">
                 <Image src="/kuningan-logo.png" alt="Logo" width={32} height={32} className="object-contain" />
                 <div>
@@ -2275,7 +2278,7 @@ export default function Home() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-[#005851]">
+            <div className="p-4 border-t border-[#005851] bg-[#002f2b]">
               <div className="flex items-center gap-3">
                 <div className="w-8 h-8 rounded-full bg-[#eda50c] text-slate-950 font-bold flex items-center justify-center text-xs">
                   BS
@@ -2287,7 +2290,7 @@ export default function Home() {
               </div>
               <button
                 onClick={() => setView("public")}
-                className="mt-3 w-full py-2 rounded-xl bg-[#005851] hover:bg-[#004741] text-emerald-100 hover:text-white text-[11px] font-bold transition flex items-center justify-center gap-2"
+                className="mt-3 w-full py-2 rounded-xl bg-[#005851] hover:bg-[#004741] text-emerald-100 hover:text-white text-[11px] font-bold transition flex items-center justify-center gap-2 shadow-2xs"
               >
                 <LogOut className="w-3.5 h-3.5" />
                 <span>Kembali ke Portal Warga</span>
@@ -2295,8 +2298,9 @@ export default function Home() {
             </div>
           </aside>
 
-          {/* Konten Utama Backpanel */}
-          <main className="flex-1 p-6 lg:p-8 max-w-[1400px] relative z-10">
+          {/* Konten Utama Backpanel (Scrollable Independen) */}
+          <main className="flex-1 h-full overflow-y-auto p-6 lg:p-8 relative z-10">
+            <div className="max-w-[1400px] mx-auto pb-16">
             {/* ============================================================ */}
             {/* TAB 1: GENERATOR PERSURATAN (3 SURAT SEMENTARA: SKU, SKTM, DOM) */}
             {/* ============================================================ */}
@@ -3091,6 +3095,7 @@ export default function Home() {
                 )}
               </div>
             )}
+            </div>
           </main>
         </div>
       )}

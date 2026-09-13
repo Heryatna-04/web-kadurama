@@ -78,6 +78,10 @@
      - Menambah lebar dropdown `w-72` pada menu Layanan dan menerapkan `whitespace-nowrap` pada seluruh link sehingga teks "Surat Keterangan Tidak Mampu (SKTM)" tidak terpotong.
      - Menambahkan segitiga penunjuk (*pointer caret*) di atas dropdown card untuk presisi visual.
    - Tekstur Latar Belakang Non-Plain: Menerapkan pola dot matrix sivik halus (`radial-gradient`) dan kisi arsitektural (`linear-gradient`) transparan pada seluruh section (Section 1 s.d. Section 6 dan workspace Backpanel Loket), sehingga tidak ada area putih atau abu-abu yang terkesan datar (*plain*).
+8. Isolasi Total Panel Admin (Navbar Publik Dihapus, Sidebar Fixed, Konten Scroll Independen):
+   - Navbar publik 2-baris diisolasi hanya tampil pada kanal warga (`view === 'public'`). Saat aparatur masuk ke panel loket (`view === 'admin'`), navbar publik ditiadakan dari DOM.
+   - Panel admin menggunakan viewport penuh `fixed inset-0 overflow-hidden` dengan sidebar `w-64 h-full` yang terpasang tetap (*fixed*, zero-scroll).
+   - Workspace utama loket persuratan (`<main>`) diberi alur scroll independen (`h-full overflow-y-auto`), sehingga formulir pembuatan surat, pratinjau kertas A4/F4, buku agenda, dan tabel kependudukan dapat di-scroll lancar tanpa menggeser sidebar.
 
 ---
 
