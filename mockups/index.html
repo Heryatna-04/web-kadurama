@@ -1,0 +1,769 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mockup Interaktif - Sistem Pemdes Terintegrasi Desa Kadurama</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+          },
+          colors: {
+            civic: {
+              50: '#f0fdf4',
+              100: '#dcfce7',
+              200: '#bbf7d0',
+              300: '#86efac',
+              400: '#4ade80',
+              500: '#22c55e',
+              600: '#16a34a',
+              700: '#15803d',
+              800: '#166534',
+              900: '#14532d',
+              950: '#052e16',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    @media print {
+      body * {
+        visibility: hidden;
+      }
+      #print-area, #print-area * {
+        visibility: visible;
+      }
+      #print-area {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+      }
+      .no-print {
+        display: none !important;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen">
+
+  <!-- Top Controller Bar (Mockup Switcher) -->
+  <div class="no-print sticky top-0 z-50 bg-slate-900 border-b border-slate-800 text-white px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shadow-md">
+    <div class="flex items-center gap-3">
+      <span class="inline-flex items-center justify-center w-7 h-7 rounded-lg bg-emerald-600 font-bold text-xs">KD</span>
+      <div>
+        <h1 class="text-sm font-semibold leading-none">Desa Kadurama • Interactive Mockup Preview</h1>
+        <p class="text-xs text-slate-400 mt-0.5">Phase 2 SDLC - Modern Emerald Civic Tech Theme</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2 bg-slate-800 p-1 rounded-lg border border-slate-700">
+      <button onclick="switchView('public')" id="btn-public" class="px-3 py-1.5 rounded-md text-xs font-medium bg-emerald-600 text-white transition">
+        🌐 Portal Publik (Landing Page)
+      </button>
+      <button onclick="switchView('admin')" id="btn-admin" class="px-3 py-1.5 rounded-md text-xs font-medium text-slate-300 hover:text-white transition">
+        🏛️ Backpanel Pelayanan Surat Desa
+      </button>
+    </div>
+  </div>
+
+  <!-- VIEW 1: PORTAL PUBLIK (LANDING PAGE) -->
+  <div id="view-public" class="transition-all duration-200">
+    <!-- Navbar -->
+    <header class="bg-white border-b border-slate-200 sticky top-[53px] z-40">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-emerald-700 text-white flex items-center justify-center font-bold text-lg shadow-sm">
+            🌿
+          </div>
+          <div>
+            <div class="font-bold text-slate-900 leading-tight">Pemerintah Desa Kadurama</div>
+            <div class="text-xs text-emerald-700 font-medium">Kabupaten Kuningan, Jawa Barat</div>
+          </div>
+        </div>
+        <nav class="hidden md:flex items-center gap-6 text-sm font-medium text-slate-600">
+          <a href="#beranda" class="text-emerald-700 font-semibold">Beranda</a>
+          <a href="#profil" class="hover:text-emerald-700 transition">Profil Wilayah</a>
+          <a href="#layanan-surat" class="hover:text-emerald-700 transition">Panduan Syarat Surat</a>
+          <a href="#kependudukan" class="hover:text-emerald-700 transition">Statistik</a>
+          <a href="#kabar" class="hover:text-emerald-700 transition">Kabar Desa</a>
+          <a href="#kontak" class="hover:text-emerald-700 transition">Kontak Loket</a>
+        </nav>
+        <div class="flex items-center gap-3">
+          <button onclick="switchView('admin')" class="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-lg bg-emerald-800 hover:bg-emerald-900 text-white text-xs font-semibold shadow-sm transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+            Masuk Backpanel Pemdes
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="beranda" class="relative overflow-hidden bg-gradient-to-b from-emerald-900 via-emerald-800 to-slate-900 text-white py-20 lg:py-28">
+      <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#fff_1px,transparent_1px)] [background-size:16px_16px]"></div>
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div class="max-w-3xl">
+          <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-700/60 border border-emerald-500/30 text-emerald-200 text-xs font-semibold uppercase tracking-wider mb-6">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Pusat Informasi & Pelayanan Warga Terpadu
+          </div>
+          <h1 class="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15] mb-6">
+            Mewujudkan Desa Kadurama yang Maju, Mandiri & Berkelanjutan
+          </h1>
+          <p class="text-lg text-emerald-100/90 leading-relaxed mb-8">
+            Platform tata kelola pemerintahan desa terintegrasi. Hadir memberikan kemudahan informasi publik, transparansi pembangunan, dan pelayanan persuratan kependudukan yang cepat dan transparan.
+          </p>
+          <div class="flex flex-wrap gap-4">
+            <a href="#layanan-surat" class="px-6 py-3.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-sm shadow-lg shadow-emerald-950/20 transition">
+              Cek Syarat Dokumen Surat
+            </a>
+            <a href="#kontak" class="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold text-sm backdrop-blur-sm transition">
+              Jadwal & Lokasi Kantor Desa
+            </a>
+          </div>
+        </div>
+
+        <!-- Quick Highlight Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-16 pt-12 border-t border-emerald-700/50">
+          <div class="bg-white/5 border border-white/10 p-4 rounded-xl backdrop-blur-sm">
+            <div class="text-2xl lg:text-3xl font-extrabold text-emerald-300">3.428</div>
+            <div class="text-xs text-slate-300 mt-1">Jiwa Penduduk</div>
+          </div>
+          <div class="bg-white/5 border border-white/10 p-4 rounded-xl backdrop-blur-sm">
+            <div class="text-2xl lg:text-3xl font-extrabold text-emerald-300">1.042</div>
+            <div class="text-xs text-slate-300 mt-1">Kepala Keluarga</div>
+          </div>
+          <div class="bg-white/5 border border-white/10 p-4 rounded-xl backdrop-blur-sm">
+            <div class="text-2xl lg:text-3xl font-extrabold text-emerald-300">4 Dusun</div>
+            <div class="text-xs text-slate-300 mt-1">12 RT / 4 RW</div>
+          </div>
+          <div class="bg-white/5 border border-white/10 p-4 rounded-xl backdrop-blur-sm">
+            <div class="text-2xl lg:text-3xl font-extrabold text-emerald-300">&lt; 5 Menit</div>
+            <div class="text-xs text-slate-300 mt-1">Layanan Cetak Surat di Loket</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Panduan Persyaratan Surat di Kantor Desa -->
+    <section id="layanan-surat" class="py-16 bg-white border-b border-slate-200">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="text-center max-w-2xl mx-auto mb-12">
+          <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">Pelayanan Warga</span>
+          <h2 class="text-2xl sm:text-3xl font-bold text-slate-900 mt-3">Panduan Persyaratan Dokumen Surat</h2>
+          <p class="text-sm text-slate-600 mt-2">
+            Pengurusan surat dilayani langsung di loket kantor pemdes. Pastikan Anda membawa kelengkapan berkas berikut sebelum datang ke kantor desa.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Card SKU -->
+          <div class="p-6 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md transition">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold mb-4">🏪</div>
+            <h3 class="font-bold text-slate-900 text-lg">Surat Keterangan Usaha (SKU)</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4">Untuk keperluan pengajuan modal usaha, pinjaman bank, atau izin usaha mikro.</p>
+            <div class="text-xs font-semibold text-slate-700 mb-2">Berkas Wajib Dibawa:</div>
+            <ul class="text-xs text-slate-600 space-y-1.5">
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Fotokopi KTP-el & Kartu Keluarga (KK)</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Surat Pengantar dari RT / RW setempat</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Foto lokasi / tempat usaha berjalan</li>
+            </ul>
+          </div>
+
+          <!-- Card SKTM -->
+          <div class="p-6 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md transition">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold mb-4">📄</div>
+            <h3 class="font-bold text-slate-900 text-lg">Surat Ket. Tidak Mampu (SKTM)</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4">Untuk beasiswa sekolah, keringanan biaya RS, atau pendaftaran KIS/PBI.</p>
+            <div class="text-xs font-semibold text-slate-700 mb-2">Berkas Wajib Dibawa:</div>
+            <ul class="text-xs text-slate-600 space-y-1.5">
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Fotokopi KTP-el & Kartu Keluarga (KK)</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Surat Pengantar RT/RW bermaterai</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Bukti tagihan/rekening listrik atau foto rumah</li>
+            </ul>
+          </div>
+
+          <!-- Card SKCK -->
+          <div class="p-6 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md transition">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold mb-4">👮</div>
+            <h3 class="font-bold text-slate-900 text-lg">Pengantar SKCK Polsek</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4">Syarat penerbitan SKCK di kepolisian untuk melamar kerja atau dinas.</p>
+            <div class="text-xs font-semibold text-slate-700 mb-2">Berkas Wajib Dibawa:</div>
+            <ul class="text-xs text-slate-600 space-y-1.5">
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Fotokopi KTP & Kartu Keluarga (KK)</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Surat Pengantar RT/RW</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Pasfoto 4x6 latar belakang merah (2 lembar)</li>
+            </ul>
+          </div>
+
+          <!-- Card Domisili -->
+          <div class="p-6 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md transition">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold mb-4">🏡</div>
+            <h3 class="font-bold text-slate-900 text-lg">Keterangan Domisili</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4">Keterangan tinggal sementara atau konfirmasi domisili resmi lembaga.</p>
+            <div class="text-xs font-semibold text-slate-700 mb-2">Berkas Wajib Dibawa:</div>
+            <ul class="text-xs text-slate-600 space-y-1.5">
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Fotokopi KTP asal & Kartu Keluarga</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Surat Pengantar RT/RW tempat tinggal saat ini</li>
+            </ul>
+          </div>
+
+          <!-- Card Kematian / Kelahiran -->
+          <div class="p-6 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md transition">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold mb-4">👶</div>
+            <h3 class="font-bold text-slate-900 text-lg">Kelahiran / Kematian</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4">Pengantar penerbitan Akta Kelahiran atau Akta Kematian Disdukcapil.</p>
+            <div class="text-xs font-semibold text-slate-700 mb-2">Berkas Wajib Dibawa:</div>
+            <ul class="text-xs text-slate-600 space-y-1.5">
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Surat keterangan dari Bidan/RS/Puskesmas</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> KTP Pelapor, Saksi (2 orang), & KK asli</li>
+            </ul>
+          </div>
+
+          <!-- Card Belum Menikah -->
+          <div class="p-6 rounded-2xl border border-slate-200 bg-slate-50 hover:bg-white hover:shadow-md transition">
+            <div class="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center font-bold mb-4">💍</div>
+            <h3 class="font-bold text-slate-900 text-lg">Ket. Belum Pernah Menikah</h3>
+            <p class="text-xs text-slate-500 mt-1 mb-4">Untuk pendaftaran pekerjaan kedinasan atau pengantar nikah ke KUA.</p>
+            <div class="text-xs font-semibold text-slate-700 mb-2">Berkas Wajib Dibawa:</div>
+            <ul class="text-xs text-slate-600 space-y-1.5">
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Fotokopi KTP & KK pemohon</li>
+              <li class="flex items-center gap-2"><span class="text-emerald-600 font-bold">✓</span> Surat pernyataan belum menikah bermaterai Rp10.000</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section: Informasi Kantor & Jam Pelayanan -->
+    <section id="kontak" class="py-16 bg-slate-100">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 shadow-sm grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div>
+            <span class="text-xs font-bold uppercase tracking-wider text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">Pelayanan Kantor</span>
+            <h3 class="text-2xl font-bold text-slate-900 mt-3">Kantor Pemerintahan Desa Kadurama</h3>
+            <p class="text-sm text-slate-600 mt-3 leading-relaxed">
+              Loket pelayanan persuratan dan kependudukan siap melayani masyarakat dengan ramah, cepat, dan tanpa pungutan liar.
+            </p>
+            <div class="mt-6 space-y-3 text-xs text-slate-600">
+              <p class="flex items-start gap-2">
+                <span class="font-bold text-slate-800">Alamat:</span>
+                Jl. Raya Desa Kadurama No. 12, Kec. Ciawigebang, Kab. Kuningan, Jawa Barat 45591
+              </p>
+              <p class="flex items-center gap-2">
+                <span class="font-bold text-slate-800">Email:</span>
+                pemdes@kadurama.desa.id
+              </p>
+              <p class="flex items-center gap-2">
+                <span class="font-bold text-slate-800">WhatsApp:</span>
+                +62 821-2345-6789 (Pusat Informasi Desa)
+              </p>
+            </div>
+          </div>
+
+          <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6">
+            <h4 class="font-bold text-slate-900 text-sm mb-4 flex items-center gap-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              Jadwal Loket Pelayanan Surat
+            </h4>
+            <div class="space-y-3 text-xs">
+              <div class="flex justify-between pb-2 border-b border-slate-200">
+                <span class="text-slate-600">Senin – Kamis</span>
+                <span class="font-semibold text-slate-900">08.00 - 15.00 WIB</span>
+              </div>
+              <div class="flex justify-between pb-2 border-b border-slate-200">
+                <span class="text-slate-600">Jumat</span>
+                <span class="font-semibold text-slate-900">08.00 - 11.30 WIB</span>
+              </div>
+              <div class="flex justify-between pb-2 border-b border-slate-200">
+                <span class="text-slate-600">Istirahat Siang</span>
+                <span class="font-semibold text-slate-900">12.00 - 13.00 WIB</span>
+              </div>
+              <div class="flex justify-between text-amber-700">
+                <span>Sabtu, Minggu & Hari Libur</span>
+                <span class="font-semibold">Tutup (Piket Darurat)</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-emerald-900 text-white rounded-2xl p-6 flex flex-col justify-between">
+            <div>
+              <div class="text-xs uppercase font-bold tracking-wider text-emerald-300">Aparatur Siaga</div>
+              <h4 class="text-lg font-bold mt-1">Petugas Layanan Terpadu</h4>
+              <p class="text-xs text-emerald-100/80 mt-2 leading-relaxed">
+                Staf bagian pelayanan umum siap membantu pengisian data dan verifikasi dokumen identitas secara cepat di ruang loket utama.
+              </p>
+            </div>
+            <button onclick="switchView('admin')" class="mt-6 w-full py-2.5 px-4 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold text-xs text-center transition">
+              Akses Backpanel Admin Persuratan →
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-900 text-slate-400 text-xs py-8 border-t border-slate-800">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <p>© 2026 Pemerintah Desa Kadurama. Seluruh hak cipta dilindungi undang-undang.</p>
+        <p class="text-slate-500">Sistem Informasi & Tata Kelola Digital Pemdes Kadurama</p>
+      </div>
+    </footer>
+  </div>
+
+  <!-- VIEW 2: BACKPANEL ADMIN PELAYANAN PERSURATAN -->
+  <div id="view-admin" class="hidden min-h-screen bg-slate-100">
+    <div class="flex">
+      <!-- Sidebar -->
+      <aside class="no-print w-64 bg-slate-900 text-white flex-shrink-0 min-h-screen flex flex-col justify-between border-r border-slate-800">
+        <div>
+          <!-- Sidebar Brand -->
+          <div class="p-5 border-b border-slate-800 flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-emerald-600 flex items-center justify-center font-bold text-sm">KD</div>
+            <div>
+              <div class="font-bold text-sm leading-tight">Admin Pemdes</div>
+              <div class="text-[11px] text-emerald-400">Desa Kadurama</div>
+            </div>
+          </div>
+
+          <!-- Navigation Links -->
+          <div class="p-3 space-y-1">
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3 py-2">Pelayanan Utama</div>
+            <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg bg-emerald-800/60 text-emerald-300 font-semibold text-xs">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+              Buat Surat Warga
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 text-xs font-medium transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              Data Kependudukan
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 text-xs font-medium transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/></svg>
+              Arsip & Agenda Surat Keluar
+            </a>
+
+            <div class="text-[10px] font-bold uppercase tracking-wider text-slate-500 px-3 py-2 mt-4">Pusat Informasi</div>
+            <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 text-xs font-medium transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+              Kelola Berita & Agenda
+            </a>
+            <a href="#" class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-slate-300 hover:bg-slate-800 text-xs font-medium transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/></svg>
+              Pengaturan Instansi Desa
+            </a>
+          </div>
+        </div>
+
+        <!-- Operator User Box -->
+        <div class="p-4 border-t border-slate-800">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-emerald-500 text-slate-950 font-bold flex items-center justify-center text-xs">OP</div>
+            <div>
+              <div class="text-xs font-semibold text-white">Budi Santoso</div>
+              <div class="text-[10px] text-slate-400">Kasi Pelayanan Umum</div>
+            </div>
+          </div>
+          <button onclick="switchView('public')" class="mt-3 w-full py-1.5 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition">
+            Lihat Web Publik ↗
+          </button>
+        </div>
+      </aside>
+
+      <!-- Main Content Area -->
+      <main class="flex-1 p-6 lg:p-8 max-w-[1400px]">
+        <!-- Header Page -->
+        <div class="no-print flex flex-wrap items-center justify-between gap-4 mb-6 pb-4 border-b border-slate-200">
+          <div>
+            <h2 class="text-xl font-bold text-slate-900">Pelayanan & Pembuatan Surat Warga</h2>
+            <p class="text-xs text-slate-500 mt-1">Pilih NIK pemohon untuk mengisi otomatis form dan menghasilkan dokumen cetak resmi.</p>
+          </div>
+          <div class="flex items-center gap-2">
+            <button onclick="window.print()" class="px-4 py-2 bg-emerald-700 hover:bg-emerald-800 text-white rounded-lg text-xs font-semibold shadow-sm flex items-center gap-2 transition">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+              Cetak Dokumen Resmi (PDF / Print)
+            </button>
+          </div>
+        </div>
+
+        <!-- 2-Column Split: Form Input & Real-Time Print Preview -->
+        <div class="grid grid-cols-1 xl:grid-cols-12 gap-8">
+          
+          <!-- Column 1: Interactive Generator Controls -->
+          <div class="no-print xl:col-span-5 space-y-6">
+            
+            <!-- Step 1: Resident Search / Picker -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+              <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                1. Cari Data Warga Pemohon (NIK / Nama)
+              </label>
+              <div class="relative">
+                <input 
+                  type="text" 
+                  id="search-input" 
+                  oninput="handleSearch(this.value)"
+                  placeholder="Ketik NIK 3208... atau nama warga" 
+                  value="3208152405900001"
+                  class="w-full text-xs px-3.5 py-2.5 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-slate-50"
+                />
+              </div>
+
+              <!-- Resident Details Card -->
+              <div id="resident-info" class="mt-4 p-3.5 bg-emerald-50/60 border border-emerald-200 rounded-xl text-xs space-y-1.5">
+                <div class="flex justify-between items-center">
+                  <span class="font-bold text-slate-900" id="res-nama">Asep Saepuloh</span>
+                  <span class="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-200 text-emerald-800">Warga Tetap</span>
+                </div>
+                <div class="text-slate-600 flex justify-between">
+                  <span>NIK:</span>
+                  <span class="font-mono font-medium text-slate-800" id="res-nik">3208152405900001</span>
+                </div>
+                <div class="text-slate-600 flex justify-between">
+                  <span>Tempat/Tgl Lahir:</span>
+                  <span class="font-medium text-slate-800" id="res-ttl">Kuningan, 24 Mei 1990</span>
+                </div>
+                <div class="text-slate-600 flex justify-between">
+                  <span>Pekerjaan:</span>
+                  <span class="font-medium text-slate-800" id="res-pekerjaan">Wiraswasta</span>
+                </div>
+                <div class="text-slate-600 flex justify-between">
+                  <span>Alamat:</span>
+                  <span class="font-medium text-slate-800 text-right" id="res-alamat">Dusun Manis RT 02 / RW 01</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Step 2: Jenis Surat & Form Parameter -->
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+              <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  2. Pilih Template Surat
+                </label>
+                <select id="letter-type" onchange="handleLetterTypeChange(this.value)" class="w-full text-xs px-3.5 py-2.5 border border-slate-300 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium">
+                  <option value="SKU" selected>Surat Keterangan Usaha (SKU)</option>
+                  <option value="SKTM">Surat Keterangan Tidak Mampu (SKTM)</option>
+                  <option value="SKCK">Surat Pengantar Catatan Kepolisian (SKCK)</option>
+                  <option value="DOMISILI">Surat Keterangan Domisili</option>
+                </select>
+              </div>
+
+              <!-- Dynamic Field: Surat Keterangan Usaha -->
+              <div id="fields-sku" class="space-y-3 pt-2 border-t border-slate-100">
+                <div class="text-xs font-bold text-slate-800">Parameter Spesifik Usaha:</div>
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600 mb-1">Nama Usaha / Dagang</label>
+                  <input type="text" id="input-usaha-nama" oninput="updatePreview()" value="Warung Sembako & Barokah Snack" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg bg-slate-50">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600 mb-1">Jenis / Bidang Usaha</label>
+                  <input type="text" id="input-usaha-jenis" oninput="updatePreview()" value="Perdagangan Kebutuhan Pokok & Makanan Ringan" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg bg-slate-50">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600 mb-1">Alamat Lokasi Usaha</label>
+                  <input type="text" id="input-usaha-lokasi" oninput="updatePreview()" value="Dusun Manis RT 02 / RW 01, Desa Kadurama" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg bg-slate-50">
+                </div>
+                <div>
+                  <label class="block text-[11px] font-medium text-slate-600 mb-1">Tujuan / Keperluan Surat</label>
+                  <input type="text" id="input-keperluan" oninput="updatePreview()" value="Kelengkapan Administrasi Permohonan Kredit Usaha Rakyat (KUR) BRI" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg bg-slate-50">
+                </div>
+              </div>
+
+              <!-- Pejabat Penandatangan -->
+              <div class="pt-3 border-t border-slate-100">
+                <label class="block text-[11px] font-medium text-slate-600 mb-1">Pejabat Penandatangan</label>
+                <select id="select-ttd" onchange="updatePreview()" class="w-full text-xs px-3 py-2 border border-slate-300 rounded-lg bg-slate-50">
+                  <option value="kades" selected>Kepala Desa - SUHENDRA, S.Sos</option>
+                  <option value="sekdes">Sekretaris Desa - DADANG KURNIA</option>
+                </select>
+              </div>
+
+              <div class="pt-2">
+                <button onclick="saveAndRegister()" class="w-full py-2.5 px-4 rounded-xl bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-xs shadow-md shadow-emerald-900/10 transition">
+                  ✓ Simpan ke Arsip & Siapkan Cetak
+                </button>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Column 2: Paper Document Preview (A4 Standard) -->
+          <div class="xl:col-span-7">
+            <div class="no-print mb-2 flex items-center justify-between text-xs text-slate-500">
+              <span class="font-semibold text-slate-700">📄 Pratinjau Dokumen Kertas Resmi (Standar F4/A4)</span>
+              <span>Siap Cetak • Skala 100%</span>
+            </div>
+
+            <!-- The Printable Sheet -->
+            <div id="print-area" class="bg-white text-black p-8 sm:p-12 rounded-lg border border-slate-300 shadow-xl max-w-[760px] mx-auto min-h-[960px] font-serif leading-relaxed text-sm">
+              
+              <!-- Kop Surat Resmi Desa Kadurama -->
+              <div class="border-b-4 border-double border-black pb-4 text-center">
+                <div class="flex items-center justify-center gap-4">
+                  <!-- Logo Placeholder -->
+                  <div class="w-16 h-16 border-2 border-black rounded flex items-center justify-center font-sans font-bold text-xs">
+                    LOGO<br>DAERAH
+                  </div>
+                  <div class="flex-1 font-sans">
+                    <div class="text-base font-bold tracking-wide uppercase">Pemerintah Kabupaten Kuningan</div>
+                    <div class="text-sm font-bold uppercase">Kecamatan Ciawigebang</div>
+                    <div class="text-xl font-extrabold tracking-wider uppercase text-emerald-950">Pemerintah Desa Kadurama</div>
+                    <div class="text-[11px] text-slate-800 mt-1">
+                      Jl. Raya Desa Kadurama No. 12, Kec. Ciawigebang, Kode Pos 45591<br>
+                      Laman Resmi: kadurama.desa.id • Pos-el: pemdes@kadurama.desa.id
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Judul Surat & Nomor Register -->
+              <div class="text-center my-6">
+                <div id="doc-title" class="font-sans font-bold text-base underline uppercase tracking-wide">
+                  Surat Keterangan Usaha
+                </div>
+                <div class="text-xs font-sans mt-0.5" id="doc-nomor">
+                  Nomor: 503 / 048 / Pem / IX / 2026
+                </div>
+              </div>
+
+              <!-- Pembuka -->
+              <p class="text-justify text-xs mb-4">
+                Yang bertanda tangan di bawah ini, Kepala Desa Kadurama, Kecamatan Ciawigebang, Kabupaten Kuningan, Provinsi Jawa Barat, dengan ini menerangkan bahwa:
+              </p>
+
+              <!-- Biodata Pemohon -->
+              <div class="space-y-1.5 text-xs ml-4 mb-4">
+                <div class="grid grid-cols-12">
+                  <div class="col-span-4 text-slate-700">Nama Lengkap</div>
+                  <div class="col-span-8 font-bold uppercase">: <span id="doc-nama">Asep Saepuloh</span></div>
+                </div>
+                <div class="grid grid-cols-12">
+                  <div class="col-span-4 text-slate-700">NIK</div>
+                  <div class="col-span-8 font-mono">: <span id="doc-nik">3208152405900001</span></div>
+                </div>
+                <div class="grid grid-cols-12">
+                  <div class="col-span-4 text-slate-700">Tempat / Tgl. Lahir</div>
+                  <div class="col-span-8">: <span id="doc-ttl">Kuningan, 24 Mei 1990</span></div>
+                </div>
+                <div class="grid grid-cols-12">
+                  <div class="col-span-4 text-slate-700">Jenis Kelamin</div>
+                  <div class="col-span-8">: Laki-laki</div>
+                </div>
+                <div class="grid grid-cols-12">
+                  <div class="col-span-4 text-slate-700">Pekerjaan</div>
+                  <div class="col-span-8">: <span id="doc-pekerjaan">Wiraswasta</span></div>
+                </div>
+                <div class="grid grid-cols-12">
+                  <div class="col-span-4 text-slate-700">Alamat KTP</div>
+                  <div class="col-span-8">: <span id="doc-alamat">Dusun Manis RT 02 / RW 01, Desa Kadurama</span></div>
+                </div>
+              </div>
+
+              <!-- Isi Keterangan Dinamis Sesuai Jenis Surat -->
+              <div id="doc-body" class="text-justify text-xs space-y-2 mb-6">
+                <p>
+                  Menerangkan dengan sebenarnya bahwa orang yang bersangkutan adalah benar warga yang berdomisili di Desa Kadurama dan sepanjang pengamatan kami memiliki dan menjalankan usaha:
+                </p>
+                <div class="ml-4 space-y-1 bg-slate-50 p-2.5 border border-slate-200 rounded">
+                  <div class="grid grid-cols-12">
+                    <div class="col-span-4 font-semibold">Nama Usaha</div>
+                    <div class="col-span-8">: <span id="doc-usaha-nama" class="font-bold">Warung Sembako & Barokah Snack</span></div>
+                  </div>
+                  <div class="grid grid-cols-12">
+                    <div class="col-span-4 font-semibold">Bidang Usaha</div>
+                    <div class="col-span-8">: <span id="doc-usaha-jenis">Perdagangan Kebutuhan Pokok & Makanan Ringan</span></div>
+                  </div>
+                  <div class="grid grid-cols-12">
+                    <div class="col-span-4 font-semibold">Alamat Usaha</div>
+                    <div class="col-span-8">: <span id="doc-usaha-lokasi">Dusun Manis RT 02 / RW 01, Desa Kadurama</span></div>
+                  </div>
+                </div>
+                <p>
+                  Surat Keterangan ini dibuat dan diberikan kepada yang bersangkutan untuk keperluan: <strong id="doc-keperluan">Kelengkapan Administrasi Permohonan Kredit Usaha Rakyat (KUR) BRI</strong>.
+                </p>
+              </div>
+
+              <!-- Penutup -->
+              <p class="text-justify text-xs mb-8">
+                Demikian surat keterangan ini kami buat dengan sebenarnya agar dapat dipergunakan sebagaimana mestinya oleh pihak yang berkepentingan.
+              </p>
+
+              <!-- Tanda Tangan & QR Code Verifikasi -->
+              <div class="grid grid-cols-12 items-end pt-4 font-sans text-xs">
+                <div class="col-span-5 text-center">
+                  <div class="border border-slate-300 p-2 rounded inline-block bg-slate-50 mb-1">
+                    <!-- QR Code Placeholder -->
+                    <div class="w-20 h-20 bg-slate-900 text-white flex items-center justify-center text-[9px] font-mono text-center p-1">
+                      KADURAMA<br>VERIFIED<br>#048-IX
+                    </div>
+                  </div>
+                  <div class="text-[9px] text-slate-500 font-mono">Scan verifikasi keabsahan</div>
+                </div>
+
+                <div class="col-span-7 text-center">
+                  <div>Kadurama, 13 September 2026</div>
+                  <div class="font-bold uppercase mt-1" id="doc-ttd-jabatan">Kepala Desa Kadurama</div>
+                  
+                  <!-- Ruang TTD & Stempel -->
+                  <div class="h-20 flex items-center justify-center text-slate-400 italic text-[11px]">
+                    (Tanda Tangan & Cap Stempel Basah)
+                  </div>
+
+                  <div class="font-bold underline uppercase" id="doc-ttd-nama">SUHENDRA, S.Sos</div>
+                  <div class="text-[11px] text-slate-600" id="doc-ttd-nip">NIP. 19780412 200501 1 008</div>
+                </div>
+              </div>
+
+            </div>
+          </div>
+
+        </div>
+      </main>
+    </div>
+  </div>
+
+  <script>
+    // View Switcher
+    function switchView(view) {
+      const publicView = document.getElementById('view-public');
+      const adminView = document.getElementById('view-admin');
+      const btnPublic = document.getElementById('btn-public');
+      const btnAdmin = document.getElementById('btn-admin');
+
+      if (view === 'public') {
+        publicView.classList.remove('hidden');
+        adminView.classList.add('hidden');
+        btnPublic.className = 'px-3 py-1.5 rounded-md text-xs font-medium bg-emerald-600 text-white transition';
+        btnAdmin.className = 'px-3 py-1.5 rounded-md text-xs font-medium text-slate-300 hover:text-white transition';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      } else {
+        publicView.classList.add('hidden');
+        adminView.classList.remove('hidden');
+        btnAdmin.className = 'px-3 py-1.5 rounded-md text-xs font-medium bg-emerald-600 text-white transition';
+        btnPublic.className = 'px-3 py-1.5 rounded-md text-xs font-medium text-slate-300 hover:text-white transition';
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }
+
+    // Mock Residents Data
+    const residents = {
+      '3208152405900001': {
+        nama: 'Asep Saepuloh',
+        nik: '3208152405900001',
+        ttl: 'Kuningan, 24 Mei 1990',
+        pekerjaan: 'Wiraswasta',
+        alamat: 'Dusun Manis RT 02 / RW 01'
+      },
+      '3208156108950002': {
+        nama: 'Siti Aminah',
+        nik: '3208156108950002',
+        ttl: 'Kuningan, 18 Agustus 1995',
+        pekerjaan: 'Mengurus Rumah Tangga',
+        alamat: 'Dusun Pahing RT 05 / RW 02'
+      }
+    };
+
+    function handleSearch(val) {
+      val = val.trim();
+      let found = residents[val];
+      if (!found) {
+        for (let key in residents) {
+          if (residents[key].nama.toLowerCase().includes(val.toLowerCase())) {
+            found = residents[key];
+            break;
+          }
+        }
+      }
+      if (found) {
+        document.getElementById('res-nama').innerText = found.nama;
+        document.getElementById('res-nik').innerText = found.nik;
+        document.getElementById('res-ttl').innerText = found.ttl;
+        document.getElementById('res-pekerjaan').innerText = found.pekerjaan;
+        document.getElementById('res-alamat').innerText = found.alamat;
+
+        document.getElementById('doc-nama').innerText = found.nama;
+        document.getElementById('doc-nik').innerText = found.nik;
+        document.getElementById('doc-ttl').innerText = found.ttl;
+        document.getElementById('doc-pekerjaan').innerText = found.pekerjaan;
+        document.getElementById('doc-alamat').innerText = found.alamat + ', Desa Kadurama';
+      }
+    }
+
+    function handleLetterTypeChange(type) {
+      const docTitle = document.getElementById('doc-title');
+      const docNomor = document.getElementById('doc-nomor');
+      const fieldsSku = document.getElementById('fields-sku');
+      const docBody = document.getElementById('doc-body');
+
+      if (type === 'SKU') {
+        docTitle.innerText = 'SURAT KETERANGAN USAHA';
+        docNomor.innerText = 'Nomor: 503 / 048 / Pem / IX / 2026';
+        fieldsSku.classList.remove('hidden');
+        updatePreview();
+      } else if (type === 'SKTM') {
+        docTitle.innerText = 'SURAT KETERANGAN TIDAK MAMPU';
+        docNomor.innerText = 'Nomor: 401 / 049 / Kesra / IX / 2026';
+        fieldsSku.classList.add('hidden');
+        docBody.innerHTML = `
+          <p>Menerangkan dengan sebenarnya bahwa yang bersangkutan di atas adalah benar-benar penduduk Desa Kadurama yang tergolong dalam keluarga pra-sejahtera / berpenghasilan rendah.</p>
+          <p class="mt-2">Surat Keterangan Tidak Mampu ini dibuat dan diberikan untuk keperluan: <strong>Keringanan Biaya Pendidikan / Pendaftaran KIP Kuliah</strong>.</p>
+        `;
+      } else if (type === 'SKCK') {
+        docTitle.innerText = 'SURAT PENGANTAR CATATAN KEPOLISIAN';
+        docNomor.innerText = 'Nomor: 331 / 050 / Trantib / IX / 2026';
+        fieldsSku.classList.add('hidden');
+        docBody.innerHTML = `
+          <p>Menerangkan dengan sebenarnya bahwa orang tersebut di atas adalah warga yang bertingkah laku baik, tidak sedang menjalani proses pidana ataupun terlibat perkara kepolisian di wilayah kami.</p>
+          <p class="mt-2">Surat pengantar ini diberikan untuk keperluan: <strong>Permohonan Penerbitan SKCK di Polsek Ciawigebang</strong>.</p>
+        `;
+      } else if (type === 'DOMISILI') {
+        docTitle.innerText = 'SURAT KETERANGAN DOMISILI';
+        docNomor.innerText = 'Nomor: 470 / 051 / Pem / IX / 2026';
+        fieldsSku.classList.add('hidden');
+        docBody.innerHTML = `
+          <p>Menerangkan dengan sebenarnya bahwa nama tersebut di atas benar berdomisili dan bertempat tinggal pada alamat yang tercantum di atas sejak tahun 2018 sampai dengan sekarang.</p>
+          <p class="mt-2">Surat Keterangan Domisili ini dibuat untuk keperluan: <strong>Kelengkapan Berkas Administrasi Pendukung</strong>.</p>
+        `;
+      }
+    }
+
+    function updatePreview() {
+      const type = document.getElementById('letter-type').value;
+      if (type === 'SKU') {
+        const uNama = document.getElementById('input-usaha-nama').value;
+        const uJenis = document.getElementById('input-usaha-jenis').value;
+        const uLokasi = document.getElementById('input-usaha-lokasi').value;
+        const uKeperluan = document.getElementById('input-keperluan').value;
+
+        document.getElementById('doc-usaha-nama').innerText = uNama;
+        document.getElementById('doc-usaha-jenis').innerText = uJenis;
+        document.getElementById('doc-usaha-lokasi').innerText = uLokasi;
+        document.getElementById('doc-keperluan').innerText = uKeperluan;
+      }
+
+      const ttd = document.getElementById('select-ttd').value;
+      if (ttd === 'kades') {
+        document.getElementById('doc-ttd-jabatan').innerText = 'Kepala Desa Kadurama';
+        document.getElementById('doc-ttd-nama').innerText = 'SUHENDRA, S.Sos';
+        document.getElementById('doc-ttd-nip').innerText = 'NIP. 19780412 200501 1 008';
+      } else {
+        document.getElementById('doc-ttd-jabatan').innerText = 'a.n. Kepala Desa Kadurama\nSekretaris Desa';
+        document.getElementById('doc-ttd-nama').innerText = 'DADANG KURNIA';
+        document.getElementById('doc-ttd-nip').innerText = 'NIP. 19820719 200902 1 003';
+      }
+    }
+
+    function saveAndRegister() {
+      alert('✓ Surat berhasil diregistrasi ke Arsip Surat Keluar!\nNomor Surat: ' + document.getElementById('doc-nomor').innerText.trim() + '\nKlik tombol "Cetak Dokumen Resmi" untuk mencetak atau simpan ke PDF.');
+    }
+  </script>
+</body>
+</html>
