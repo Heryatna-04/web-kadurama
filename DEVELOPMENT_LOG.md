@@ -82,6 +82,22 @@
    - Navbar publik 2-baris diisolasi hanya tampil pada kanal warga (`view === 'public'`). Saat aparatur masuk ke panel loket (`view === 'admin'`), navbar publik ditiadakan dari DOM.
    - Panel admin menggunakan viewport penuh `fixed inset-0 overflow-hidden` dengan sidebar `w-64 h-full` yang terpasang tetap (*fixed*, zero-scroll).
    - Workspace utama loket persuratan (`<main>`) diberi alur scroll independen (`h-full overflow-y-auto`), sehingga formulir pembuatan surat, pratinjau kertas A4/F4, buku agenda, dan tabel kependudukan dapat di-scroll lancar tanpa menggeser sidebar.
+9. Admin Portal Features Expansion, Reusable Pagination & Master Data Synchronization:
+   - Penambahan Fitur Manajemen Kabar Desa (Tab Admin `berita`):
+     - Panel administrasi untuk melihat, menulis kabar baru, mengubah, menghapus, serta mengubah status publikasi (*Terbit* vs *Draf*).
+     - Terhubung langsung secara reaktif dengan Section Berita di beranda publik (hanya berita berstatus *Terbit* yang ditampilkan).
+   - Penambahan Fitur Kelola Transparansi APBDes 2026 (Tab Admin `apbdes`):
+     - Panel administrasi cockpit ringkasan pendapatan, belanja, dan serapan berjalan, serta tabel 5 bidang belanja.
+     - Modal penyesuaian pagu anggaran, realisasi belanja per bidang, dan kalkulasi otomatis persentase serapan.
+     - Terhubung langsung secara reaktif dengan Section Transparansi APBDes di beranda publik.
+   - Transformasi Master Data Kependudukan (`residents`):
+     - Mengganti aksi "Buat Surat" menjadi aksi tata kelola data internal: tombol "Perbarui" (membuka modal koreksi nama, KK, pekerjaan, alamat, dusun, status keluarga) dan tombol "Sinkronkan" (sinkronisasi SIAK Dukcapil).
+     - Tombol massal "Sinkronisasi Semua (SIAK)" di bagian header dengan animasi loading dan toast notifikasi interaktif.
+     - Penambahan kolom indikator badge status sinkronisasi (*Tersinkronisasi SIAK*, *Pembaruan Internal*, *Belum Sinkron*).
+     - Pencarian real-time berdasarkan NIK, Nama, dan No. KK dipadukan dengan filter 5 Dusun.
+   - Komponen Pagination Reusable:
+     - Komponen `Pagination` fleksibel yang mendukung pemilihan jumlah baris (10 atau 25 baris per halaman), penunjuk range data (`Menampilkan X - Y dari Z data`), serta tombol navigasi halaman.
+     - Diterapkan pada Buku Agenda Persuratan (`agenda`), Master Data Kependudukan (`residents`), dan Manajemen Kabar Desa (`berita`).
 
 ---
 

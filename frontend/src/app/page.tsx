@@ -35,6 +35,12 @@ import {
   Send,
   Building,
   Calendar,
+  RefreshCw,
+  Edit3,
+  Trash2,
+  Newspaper,
+  PieChart,
+  ChevronLeft,
 } from "lucide-react";
 
 // Mock Resident Data for Loket Generator & Master Data
@@ -53,10 +59,11 @@ interface Resident {
   rw: string;
   alamat: string;
   status: string;
+  syncStatus?: "Tersinkronisasi" | "Perlu Sinkronisasi" | "Diperbarui Internal";
 }
 
-const RESIDENTS_DATA: Record<string, Resident> = {
-  "3208152405900001": {
+const INITIAL_RESIDENTS_ARRAY: Resident[] = [
+  {
     nik: "3208152405900001",
     noKk: "3208150102030001",
     nama: "Asep Saepuloh",
@@ -71,8 +78,9 @@ const RESIDENTS_DATA: Record<string, Resident> = {
     rw: "01",
     alamat: "Dusun Manis RT 02 / RW 01, Desa Kadurama",
     status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
   },
-  "3208156108950002": {
+  {
     nik: "3208156108950002",
     noKk: "3208150102030002",
     nama: "Siti Aminah",
@@ -87,8 +95,9 @@ const RESIDENTS_DATA: Record<string, Resident> = {
     rw: "02",
     alamat: "Dusun Pahing RT 05 / RW 02, Desa Kadurama",
     status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
   },
-  "3208151201880003": {
+  {
     nik: "3208151201880003",
     noKk: "3208150102030003",
     nama: "Udi Hermanto",
@@ -103,8 +112,9 @@ const RESIDENTS_DATA: Record<string, Resident> = {
     rw: "04",
     alamat: "Dusun Kliwon RT 09 / RW 04, Desa Kadurama",
     status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
   },
-  "3208152504010004": {
+  {
     nik: "3208152504010004",
     noKk: "3208150102030001",
     nama: "Rizky Ramdani",
@@ -119,8 +129,9 @@ const RESIDENTS_DATA: Record<string, Resident> = {
     rw: "01",
     alamat: "Dusun Manis RT 02 / RW 01, Desa Kadurama",
     status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
   },
-  "3208151111920005": {
+  {
     nik: "3208151111920005",
     noKk: "3208150102030004",
     nama: "Maman Suherman",
@@ -135,8 +146,9 @@ const RESIDENTS_DATA: Record<string, Resident> = {
     rw: "03",
     alamat: "Dusun Puhun RT 03 / RW 03, Desa Kadurama",
     status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
   },
-  "3208155502940006": {
+  {
     nik: "3208155502940006",
     noKk: "3208150102030005",
     nama: "Neneng Hasanah",
@@ -151,8 +163,336 @@ const RESIDENTS_DATA: Record<string, Resident> = {
     rw: "03",
     alamat: "Dusun Wage RT 07 / RW 03, Desa Kadurama",
     status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
   },
-};
+  {
+    nik: "3208150303850007",
+    noKk: "3208150102030006",
+    nama: "Dedi Suryadi",
+    ttl: "Kuningan, 03 Maret 1985",
+    jenisKelamin: "Laki-laki",
+    pekerjaan: "Petani / Pekebun",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Kepala Keluarga",
+    dusun: "Manis",
+    rt: "01",
+    rw: "01",
+    alamat: "Dusun Manis RT 01 / RW 01, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208154407890008",
+    noKk: "3208150102030006",
+    nama: "Iis Rosita",
+    ttl: "Kuningan, 04 Juli 1989",
+    jenisKelamin: "Perempuan",
+    pekerjaan: "Mengurus Rumah Tangga",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Istri",
+    dusun: "Manis",
+    rt: "01",
+    rw: "01",
+    alamat: "Dusun Manis RT 01 / RW 01, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208151909980009",
+    noKk: "3208150102030007",
+    nama: "Gilang Pratama",
+    ttl: "Kuningan, 19 September 1998",
+    jenisKelamin: "Laki-laki",
+    pekerjaan: "Karyawan Swasta",
+    agama: "Islam",
+    statusPerkawinan: "Belum Kawin",
+    hubunganKeluarga: "Kepala Keluarga",
+    dusun: "Manis",
+    rt: "03",
+    rw: "01",
+    alamat: "Dusun Manis RT 03 / RW 01, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208152106750010",
+    noKk: "3208150102030008",
+    nama: "Jaja Subagja",
+    ttl: "Kuningan, 21 Juni 1975",
+    jenisKelamin: "Laki-laki",
+    pekerjaan: "PNS / Guru",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Kepala Keluarga",
+    dusun: "Pahing",
+    rt: "04",
+    rw: "02",
+    alamat: "Dusun Pahing RT 04 / RW 02, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208156612780011",
+    noKk: "3208150102030008",
+    nama: "Enok Komala",
+    ttl: "Kuningan, 26 Desember 1978",
+    jenisKelamin: "Perempuan",
+    pekerjaan: "Pedagang Warung",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Istri",
+    dusun: "Pahing",
+    rt: "04",
+    rw: "02",
+    alamat: "Dusun Pahing RT 04 / RW 02, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208151408020012",
+    noKk: "3208150102030008",
+    nama: "Fajar Ramadhan",
+    ttl: "Kuningan, 14 Agustus 2002",
+    jenisKelamin: "Laki-laki",
+    pekerjaan: "Pelajar / Mahasiswa",
+    agama: "Islam",
+    statusPerkawinan: "Belum Kawin",
+    hubunganKeluarga: "Anak",
+    dusun: "Pahing",
+    rt: "04",
+    rw: "02",
+    alamat: "Dusun Pahing RT 04 / RW 02, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208151004820013",
+    noKk: "3208150102030009",
+    nama: "Nana Sumarna",
+    ttl: "Kuningan, 10 April 1982",
+    jenisKelamin: "Laki-laki",
+    pekerjaan: "Buruh Harian Lepas",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Kepala Keluarga",
+    dusun: "Pahing",
+    rt: "06",
+    rw: "02",
+    alamat: "Dusun Pahing RT 06 / RW 02, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208151508800014",
+    noKk: "3208150102030010",
+    nama: "Cecep Supriatna",
+    ttl: "Kuningan, 15 Agustus 1980",
+    jenisKelamin: "Laki-laki",
+    pekerjaan: "Peternak Sapi",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Kepala Keluarga",
+    dusun: "Puhun",
+    rt: "01",
+    rw: "03",
+    alamat: "Dusun Puhun RT 01 / RW 03, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208155209840015",
+    noKk: "3208150102030010",
+    nama: "Cucu Sumiati",
+    ttl: "Kuningan, 12 September 1984",
+    jenisKelamin: "Perempuan",
+    pekerjaan: "Mengurus Rumah Tangga",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Istri",
+    dusun: "Puhun",
+    rt: "01",
+    rw: "03",
+    alamat: "Dusun Puhun RT 01 / RW 03, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208152802950016",
+    noKk: "3208150102030011",
+    nama: "Tatang Sutisna",
+    ttl: "Kuningan, 28 Februari 1995",
+    jenisKelamin: "Laki-laki",
+    pekerjaan: "Montir Bengkel",
+    agama: "Islam",
+    statusPerkawinan: "Belum Kawin",
+    hubunganKeluarga: "Kepala Keluarga",
+    dusun: "Puhun",
+    rt: "02",
+    rw: "03",
+    alamat: "Dusun Puhun RT 02 / RW 03, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208151703900017",
+    noKk: "3208150102030012",
+    nama: "Oman Rohman",
+    ttl: "Kuningan, 17 Maret 1990",
+    jenisKelamin: "Laki-laki",
+    pekerjaan: "Sopir Angkutan",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Kepala Keluarga",
+    dusun: "Wage",
+    rt: "01",
+    rw: "03",
+    alamat: "Dusun Wage RT 01 / RW 03, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208154101920018",
+    noKk: "3208150102030012",
+    nama: "Ai Maryani",
+    ttl: "Kuningan, 01 Januari 1992",
+    jenisKelamin: "Perempuan",
+    pekerjaan: "Karyawan Toko",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Istri",
+    dusun: "Wage",
+    rt: "01",
+    rw: "03",
+    alamat: "Dusun Wage RT 01 / RW 03, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208152310860019",
+    noKk: "3208150102030013",
+    nama: "Kusnadi",
+    ttl: "Kuningan, 23 Oktober 1986",
+    jenisKelamin: "Laki-laki",
+    pekerjaan: "Tukang Kayu",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Kepala Keluarga",
+    dusun: "Wage",
+    rt: "02",
+    rw: "03",
+    alamat: "Dusun Wage RT 02 / RW 03, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208150905930020",
+    noKk: "3208150102030014",
+    nama: "Wawan Hendrawan",
+    ttl: "Kuningan, 09 Mei 1993",
+    jenisKelamin: "Laki-laki",
+    pekerjaan: "Wiraswasta Olahan Ubi",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Kepala Keluarga",
+    dusun: "Kliwon",
+    rt: "08",
+    rw: "04",
+    alamat: "Dusun Kliwon RT 08 / RW 04, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208154811950021",
+    noKk: "3208150102030014",
+    nama: "Yanti Susanti",
+    ttl: "Kuningan, 08 November 1995",
+    jenisKelamin: "Perempuan",
+    pekerjaan: "Mengurus Rumah Tangga",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Istri",
+    dusun: "Kliwon",
+    rt: "08",
+    rw: "04",
+    alamat: "Dusun Kliwon RT 08 / RW 04, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208151606770022",
+    noKk: "3208150102030015",
+    nama: "Endang Sujana",
+    ttl: "Kuningan, 16 Juni 1977",
+    jenisKelamin: "Laki-laki",
+    pekerjaan: "Petani Padi",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Kepala Keluarga",
+    dusun: "Kliwon",
+    rt: "10",
+    rw: "04",
+    alamat: "Dusun Kliwon RT 10 / RW 04, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208155904800023",
+    noKk: "3208150102030015",
+    nama: "Kokom Komariah",
+    ttl: "Kuningan, 19 April 1980",
+    jenisKelamin: "Perempuan",
+    pekerjaan: "Pedagang Pasar",
+    agama: "Islam",
+    statusPerkawinan: "Kawin",
+    hubunganKeluarga: "Istri",
+    dusun: "Kliwon",
+    rt: "10",
+    rw: "04",
+    alamat: "Dusun Kliwon RT 10 / RW 04, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208150508000024",
+    noKk: "3208150102030016",
+    nama: "Bagus Nugraha",
+    ttl: "Kuningan, 05 Agustus 2000",
+    jenisKelamin: "Laki-laki",
+    pekerjaan: "Tenaga Medis Puskesmas",
+    agama: "Islam",
+    statusPerkawinan: "Belum Kawin",
+    hubunganKeluarga: "Kepala Keluarga",
+    dusun: "Manis",
+    rt: "02",
+    rw: "01",
+    alamat: "Dusun Manis RT 02 / RW 01, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+  {
+    nik: "3208154703990025",
+    noKk: "3208150102030017",
+    nama: "Rina Marlina",
+    ttl: "Kuningan, 07 Maret 1999",
+    jenisKelamin: "Perempuan",
+    pekerjaan: "Bidan Desa",
+    agama: "Islam",
+    statusPerkawinan: "Belum Kawin",
+    hubunganKeluarga: "Kepala Keluarga",
+    dusun: "Pahing",
+    rt: "05",
+    rw: "02",
+    alamat: "Dusun Pahing RT 05 / RW 02, Desa Kadurama",
+    status: "Warga Tetap",
+    syncStatus: "Tersinkronisasi",
+  },
+];
+
+const RESIDENTS_DATA: Record<string, Resident> = Object.fromEntries(
+  INITIAL_RESIDENTS_ARRAY.map((r) => [r.nik, r])
+);
 
 // Initial Integrated Agenda Records (Surat Masuk & Keluar)
 interface AgendaRecord {
@@ -217,7 +557,321 @@ const INITIAL_AGENDA: AgendaRecord[] = [
     pejabatAtauPenerima: "Kades Suhendra, S.Sos",
     status: "Terbit",
   },
+  {
+    id: "AG-K-004",
+    tipe: "keluar",
+    nomorSurat: "503/051/Pem/IX/2026",
+    tanggal: "07 Sep 2026",
+    perihal: "Surat Keterangan Usaha (SKU) - Bengkel Las Jaya",
+    pihakTerkait: "Tatang Sutisna (NIK: 3208152802950016)",
+    pejabatAtauPenerima: "Kades Suhendra, S.Sos",
+    status: "Terbit",
+  },
+  {
+    id: "AG-M-003",
+    tipe: "masuk",
+    nomorSurat: "900/084/DPMD/2026",
+    tanggal: "05 Sep 2026",
+    perihal: "Surat Edaran Verifikasi Laporan Realisasi Dana Desa Tahap II",
+    pihakTerkait: "Dinas Pemberdayaan Masyarakat dan Desa (DPMD)",
+    pejabatAtauPenerima: "Kaur Keuangan & Sekdes",
+    status: "Disposisi Kades",
+  },
+  {
+    id: "AG-K-005",
+    tipe: "keluar",
+    nomorSurat: "401/052/Kesra/IX/2026",
+    tanggal: "04 Sep 2026",
+    perihal: "Surat Keterangan Tidak Mampu (SKTM) - Pengantar BPJS PBI",
+    pihakTerkait: "Nana Sumarna (NIK: 3208151004820013)",
+    pejabatAtauPenerima: "Sekdes Dadang Kurnia",
+    status: "Terbit",
+  },
+  {
+    id: "AG-K-006",
+    tipe: "keluar",
+    nomorSurat: "470/053/Pem/IX/2026",
+    tanggal: "02 Sep 2026",
+    perihal: "Surat Keterangan Domisili Usaha Peternakan",
+    pihakTerkait: "Cecep Supriatna (NIK: 3208151508800014)",
+    pejabatAtauPenerima: "Kades Suhendra, S.Sos",
+    status: "Terbit",
+  },
+  {
+    id: "AG-M-004",
+    tipe: "masuk",
+    nomorSurat: "440/215/Pusk.Cwg/2026",
+    tanggal: "01 Sep 2026",
+    perihal: "Pemberitahuan Posyandu Balita & Skrining PTM Serentak",
+    pihakTerkait: "Puskesmas Ciawigebang",
+    pejabatAtauPenerima: "Kasi Kesejahteraan Rakyat",
+    status: "Terarsip",
+  },
+  {
+    id: "AG-K-007",
+    tipe: "keluar",
+    nomorSurat: "503/054/Pem/VIII/2026",
+    tanggal: "29 Agu 2026",
+    perihal: "Surat Keterangan Usaha (SKU) - Produksi Keripik Pisang",
+    pihakTerkait: "Wawan Hendrawan (NIK: 3208150905930020)",
+    pejabatAtauPenerima: "Kades Suhendra, S.Sos",
+    status: "Terbit",
+  },
+  {
+    id: "AG-M-005",
+    tipe: "masuk",
+    nomorSurat: "600/402/DPUTR/2026",
+    tanggal: "27 Agu 2026",
+    perihal: "Jadwal Pengukuran Lapangan Drainase Lingkungan Dusun Wage",
+    pihakTerkait: "Dinas PUTR Kabupaten Kuningan",
+    pejabatAtauPenerima: "Kaur Perencanaan & Pembangunan",
+    status: "Disposisi Kades",
+  },
+  {
+    id: "AG-K-008",
+    tipe: "keluar",
+    nomorSurat: "470/055/Pem/VIII/2026",
+    tanggal: "25 Agu 2026",
+    perihal: "Surat Keterangan Domisili Tinggal Sementara",
+    pihakTerkait: "Bagus Nugraha (NIK: 3208150508000024)",
+    pejabatAtauPenerima: "Kades Suhendra, S.Sos",
+    status: "Terbit",
+  },
+  {
+    id: "AG-M-006",
+    tipe: "masuk",
+    nomorSurat: "027/110/Bag.Hukum/2026",
+    tanggal: "22 Agu 2026",
+    perihal: "Salinan Peraturan Bupati tentang Pedoman Pengelolaan Keuangan Desa",
+    pihakTerkait: "Bagian Hukum Setda Kabupaten Kuningan",
+    pejabatAtauPenerima: "Kades Suhendra, S.Sos",
+    status: "Terarsip",
+  },
+  {
+    id: "AG-K-009",
+    tipe: "keluar",
+    nomorSurat: "401/056/Kesra/VIII/2026",
+    tanggal: "20 Agu 2026",
+    perihal: "Surat Keterangan Tidak Mampu (SKTM) - Keringanan Biaya Sekolah",
+    pihakTerkait: "Endang Sujana (NIK: 3208151606770022)",
+    pejabatAtauPenerima: "Sekdes Dadang Kurnia",
+    status: "Terbit",
+  },
 ];
+
+// Manajemen Berita / Kabar Desa Data
+interface NewsItem {
+  id: string;
+  title: string;
+  category: "Pemerintahan" | "Bansos" | "Pembangunan" | "Kesehatan" | "Kegiatan";
+  date: string;
+  author: string;
+  summary: string;
+  status: "Terbit" | "Draf";
+  imageUrl: string;
+}
+
+const INITIAL_NEWS: NewsItem[] = [
+  {
+    id: "NEWS-001",
+    title: "Musyawarah Rencana Kerja Pemerintah Desa (RKPDes) Tahun 2027 Berjalan Lancar",
+    category: "Pemerintahan",
+    date: "12 September 2026",
+    author: "Tim Humas Pemdes",
+    summary: "Kepala Desa bersama BPD dan tokoh masyarakat dari 5 dusun menyepakati prioritas pembangunan jalan tani dan drainase lingkungan untuk tahun depan.",
+    status: "Terbit",
+    imageUrl: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
+  },
+  {
+    id: "NEWS-002",
+    title: "Penyaluran Bantuan Langsung Tunai (BLT) Dana Desa Triwulan III Tepat Sasaran",
+    category: "Bansos",
+    date: "08 September 2026",
+    author: "Kasi Kesejahteraan",
+    summary: "Sebanyak 65 Keluarga Penerima Manfaat (KPM) dari lima dusun menerima bantuan tunai untuk pemenuhan kebutuhan pokok keluarga.",
+    status: "Terbit",
+    imageUrl: "https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=600&q=80",
+  },
+  {
+    id: "NEWS-003",
+    title: "Peningkatan Kapasitas Posyandu dan Penguatan Gizi Balai Dusun Pahing",
+    category: "Kesehatan",
+    date: "03 September 2026",
+    author: "Bidan Desa & Kader PKK",
+    summary: "Pemerintah Desa Kadurama menggencarkan penimbangan balita dan pemberian makanan tambahan guna mempertahankan zero stunting.",
+    status: "Terbit",
+    imageUrl: "https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?auto=format&fit=crop&w=600&q=80",
+  },
+  {
+    id: "NEWS-004",
+    title: "Rehabilitasi Drainase Lingkungan Dusun Wage Memasuki Tahap Penyelesaian",
+    category: "Pembangunan",
+    date: "28 Agustus 2026",
+    author: "Kaur Pembangunan",
+    summary: "Pembangunan saluran drainase sepanjang 320 meter di Dusun Wage berhasil menuntaskan masalah genangan saat musim hujan.",
+    status: "Terbit",
+    imageUrl: "https://images.unsplash.com/photo-1590402494682-cd3fb53b1f70?auto=format&fit=crop&w=600&q=80",
+  },
+  {
+    id: "NEWS-005",
+    title: "Pelatihan Keterampilan Digital dan Pembukuan Bagi Pengrajin Olahan Ubi Kuningan",
+    category: "Kegiatan",
+    date: "22 Agustus 2026",
+    author: "Pendamping Desa",
+    summary: "Sebanyak 25 pelaku UMKM Desa Kadurama mendapatkan pelatihan pemasaran digital dan integrasi barcode QRIS untuk ekspansi usaha.",
+    status: "Terbit",
+    imageUrl: "https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=600&q=80",
+  },
+  {
+    id: "NEWS-006",
+    title: "Rencana Pembentukan Pos Pelayanan Terpadu Bencana Tingkat Desa Kadurama",
+    category: "Pemerintahan",
+    date: "15 Agustus 2026",
+    author: "Sekretaris Desa",
+    summary: "Pemerintah desa mempersiapkan pos siaga bencana berbasis dusun untuk mitigasi dini terhadap potensi cuaca ekstrem.",
+    status: "Draf",
+    imageUrl: "https://images.unsplash.com/photo-1509099836639-18ba1795216d?auto=format&fit=crop&w=600&q=80",
+  },
+];
+
+// APBDes Bidang Belanja Data
+interface APBDesBidang {
+  id: number;
+  nama: string;
+  persen: number;
+  pagu: number;
+  realisasi: number;
+  keterangan: string;
+}
+
+const INITIAL_APBDES_BIDANG: APBDesBidang[] = [
+  {
+    id: 1,
+    nama: "Penyelenggaraan Pemdes",
+    persen: 85,
+    pagu: 485600000,
+    realisasi: 412760000,
+    keterangan: "Siltap pamong, operasional kantor balai desa, kearsipan, dan BPD.",
+  },
+  {
+    id: 2,
+    nama: "Pelaksanaan Pembangunan",
+    persen: 78,
+    pagu: 562400000,
+    realisasi: 438672000,
+    keterangan: "Rabat beton jalan Dusun Pahing, drainase pemukiman, dan posyandu.",
+  },
+  {
+    id: 3,
+    nama: "Pembinaan Kemasyarakatan",
+    persen: 88,
+    pagu: 145000000,
+    realisasi: 127600000,
+    keterangan: "Kegiatan keagamaan, olahraga karang taruna, dan ketenteraman warga.",
+  },
+  {
+    id: 4,
+    nama: "Pemberdayaan Masyarakat",
+    persen: 81,
+    pagu: 185800000,
+    realisasi: 150498000,
+    keterangan: "Pelatihan UMKM olahan pangan lokal dan bantuan modal bibit ternak.",
+  },
+  {
+    id: 5,
+    nama: "Penanggulangan Bencana & Darurat",
+    persen: 75,
+    pagu: 84000000,
+    realisasi: 63000000,
+    keterangan: "Bantuan darurat warga sakit berat dan kesiapsiagaan musim hujan.",
+  },
+];
+
+// Reusable Pagination Component (Per 10 atau 25 data)
+function Pagination({
+  currentPage,
+  totalItems,
+  pageSize,
+  onPageChange,
+  onPageSizeChange,
+  pageSizeOptions = [10, 25],
+}: {
+  currentPage: number;
+  totalItems: number;
+  pageSize: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  pageSizeOptions?: number[];
+}) {
+  const totalPages = Math.ceil(totalItems / pageSize) || 1;
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-white border-t border-slate-200 text-xs text-slate-600 rounded-b-2xl select-none">
+      <div className="flex items-center gap-2">
+        <span className="text-slate-500">Tampilkan:</span>
+        <select
+          value={pageSize}
+          onChange={(e) => {
+            onPageSizeChange(Number(e.target.value));
+            onPageChange(1);
+          }}
+          className="px-2 py-1 rounded-lg border border-slate-300 bg-slate-50 font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#009388]"
+        >
+          {pageSizeOptions.map((opt) => (
+            <option key={opt} value={opt}>
+              {opt} baris
+            </option>
+          ))}
+        </select>
+        <span className="text-slate-300">|</span>
+        <span>
+          Menampilkan <strong className="text-slate-900">{startItem}</strong> -{" "}
+          <strong className="text-slate-900">{endItem}</strong> dari{" "}
+          <strong className="text-slate-900">{totalItems}</strong> data
+        </span>
+      </div>
+
+      <div className="flex items-center gap-1.5">
+        <button
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={currentPage === 1}
+          className="px-2.5 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-[11px] flex items-center gap-1 transition"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+          <span>Sebelumnya</span>
+        </button>
+
+        <div className="flex items-center gap-1">
+          {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+            <button
+              key={p}
+              onClick={() => onPageChange(p)}
+              className={`w-7 h-7 rounded-lg text-xs font-bold transition ${
+                currentPage === p
+                  ? "bg-[#009388] text-white shadow-2xs"
+                  : "hover:bg-slate-100 text-slate-700"
+              }`}
+            >
+              {p}
+            </button>
+          ))}
+        </div>
+
+        <button
+          onClick={() => onPageChange(Math.min(totalPages, currentPage + 1))}
+          disabled={currentPage === totalPages}
+          className="px-2.5 py-1.5 rounded-lg border border-slate-300 hover:bg-slate-50 disabled:opacity-40 disabled:cursor-not-allowed font-semibold text-[11px] flex items-center gap-1 transition"
+        >
+          <span>Selanjutnya</span>
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
+
 
 export default function Home() {
   // Navigation & View States
@@ -252,13 +906,16 @@ export default function Home() {
   const [apbdesFilter, setApbdesFilter] = useState<"all" | "pendapatan" | "belanja">("all");
 
   // Admin Panel States
-  const [adminTab, setAdminTab] = useState<"generator" | "agenda" | "residents">("generator");
+  const [adminTab, setAdminTab] = useState<
+    "generator" | "agenda" | "residents" | "berita" | "apbdes"
+  >("generator");
   const [paperSize, setPaperSize] = useState<"F4" | "A4">("F4");
   const [authMode, setAuthMode] = useState<"wet" | "digital" | "scanned">("wet");
 
-  // Generator Loket States (HANYA 3 JENIS SURAT SEMENTARA: SKU, SKTM, DOMISILI)
+  // Generator Loket States (3 JENIS SURAT SEMENTARA: SKU, SKTM, DOMISILI)
+  const [residentsList, setResidentsList] = useState<Resident[]>(INITIAL_RESIDENTS_ARRAY);
   const [searchQuery, setSearchQuery] = useState("3208152405900001");
-  const [selectedResident, setSelectedResident] = useState<Resident>(RESIDENTS_DATA["3208152405900001"]);
+  const [selectedResident, setSelectedResident] = useState<Resident>(INITIAL_RESIDENTS_ARRAY[0]);
   const [letterType, setLetterType] = useState<"SKU" | "SKTM" | "DOMISILI">("SKU");
   const [businessName, setBusinessName] = useState("Warung Sembako Barokah");
   const [businessField, setBusinessField] = useState("Perdagangan Kebutuhan Pokok dan Makanan Ringan");
@@ -266,11 +923,42 @@ export default function Home() {
   const [letterPurpose, setLetterPurpose] = useState("Kelengkapan Administrasi Permohonan Kredit Usaha Rakyat (KUR) BRI");
   const [selectedOfficial, setSelectedOfficial] = useState<"kades" | "sekdes">("kades");
 
-  // Agenda & Residents States
+  // Agenda & Residents States + Pagination
   const [agendaList, setAgendaList] = useState<AgendaRecord[]>(INITIAL_AGENDA);
   const [agendaFilter, setAgendaFilter] = useState<"all" | "keluar" | "masuk">("all");
+  const [agendaCurrentPage, setAgendaCurrentPage] = useState(1);
+  const [agendaPageSize, setAgendaPageSize] = useState(10);
+
+  // Master Data Kependudukan States + Sync + Pagination
   const [residentDusunFilter, setResidentDusunFilter] = useState<string>("all");
+  const [residentSearch, setResidentSearch] = useState("");
+  const [residentCurrentPage, setResidentCurrentPage] = useState(1);
+  const [residentPageSize, setResidentPageSize] = useState(10);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [editingResident, setEditingResident] = useState<Resident | null>(null);
+  const [isEditResidentModalOpen, setIsEditResidentModalOpen] = useState(false);
+  const [syncNotification, setSyncNotification] = useState<string | null>(null);
+  const [isSyncingAll, setIsSyncingAll] = useState(false);
+
+  // Manajemen Kabar Desa States + Pagination
+  const [newsList, setNewsList] = useState<NewsItem[]>(INITIAL_NEWS);
+  const [newsCategoryFilter, setNewsCategoryFilter] = useState<string>("all");
+  const [newsStatusFilter, setNewsStatusFilter] = useState<"all" | "Terbit" | "Draf">("all");
+  const [newsCurrentPage, setNewsCurrentPage] = useState(1);
+  const [newsPageSize, setNewsPageSize] = useState(10);
+  const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
+  const [editingNews, setEditingNews] = useState<NewsItem | null>(null);
+
+  // APBDes 2026 Transparansi States
+  const [apbdesTotals, setApbdesTotals] = useState({
+    pendapatan: 1485240000,
+    belanja: 1462800000,
+    serapan: 82.4,
+  });
+  const [apbdesBidangList, setApbdesBidangList] = useState<APBDesBidang[]>(INITIAL_APBDES_BIDANG);
+  const [editingBidang, setEditingBidang] = useState<APBDesBidang | null>(null);
+  const [isEditBidangModalOpen, setIsEditBidangModalOpen] = useState(false);
+  const [isEditTotalsModalOpen, setIsEditTotalsModalOpen] = useState(false);
 
   // GSAP Animations Effect
   useEffect(() => {
@@ -389,15 +1077,16 @@ export default function Home() {
   const handleSearchResident = (val: string) => {
     setSearchQuery(val);
     const trimmed = val.trim();
-    if (RESIDENTS_DATA[trimmed]) {
-      setSelectedResident(RESIDENTS_DATA[trimmed]);
+    const foundExact = residentsList.find((r) => r.nik === trimmed);
+    if (foundExact) {
+      setSelectedResident(foundExact);
       return;
     }
-    const found = Object.values(RESIDENTS_DATA).find((r) =>
+    const foundByName = residentsList.find((r) =>
       r.nama.toLowerCase().includes(trimmed.toLowerCase())
     );
-    if (found) {
-      setSelectedResident(found);
+    if (foundByName) {
+      setSelectedResident(foundByName);
     }
   };
 
@@ -434,15 +1123,171 @@ export default function Home() {
     );
   };
 
+  // Agenda Filter & Pagination
   const filteredAgenda = agendaList.filter((item) => {
     if (agendaFilter === "all") return true;
     return item.tipe === agendaFilter;
   });
 
-  const filteredResidents = Object.values(RESIDENTS_DATA).filter((res) => {
-    if (residentDusunFilter === "all") return true;
-    return res.dusun === residentDusunFilter;
+  const paginatedAgenda = filteredAgenda.slice(
+    (agendaCurrentPage - 1) * agendaPageSize,
+    agendaCurrentPage * agendaPageSize
+  );
+
+  // Residents Filter, Sync & Pagination
+  const filteredResidents = residentsList.filter((res) => {
+    const matchesDusun = residentDusunFilter === "all" || res.dusun === residentDusunFilter;
+    const matchesSearch =
+      !residentSearch.trim() ||
+      res.nama.toLowerCase().includes(residentSearch.toLowerCase()) ||
+      res.nik.includes(residentSearch) ||
+      res.noKk.includes(residentSearch);
+    return matchesDusun && matchesSearch;
   });
+
+  const paginatedResidents = filteredResidents.slice(
+    (residentCurrentPage - 1) * residentPageSize,
+    residentCurrentPage * residentPageSize
+  );
+
+  const handleSyncSingleResident = (nik: string) => {
+    setResidentsList((prev) =>
+      prev.map((r) =>
+        r.nik === nik ? { ...r, syncStatus: "Tersinkronisasi" as const } : r
+      )
+    );
+    const target = residentsList.find((r) => r.nik === nik);
+    setSyncNotification(`Data kependudukan ${target?.nama || nik} berhasil disinkronkan dengan SIAK Dukcapil.`);
+    setTimeout(() => setSyncNotification(null), 3500);
+  };
+
+  const handleSyncAllResidents = () => {
+    setIsSyncingAll(true);
+    setTimeout(() => {
+      setResidentsList((prev) =>
+        prev.map((r) => ({ ...r, syncStatus: "Tersinkronisasi" as const }))
+      );
+      setIsSyncingAll(false);
+      setSyncNotification("Seluruh master data kependudukan (25 data) berhasil disinkronkan dengan SIAK Dukcapil.");
+      setTimeout(() => setSyncNotification(null), 4000);
+    }, 700);
+  };
+
+  const handleOpenEditResident = (res: Resident) => {
+    setEditingResident({ ...res });
+    setIsEditResidentModalOpen(true);
+  };
+
+  const handleSaveEditResident = () => {
+    if (!editingResident) return;
+    setResidentsList((prev) =>
+      prev.map((r) =>
+        r.nik === editingResident.nik
+          ? { ...editingResident, syncStatus: "Diperbarui Internal" as const }
+          : r
+      )
+    );
+    if (selectedResident.nik === editingResident.nik) {
+      setSelectedResident(editingResident);
+    }
+    setIsEditResidentModalOpen(false);
+    setSyncNotification(`Perubahan data internal warga ${editingResident.nama} berhasil diperbarui.`);
+    setTimeout(() => setSyncNotification(null), 3500);
+  };
+
+  // News Handlers & Pagination
+  const handleToggleNewsStatus = (id: string) => {
+    setNewsList((prev) =>
+      prev.map((item) =>
+        item.id === id
+          ? { ...item, status: item.status === "Terbit" ? "Draf" : "Terbit" }
+          : item
+      )
+    );
+  };
+
+  const handleDeleteNews = (id: string) => {
+    if (confirm("Apakah Anda yakin ingin menghapus artikel kabar desa ini?")) {
+      setNewsList((prev) => prev.filter((item) => item.id !== id));
+    }
+  };
+
+  const handleOpenCreateNews = () => {
+    setEditingNews({
+      id: `NEWS-00${newsList.length + 1}`,
+      title: "",
+      category: "Pemerintahan",
+      date: "14 September 2026",
+      author: "Kasi Pelayanan",
+      summary: "",
+      status: "Terbit",
+      imageUrl: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
+    });
+    setIsNewsModalOpen(true);
+  };
+
+  const handleOpenEditNews = (news: NewsItem) => {
+    setEditingNews({ ...news });
+    setIsNewsModalOpen(true);
+  };
+
+  const handleSaveNews = () => {
+    if (!editingNews || !editingNews.title.trim()) {
+      alert("Judul artikel berita wajib diisi!");
+      return;
+    }
+    setNewsList((prev) => {
+      const exists = prev.some((n) => n.id === editingNews.id);
+      if (exists) {
+        return prev.map((n) => (n.id === editingNews.id ? editingNews : n));
+      } else {
+        return [editingNews, ...prev];
+      }
+    });
+    setIsNewsModalOpen(false);
+    setEditingNews(null);
+  };
+
+  const filteredNews = newsList.filter((item) => {
+    const matchesCategory =
+      newsCategoryFilter === "all" || item.category === newsCategoryFilter;
+    const matchesStatus =
+      newsStatusFilter === "all" || item.status === newsStatusFilter;
+    return matchesCategory && matchesStatus;
+  });
+
+  const paginatedNews = filteredNews.slice(
+    (newsCurrentPage - 1) * newsPageSize,
+    newsCurrentPage * newsPageSize
+  );
+
+  // APBDes Handlers
+  const handleOpenEditBidang = (bidang: APBDesBidang) => {
+    setEditingBidang({ ...bidang });
+    setIsEditBidangModalOpen(true);
+  };
+
+  const handleSaveBidang = () => {
+    if (!editingBidang) return;
+    const persen = Math.round((editingBidang.realisasi / editingBidang.pagu) * 100);
+    const updated = { ...editingBidang, persen };
+    const updatedList = apbdesBidangList.map((b) =>
+      b.id === updated.id ? updated : b
+    );
+    setApbdesBidangList(updatedList);
+
+    // Recalculate totals
+    const totalPaguBelanja = updatedList.reduce((acc, curr) => acc + curr.pagu, 0);
+    const totalRealisasi = updatedList.reduce((acc, curr) => acc + curr.realisasi, 0);
+    const serapan = Number(((totalRealisasi / totalPaguBelanja) * 100).toFixed(1));
+    setApbdesTotals((prev) => ({
+      ...prev,
+      belanja: totalPaguBelanja,
+      serapan,
+    }));
+    setIsEditBidangModalOpen(false);
+  };
+
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
@@ -1826,7 +2671,7 @@ export default function Home() {
                     id="apbdes-pendapatan-val"
                     className="text-2xl sm:text-3xl font-extrabold text-slate-950 mt-2 font-mono"
                   >
-                    Rp 1.485.240.000
+                    Rp {apbdesTotals.pendapatan.toLocaleString("id-ID")}
                   </div>
                   <div className="text-xs text-slate-500 mt-2">
                     Dana Desa (DD), ADD, PADes, dan Bagi Hasil Pajak.
@@ -1841,7 +2686,7 @@ export default function Home() {
                     id="apbdes-belanja-val"
                     className="text-2xl sm:text-3xl font-extrabold text-slate-950 mt-2 font-mono"
                   >
-                    Rp 1.462.800.000
+                    Rp {apbdesTotals.belanja.toLocaleString("id-ID")}
                   </div>
                   <div className="text-xs text-slate-500 mt-2">
                     Realisasi serapan belanja per triwulan III berjalan.
@@ -1856,13 +2701,13 @@ export default function Home() {
                     id="apbdes-serapan-val"
                     className="text-2xl sm:text-3xl font-extrabold text-[#009388] mt-2 font-mono"
                   >
-                    82.4%
+                    {apbdesTotals.serapan}%
                   </div>
                   <div className="w-full bg-slate-100 rounded-full h-2.5 mt-3 overflow-hidden">
                     <div
                       id="apbdes-progress-bar"
-                      className="bg-[#009388] h-2.5 rounded-full transition-all"
-                      style={{ width: "82.4%" }}
+                      className="bg-[#009388] h-2.5 rounded-full transition-all duration-500"
+                      style={{ width: `${apbdesTotals.serapan}%` }}
                     ></div>
                   </div>
                 </div>
@@ -1871,85 +2716,31 @@ export default function Home() {
               {/* Grid 5 Bidang Belanja & Unduh PDF (Sesuai index.html & Staggered GSAP) */}
               {(apbdesFilter === "all" || apbdesFilter === "belanja") && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {/* Bidang 1 */}
-                  <div className="apbdes-bidang-card p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-bold text-[#009388] uppercase bg-[#e6f7f5] px-2 py-0.5 rounded">
-                        Bidang 1
-                      </span>
-                      <span className="text-xs font-bold text-[#009388]">85% Terpakai</span>
+                  {apbdesBidangList.map((bidang) => (
+                    <div
+                      key={bidang.id}
+                      className="apbdes-bidang-card p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="flex justify-between items-start">
+                          <span className="text-[10px] font-bold text-[#009388] uppercase bg-[#e6f7f5] px-2 py-0.5 rounded">
+                            Bidang {bidang.id}
+                          </span>
+                          <span className="text-xs font-bold text-[#009388]">
+                            {bidang.persen}% Terpakai
+                          </span>
+                        </div>
+                        <h4 className="font-bold text-slate-900 text-sm mt-2">{bidang.nama}</h4>
+                        <p className="text-xs text-slate-500 mt-1">{bidang.keterangan}</p>
+                      </div>
+                      <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs">
+                        <span className="text-slate-500">Pagu:</span>
+                        <span className="font-bold text-slate-900">
+                          Rp {bidang.pagu.toLocaleString("id-ID")}
+                        </span>
+                      </div>
                     </div>
-                    <h4 className="font-bold text-slate-900 text-sm mt-2">Penyelenggaraan Pemdes</h4>
-                    <p className="text-xs text-slate-500 mt-1">Siltap pamong, operasional kantor balai desa, kearsipan, dan BPD.</p>
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs">
-                      <span className="text-slate-500">Pagu:</span>
-                      <span className="font-bold text-slate-900">Rp 485.600.000</span>
-                    </div>
-                  </div>
-
-                  {/* Bidang 2 */}
-                  <div className="apbdes-bidang-card p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-bold text-[#009388] uppercase bg-[#e6f7f5] px-2 py-0.5 rounded">
-                        Bidang 2
-                      </span>
-                      <span className="text-xs font-bold text-[#009388]">78% Terpakai</span>
-                    </div>
-                    <h4 className="font-bold text-slate-900 text-sm mt-2">Pelaksanaan Pembangunan</h4>
-                    <p className="text-xs text-slate-500 mt-1">Rabat beton jalan Dusun Pahing, drainase pemukiman, dan posyandu.</p>
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs">
-                      <span className="text-slate-500">Pagu:</span>
-                      <span className="font-bold text-slate-900">Rp 562.400.000</span>
-                    </div>
-                  </div>
-
-                  {/* Bidang 3 */}
-                  <div className="apbdes-bidang-card p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-bold text-[#009388] uppercase bg-[#e6f7f5] px-2 py-0.5 rounded">
-                        Bidang 3
-                      </span>
-                      <span className="text-xs font-bold text-[#009388]">72% Terpakai</span>
-                    </div>
-                    <h4 className="font-bold text-slate-900 text-sm mt-2">Pembinaan Kemasyarakatan</h4>
-                    <p className="text-xs text-slate-500 mt-1">Pembinaan Karang Taruna, Linmas, keagamaan, dan kerukunan warga.</p>
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs">
-                      <span className="text-slate-500">Pagu:</span>
-                      <span className="font-bold text-slate-900">Rp 148.200.000</span>
-                    </div>
-                  </div>
-
-                  {/* Bidang 4 */}
-                  <div className="apbdes-bidang-card p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-bold text-[#009388] uppercase bg-[#e6f7f5] px-2 py-0.5 rounded">
-                        Bidang 4
-                      </span>
-                      <span className="text-xs font-bold text-[#009388]">80% Terpakai</span>
-                    </div>
-                    <h4 className="font-bold text-slate-900 text-sm mt-2">Pemberdayaan Masyarakat</h4>
-                    <p className="text-xs text-slate-500 mt-1">Pelatihan kelompok tani, ketahanan pangan hewani, dan BUMDes.</p>
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs">
-                      <span className="text-slate-500">Pagu:</span>
-                      <span className="font-bold text-slate-900">Rp 195.600.000</span>
-                    </div>
-                  </div>
-
-                  {/* Bidang 5 */}
-                  <div className="apbdes-bidang-card p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                    <div className="flex justify-between items-start">
-                      <span className="text-[10px] font-bold text-[#009388] uppercase bg-[#e6f7f5] px-2 py-0.5 rounded">
-                        Bidang 5
-                      </span>
-                      <span className="text-xs font-bold text-[#009388]">90% Terpakai</span>
-                    </div>
-                    <h4 className="font-bold text-slate-900 text-sm mt-2">Bencana & Mendesak</h4>
-                    <p className="text-xs text-slate-500 mt-1">Penyaluran BLT Dana Desa (BLT-DD) bagi keluarga pra-sejahtera.</p>
-                    <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between text-xs">
-                      <span className="text-slate-500">Pagu:</span>
-                      <span className="font-bold text-slate-900">Rp 71.000.000</span>
-                    </div>
-                  </div>
+                  ))}
 
                   {/* Unduh Dokumen PDF */}
                   <div className="apbdes-bidang-card p-5 rounded-2xl bg-[#003733] text-white flex flex-col justify-between shadow-2xs">
@@ -2000,86 +2791,51 @@ export default function Home() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                {/* Berita 1 */}
-                <article className="bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:shadow-md transition group">
-                  <div className="h-48 bg-slate-200 overflow-hidden relative">
-                    <img
-                      src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80"
-                      alt="Musdes Kadurama"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-3 left-3 bg-[#009388] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase">
-                      Pemerintahan
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <div className="text-[11px] text-slate-500 mb-2">12 September 2026 • Balai Desa</div>
-                    <h3 className="font-bold text-slate-900 text-base group-hover:text-[#009388] transition line-clamp-2">
-                      Musyawarah Rencana Kerja Pemerintah Desa (RKPDes) Tahun 2027 Berjalan Lancar
-                    </h3>
-                    <p className="text-xs text-slate-600 mt-2 line-clamp-3 leading-relaxed">
-                      Kepala Desa bersama BPD dan tokoh masyarakat dari 5 dusun menyepakati prioritas pembangunan jalan tani dan drainase lingkungan untuk tahun depan.
-                    </p>
-                    <div className="mt-4 pt-3 border-t border-slate-200 flex justify-between items-center text-xs font-semibold text-[#009388]">
-                      <span>Baca Selengkapnya</span>
-                      <span>→</span>
-                    </div>
-                  </div>
-                </article>
-
-                {/* Berita 2 */}
-                <article className="bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:shadow-md transition group">
-                  <div className="h-48 bg-slate-200 overflow-hidden relative">
-                    <img
-                      src="https://images.unsplash.com/photo-1593113598332-cd288d649433?auto=format&fit=crop&w=600&q=80"
-                      alt="Penyaluran BLT"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-3 left-3 bg-[#eda50c] text-slate-950 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase">
-                      Bansos
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <div className="text-[11px] text-slate-500 mb-2">08 September 2026 • Pendopo Desa</div>
-                    <h3 className="font-bold text-slate-900 text-base group-hover:text-[#009388] transition line-clamp-2">
-                      Penyaluran Bantuan Langsung Tunai (BLT) Dana Desa Triwulan III Tepat Sasaran
-                    </h3>
-                    <p className="text-xs text-slate-600 mt-2 line-clamp-3 leading-relaxed">
-                      Sebanyak 65 Keluarga Penerima Manfaat (KPM) dari lima dusun menerima bantuan tunai untuk pemenuhan kebutuhan pokok keluarga.
-                    </p>
-                    <div className="mt-4 pt-3 border-t border-slate-200 flex justify-between items-center text-xs font-semibold text-[#009388]">
-                      <span>Baca Selengkapnya</span>
-                      <span>→</span>
-                    </div>
-                  </div>
-                </article>
-
-                {/* Berita 3 */}
-                <article className="bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:shadow-md transition group">
-                  <div className="h-48 bg-slate-200 overflow-hidden relative">
-                    <img
-                      src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=600&q=80"
-                      alt="Panen Raya"
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-3 left-3 bg-[#009388] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase">
-                      Pertanian
-                    </div>
-                  </div>
-                  <div className="p-6">
-                    <div className="text-[11px] text-slate-500 mb-2">02 September 2026 • Dusun Manis</div>
-                    <h3 className="font-bold text-slate-900 text-base group-hover:text-[#009388] transition line-clamp-2">
-                      Kelompok Tani Sri Rejeki Panen Perdana Beras Organik dengan Hasil Memuaskan
-                    </h3>
-                    <p className="text-xs text-slate-600 mt-2 line-clamp-3 leading-relaxed">
-                      Program ketahanan pangan desa berhasil meningkatkan produktivitas gabah kelompok tani Dusun Manis melalui metode pemupukan organik terpadu.
-                    </p>
-                    <div className="mt-4 pt-3 border-t border-slate-200 flex justify-between items-center text-xs font-semibold text-[#009388]">
-                      <span>Baca Selengkapnya</span>
-                      <span>→</span>
-                    </div>
-                  </div>
-                </article>
+                {newsList
+                  .filter((item) => item.status === "Terbit")
+                  .slice(0, 3)
+                  .map((item) => (
+                    <article
+                      key={item.id}
+                      className="bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:shadow-md transition group flex flex-col justify-between"
+                    >
+                      <div>
+                        <div className="h-48 bg-slate-200 overflow-hidden relative">
+                          <img
+                            src={item.imageUrl}
+                            alt={item.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div
+                            className={`absolute top-3 left-3 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase ${
+                              item.category === "Bansos"
+                                ? "bg-[#eda50c] text-slate-950"
+                                : "bg-[#009388] text-white"
+                            }`}
+                          >
+                            {item.category}
+                          </div>
+                        </div>
+                        <div className="p-6">
+                          <div className="text-[11px] text-slate-500 mb-2">
+                            {item.date} • {item.author}
+                          </div>
+                          <h3 className="font-bold text-slate-900 text-base group-hover:text-[#009388] transition line-clamp-2">
+                            {item.title}
+                          </h3>
+                          <p className="text-xs text-slate-600 mt-2 line-clamp-3 leading-relaxed">
+                            {item.summary}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="px-6 pb-6 pt-0">
+                        <div className="pt-3 border-t border-slate-200 flex justify-between items-center text-xs font-semibold text-[#009388]">
+                          <span>Baca Selengkapnya</span>
+                          <span>→</span>
+                        </div>
+                      </div>
+                    </article>
+                  ))}
               </div>
             </div>
           </section>
@@ -2274,6 +3030,34 @@ export default function Home() {
                 >
                   <Users className="w-4 h-4" />
                   <span>Data Kependudukan (5 Dusun)</span>
+                </button>
+
+                <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-200/70 px-3 pt-3 pb-1">
+                  Portal & Transparansi
+                </div>
+
+                <button
+                  onClick={() => setAdminTab("berita")}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition ${
+                    adminTab === "berita"
+                      ? "bg-[#009388] text-white shadow-sm"
+                      : "text-emerald-100 hover:bg-[#005851]"
+                  }`}
+                >
+                  <Newspaper className="w-4 h-4" />
+                  <span>Manajemen Kabar Desa</span>
+                </button>
+
+                <button
+                  onClick={() => setAdminTab("apbdes")}
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition ${
+                    adminTab === "apbdes"
+                      ? "bg-[#009388] text-white shadow-sm"
+                      : "text-emerald-100 hover:bg-[#005851]"
+                  }`}
+                >
+                  <PieChart className="w-4 h-4" />
+                  <span>Kelola APBDes 2026</span>
                 </button>
               </div>
             </div>
@@ -2868,7 +3652,7 @@ export default function Home() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {filteredAgenda.map((item) => (
+                        {paginatedAgenda.map((item) => (
                           <tr key={item.id} className="hover:bg-slate-50 transition">
                             <td className="px-4 py-3 font-mono font-bold text-[#009388]">{item.id}</td>
                             <td className="px-4 py-3 text-slate-600 whitespace-nowrap">{item.tanggal}</td>
@@ -2909,6 +3693,15 @@ export default function Home() {
                       </tbody>
                     </table>
                   </div>
+                  {/* Reusable Pagination for Buku Agenda */}
+                  <Pagination
+                    currentPage={agendaCurrentPage}
+                    totalItems={filteredAgenda.length}
+                    pageSize={agendaPageSize}
+                    onPageChange={setAgendaCurrentPage}
+                    onPageSizeChange={setAgendaPageSize}
+                    pageSizeOptions={[10, 25]}
+                  />
                 </div>
               </div>
             )}
@@ -2924,21 +3717,29 @@ export default function Home() {
                       Master Data Kependudukan Desa Kadurama
                     </h2>
                     <p className="text-xs text-slate-500 mt-1">
-                      Dikelompokkan berdasarkan 5 Dusun tradisional Kuningan, rincian Kartu Keluarga (KK), dan RT/RW.
+                      Data kependudukan 5 Dusun tradisional. Aksi difokuskan untuk koreksi data internal dan sinkronisasi SIAK Dukcapil.
                     </p>
                   </div>
                   <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleSyncAllResidents}
+                      disabled={isSyncingAll}
+                      className="px-4 py-2.5 bg-[#009388] hover:bg-[#007b71] text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition disabled:opacity-60"
+                    >
+                      <RefreshCw className={`w-4 h-4 text-[#eda50c] ${isSyncingAll ? "animate-spin" : ""}`} />
+                      <span>{isSyncingAll ? "Menyinkronkan..." : "Sinkronisasi Semua (SIAK)"}</span>
+                    </button>
                     <button
                       onClick={() => setIsImportModalOpen(true)}
                       className="px-4 py-2.5 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition"
                     >
                       <Upload className="w-4 h-4 text-[#eda50c]" />
-                      <span>Bulk Import (Excel / CSV / SIAK)</span>
+                      <span>Bulk Import (Excel / CSV)</span>
                     </button>
                   </div>
                 </div>
 
-                {/* Filter Wilayah 5 Dusun */}
+                {/* Filter Wilayah 5 Dusun & Pencarian */}
                 <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-xs font-bold text-slate-700 mr-2 flex items-center gap-1">
@@ -2946,7 +3747,10 @@ export default function Home() {
                       <span>Filter Dusun:</span>
                     </span>
                     <button
-                      onClick={() => setResidentDusunFilter("all")}
+                      onClick={() => {
+                        setResidentDusunFilter("all");
+                        setResidentCurrentPage(1);
+                      }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                         residentDusunFilter === "all"
                           ? "bg-[#009388] text-white"
@@ -2958,7 +3762,10 @@ export default function Home() {
                     {["Manis", "Pahing", "Puhun", "Wage", "Kliwon"].map((dusun) => (
                       <button
                         key={dusun}
-                        onClick={() => setResidentDusunFilter(dusun)}
+                        onClick={() => {
+                          setResidentDusunFilter(dusun);
+                          setResidentCurrentPage(1);
+                        }}
                         className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
                           residentDusunFilter === dusun
                             ? "bg-[#009388] text-white"
@@ -2970,8 +3777,20 @@ export default function Home() {
                     ))}
                   </div>
 
-                  <div className="text-xs text-slate-500">
-                    Menampilkan <strong>{filteredResidents.length}</strong> data warga contoh
+                  <div className="flex items-center gap-2">
+                    <div className="relative">
+                      <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                      <input
+                        type="text"
+                        value={residentSearch}
+                        onChange={(e) => {
+                          setResidentSearch(e.target.value);
+                          setResidentCurrentPage(1);
+                        }}
+                        placeholder="Cari NIK / Nama / KK..."
+                        className="pl-8 pr-3 py-1.5 rounded-lg border border-slate-300 bg-slate-50 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-[#009388] w-48 sm:w-56"
+                      />
+                    </div>
                   </div>
                 </div>
 
@@ -2987,11 +3806,12 @@ export default function Home() {
                           <th className="px-4 py-3.5">Dusun & RT/RW</th>
                           <th className="px-4 py-3.5">Tempat & Tanggal Lahir</th>
                           <th className="px-4 py-3.5">Pekerjaan</th>
-                          <th className="px-4 py-3.5 text-right">Aksi Loket</th>
+                          <th className="px-4 py-3.5">Status Sinkron</th>
+                          <th className="px-4 py-3.5 text-right">Aksi Data</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {filteredResidents.map((res) => (
+                        {paginatedResidents.map((res) => (
                           <tr key={res.nik} className="hover:bg-slate-50 transition">
                             <td className="px-4 py-3">
                               <div className="font-mono font-bold text-slate-900">{res.nik}</div>
@@ -3011,17 +3831,360 @@ export default function Home() {
                             </td>
                             <td className="px-4 py-3 text-slate-600">{res.ttl}</td>
                             <td className="px-4 py-3 text-slate-600">{res.pekerjaan}</td>
-                            <td className="px-4 py-3 text-right">
-                              <button
-                                onClick={() => {
-                                  setSelectedResident(res);
-                                  setSearchQuery(res.nik);
-                                  setAdminTab("generator");
-                                  window.scrollTo({ top: 0, behavior: "smooth" });
-                                }}
-                                className="px-3 py-1.5 rounded-lg bg-[#009388] hover:bg-[#007b71] text-white font-bold text-[11px] transition shadow-2xs"
+                            <td className="px-4 py-3">
+                              <span
+                                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold ${
+                                  res.syncStatus === "Tersinkronisasi"
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200"
+                                    : res.syncStatus === "Diperbarui Internal"
+                                    ? "bg-amber-50 text-amber-800 border border-amber-200"
+                                    : "bg-blue-50 text-blue-700 border border-blue-200"
+                                }`}
                               >
-                                Buat Surat
+                                {res.syncStatus === "Tersinkronisasi" ? (
+                                  <CheckCircle2 className="w-3 h-3 text-emerald-600" />
+                                ) : (
+                                  <RefreshCw className="w-3 h-3 text-amber-600" />
+                                )}
+                                <span>{res.syncStatus || "Tersinkronisasi"}</span>
+                              </span>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => handleOpenEditResident(res)}
+                                  title="Koreksi / Perbarui Data Internal"
+                                  className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-[#e6f7f5] text-slate-700 hover:text-[#009388] font-bold text-[11px] transition flex items-center gap-1 border border-slate-200"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                  <span>Perbarui</span>
+                                </button>
+                                <button
+                                  onClick={() => handleSyncSingleResident(res.nik)}
+                                  title="Sinkronkan data dengan SIAK Dukcapil"
+                                  className="p-1.5 rounded-lg bg-[#e6f7f5] hover:bg-[#009388] text-[#009388] hover:text-white transition shadow-2xs border border-[#009388]/20"
+                                >
+                                  <RefreshCw className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Reusable Pagination for Data Kependudukan */}
+                  <Pagination
+                    currentPage={residentCurrentPage}
+                    totalItems={filteredResidents.length}
+                    pageSize={residentPageSize}
+                    onPageChange={setResidentCurrentPage}
+                    onPageSizeChange={setResidentPageSize}
+                    pageSizeOptions={[10, 25]}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ============================================================ */}
+            {/* TAB 4: MANAJEMEN KABAR & BERITA DESA                         */}
+            {/* ============================================================ */}
+            {adminTab === "berita" && (
+              <div className="no-print space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-950">
+                      Manajemen Kabar & Berita Publik Desa
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Publikasi artikel informasi kegiatan desa, transparansi bansos, dan agenda pembangunan untuk portal warga.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={handleOpenCreateNews}
+                      className="px-4 py-2 bg-[#009388] hover:bg-[#007b71] text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Tulis Kabar Baru</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Filter Status & Kategori Berita */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        setNewsStatusFilter("all");
+                        setNewsCurrentPage(1);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                        newsStatusFilter === "all"
+                          ? "bg-[#009388] text-white"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }`}
+                    >
+                      Semua Status ({newsList.length})
+                    </button>
+                    <button
+                      onClick={() => {
+                        setNewsStatusFilter("Terbit");
+                        setNewsCurrentPage(1);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                        newsStatusFilter === "Terbit"
+                          ? "bg-[#009388] text-white"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }`}
+                    >
+                      <span>Terbit ({newsList.filter((n) => n.status === "Terbit").length})</span>
+                    </button>
+                    <button
+                      onClick={() => {
+                        setNewsStatusFilter("Draf");
+                        setNewsCurrentPage(1);
+                      }}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1.5 ${
+                        newsStatusFilter === "Draf"
+                          ? "bg-[#009388] text-white"
+                          : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                      }`}
+                    >
+                      <span>Draf ({newsList.filter((n) => n.status === "Draf").length})</span>
+                    </button>
+                  </div>
+
+                  <div className="flex items-center gap-2 text-xs">
+                    <span className="text-slate-500 font-medium">Kategori:</span>
+                    <select
+                      value={newsCategoryFilter}
+                      onChange={(e) => {
+                        setNewsCategoryFilter(e.target.value);
+                        setNewsCurrentPage(1);
+                      }}
+                      className="px-2.5 py-1.5 rounded-lg border border-slate-300 bg-slate-50 font-bold text-slate-800 focus:outline-none focus:ring-1 focus:ring-[#009388]"
+                    >
+                      <option value="all">Semua Kategori</option>
+                      <option value="Pemerintahan">Pemerintahan</option>
+                      <option value="Bansos">Bansos</option>
+                      <option value="Kesehatan">Kesehatan</option>
+                      <option value="Pembangunan">Pembangunan</option>
+                      <option value="Kegiatan">Kegiatan</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Tabel Manajemen Berita */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="px-4 py-3.5">Gambar</th>
+                          <th className="px-4 py-3.5">Judul & Ringkasan</th>
+                          <th className="px-4 py-3.5">Kategori</th>
+                          <th className="px-4 py-3.5">Penulis & Tanggal</th>
+                          <th className="px-4 py-3.5">Status Publikasi</th>
+                          <th className="px-4 py-3.5 text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {paginatedNews.map((item) => (
+                          <tr key={item.id} className="hover:bg-slate-50 transition">
+                            <td className="px-4 py-3">
+                              <img
+                                src={item.imageUrl}
+                                alt={item.title}
+                                className="w-16 h-12 object-cover rounded-lg border border-slate-200"
+                              />
+                            </td>
+                            <td className="px-4 py-3 max-w-md">
+                              <div className="font-bold text-slate-900 line-clamp-1">{item.title}</div>
+                              <div className="text-[11px] text-slate-500 line-clamp-1 mt-0.5">{item.summary}</div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#e6f7f5] text-[#009388] border border-[#009388]/20">
+                                {item.category}
+                              </span>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="font-medium text-slate-800">{item.author}</div>
+                              <div className="text-[11px] text-slate-500">{item.date}</div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <button
+                                onClick={() => handleToggleNewsStatus(item.id)}
+                                title="Klik untuk mengubah status publikasi"
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition flex items-center gap-1 ${
+                                  item.status === "Terbit"
+                                    ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100"
+                                    : "bg-slate-100 text-slate-600 border border-slate-300 hover:bg-slate-200"
+                                }`}
+                              >
+                                <span className={`w-1.5 h-1.5 rounded-full ${item.status === "Terbit" ? "bg-emerald-500" : "bg-slate-400"}`}></span>
+                                <span>{item.status}</span>
+                              </button>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => handleOpenEditNews(item)}
+                                  className="px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-[#e6f7f5] text-slate-700 hover:text-[#009388] font-bold text-[11px] transition flex items-center gap-1 border border-slate-200"
+                                >
+                                  <Edit3 className="w-3.5 h-3.5" />
+                                  <span>Ubah</span>
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteNews(item.id)}
+                                  className="p-1.5 rounded-lg bg-red-50 hover:bg-red-100 text-red-600 transition border border-red-200"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  {/* Reusable Pagination for Berita */}
+                  <Pagination
+                    currentPage={newsCurrentPage}
+                    totalItems={filteredNews.length}
+                    pageSize={newsPageSize}
+                    onPageChange={setNewsCurrentPage}
+                    onPageSizeChange={setNewsPageSize}
+                    pageSizeOptions={[10, 25]}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* ============================================================ */}
+            {/* TAB 5: KELOLA TRANSPARANSI APBDES 2026                       */}
+            {/* ============================================================ */}
+            {adminTab === "apbdes" && (
+              <div className="no-print space-y-6">
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                  <div>
+                    <h2 className="text-xl font-bold text-slate-950">
+                      Pengelolaan Transparansi APBDes Tahun Anggaran 2026
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Perbarui pagu anggaran, realisasi belanja per bidang, dan kalkulasi serapan untuk transparansi publik warga.
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setIsEditTotalsModalOpen(true)}
+                      className="px-4 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition"
+                    >
+                      <Edit3 className="w-4 h-4 text-[#eda50c]" />
+                      <span>Sesuaikan Total Anggaran</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Ringkasan Cockpit Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="text-xs font-bold uppercase tracking-wider text-[#009388]">
+                      Total Pendapatan Desa
+                    </div>
+                    <div className="text-2xl font-extrabold text-slate-950 mt-2 font-mono">
+                      Rp {apbdesTotals.pendapatan.toLocaleString("id-ID")}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      Dana Desa, Alokasi Dana Desa (ADD), & PADes
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="text-xs font-bold uppercase tracking-wider text-[#eda50c]">
+                      Total Belanja Desa
+                    </div>
+                    <div className="text-2xl font-extrabold text-slate-950 mt-2 font-mono">
+                      Rp {apbdesTotals.belanja.toLocaleString("id-ID")}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-1">
+                      Akumulasi pagu dari 5 bidang belanja
+                    </div>
+                  </div>
+
+                  <div className="bg-white p-5 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="text-xs font-bold uppercase tracking-wider text-slate-600">
+                      Persentase Serapan Berjalan
+                    </div>
+                    <div className="text-2xl font-extrabold text-[#009388] mt-2 font-mono">
+                      {apbdesTotals.serapan}%
+                    </div>
+                    <div className="w-full bg-slate-100 rounded-full h-2 mt-2.5 overflow-hidden">
+                      <div
+                        className="bg-[#009388] h-2 rounded-full transition-all duration-500"
+                        style={{ width: `${apbdesTotals.serapan}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Tabel 5 Bidang Belanja */}
+                <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <div>
+                      <h3 className="font-bold text-sm text-slate-900">Rincian 5 Bidang Belanja Desa</h3>
+                      <p className="text-xs text-slate-500">Nilai pada tabel ini terhubung langsung dengan tampilan transparansi di beranda publik.</p>
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs">
+                      <thead className="bg-slate-50 text-slate-700 uppercase tracking-wider font-bold border-b border-slate-200">
+                        <tr>
+                          <th className="px-4 py-3.5">Bidang</th>
+                          <th className="px-4 py-3.5">Pagu Anggaran</th>
+                          <th className="px-4 py-3.5">Realisasi Berjalan</th>
+                          <th className="px-4 py-3.5">Persentase Serapan</th>
+                          <th className="px-4 py-3.5">Keterangan / Program Utama</th>
+                          <th className="px-4 py-3.5 text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {apbdesBidangList.map((bidang) => (
+                          <tr key={bidang.id} className="hover:bg-slate-50 transition">
+                            <td className="px-4 py-3.5">
+                              <span className="text-[10px] font-bold text-[#009388] uppercase bg-[#e6f7f5] px-2 py-0.5 rounded">
+                                Bidang {bidang.id}
+                              </span>
+                              <div className="font-bold text-slate-900 text-sm mt-1">{bidang.nama}</div>
+                            </td>
+                            <td className="px-4 py-3.5 font-mono font-bold text-slate-900 whitespace-nowrap">
+                              Rp {bidang.pagu.toLocaleString("id-ID")}
+                            </td>
+                            <td className="px-4 py-3.5 font-mono font-bold text-[#009388] whitespace-nowrap">
+                              Rp {bidang.realisasi.toLocaleString("id-ID")}
+                            </td>
+                            <td className="px-4 py-3.5">
+                              <div className="flex items-center gap-2">
+                                <span className="font-mono font-bold text-slate-800">{bidang.persen}%</span>
+                                <div className="w-16 bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                                  <div
+                                    className="bg-[#009388] h-1.5 rounded-full"
+                                    style={{ width: `${bidang.persen}%` }}
+                                  ></div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-4 py-3.5 text-slate-600 max-w-xs">{bidang.keterangan}</td>
+                            <td className="px-4 py-3.5 text-right">
+                              <button
+                                onClick={() => handleOpenEditBidang(bidang)}
+                                className="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-[#e6f7f5] text-slate-700 hover:text-[#009388] font-bold text-[11px] transition flex items-center gap-1 border border-slate-200 ml-auto"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>Sesuaikan</span>
                               </button>
                             </td>
                           </tr>
@@ -3030,73 +4193,638 @@ export default function Home() {
                     </table>
                   </div>
                 </div>
+              </div>
+            )}
 
-                {/* Modal Simulasi Bulk Import */}
-                {isImportModalOpen && (
-                  <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-                    <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
-                      <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-                        <div className="flex items-center gap-3">
-                          <div className="w-9 h-9 rounded-xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center">
-                            <Upload className="w-5 h-5" />
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-base text-slate-900">
-                              Import Master Data Kependudukan
-                            </h3>
-                            <p className="text-[11px] text-slate-500">Format Excel (.xlsx), CSV, atau Export SIAK</p>
-                          </div>
-                        </div>
-                        <button
-                          onClick={() => setIsImportModalOpen(false)}
-                          className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+            {/* Modal Edit Data Warga Internal */}
+            {isEditResidentModalOpen && editingResident && (
+              <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center">
+                        <Edit3 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base text-slate-900">
+                          Koreksi / Perbarui Data Warga Internal
+                        </h3>
+                        <p className="text-[11px] text-slate-500">Perubahan disimpan ke master internal desa</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsEditResidentModalOpen(false)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        NIK (Nomor Induk Kependudukan)
+                      </label>
+                      <input
+                        type="text"
+                        disabled
+                        value={editingResident.nik}
+                        className="w-full px-3 py-2 rounded-xl border border-slate-200 bg-slate-100 text-slate-500 font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Nomor Kartu Keluarga (KK)
+                      </label>
+                      <input
+                        type="text"
+                        value={editingResident.noKk}
+                        onChange={(e) =>
+                          setEditingResident({ ...editingResident, noKk: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Nama Lengkap
+                      </label>
+                      <input
+                        type="text"
+                        value={editingResident.nama}
+                        onChange={(e) =>
+                          setEditingResident({ ...editingResident, nama: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Dusun
+                      </label>
+                      <select
+                        value={editingResident.dusun}
+                        onChange={(e) =>
+                          setEditingResident({
+                            ...editingResident,
+                            dusun: e.target.value as any,
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-[#009388]"
+                      >
+                        <option value="Manis">Dusun Manis</option>
+                        <option value="Pahing">Dusun Pahing</option>
+                        <option value="Puhun">Dusun Puhun</option>
+                        <option value="Wage">Dusun Wage</option>
+                        <option value="Kliwon">Dusun Kliwon</option>
+                      </select>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          RT
+                        </label>
+                        <input
+                          type="text"
+                          value={editingResident.rt}
+                          onChange={(e) =>
+                            setEditingResident({ ...editingResident, rt: e.target.value })
+                          }
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-[#009388]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          RW
+                        </label>
+                        <input
+                          type="text"
+                          value={editingResident.rw}
+                          onChange={(e) =>
+                            setEditingResident({ ...editingResident, rw: e.target.value })
+                          }
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-[#009388]"
+                        />
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Hubungan Keluarga
+                      </label>
+                      <input
+                        type="text"
+                        value={editingResident.hubunganKeluarga}
+                        onChange={(e) =>
+                          setEditingResident({
+                            ...editingResident,
+                            hubunganKeluarga: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Pekerjaan
+                      </label>
+                      <input
+                        type="text"
+                        value={editingResident.pekerjaan}
+                        onChange={(e) =>
+                          setEditingResident({
+                            ...editingResident,
+                            pekerjaan: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Alamat Lengkap
+                      </label>
+                      <input
+                        type="text"
+                        value={editingResident.alamat}
+                        onChange={(e) =>
+                          setEditingResident({
+                            ...editingResident,
+                            alamat: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-end gap-2.5">
+                    <button
+                      onClick={() => setIsEditResidentModalOpen(false)}
+                      className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={handleSaveEditResident}
+                      className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Simpan Pembaruan Data</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Tambah / Edit Berita */}
+            {isNewsModalOpen && editingNews && (
+              <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center">
+                        <Newspaper className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base text-slate-900">
+                          {newsList.some((n) => n.id === editingNews.id)
+                            ? "Ubah Kabar Desa"
+                            : "Tulis Kabar Desa Baru"}
+                        </h3>
+                        <p className="text-[11px] text-slate-500">Artikel akan langsung terlihat di beranda warga jika berstatus Terbit</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsNewsModalOpen(false)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-4 space-y-3.5 text-xs">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Judul Kabar Desa
+                      </label>
+                      <input
+                        type="text"
+                        value={editingNews.title}
+                        onChange={(e) =>
+                          setEditingNews({ ...editingNews, title: e.target.value })
+                        }
+                        placeholder="Contoh: Musyawarah Pembangunan Jalan Usaha Tani..."
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Kategori
+                        </label>
+                        <select
+                          value={editingNews.category}
+                          onChange={(e) =>
+                            setEditingNews({
+                              ...editingNews,
+                              category: e.target.value as NewsItem["category"],
+                            })
+                          }
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-[#009388]"
                         >
-                          <X className="w-5 h-5" />
-                        </button>
+                          <option value="Pemerintahan">Pemerintahan</option>
+                          <option value="Bansos">Bansos</option>
+                          <option value="Kesehatan">Kesehatan</option>
+                          <option value="Pembangunan">Pembangunan</option>
+                          <option value="Kegiatan">Kegiatan</option>
+                        </select>
                       </div>
 
-                      <div className="mt-4 space-y-4 text-xs">
-                        <div className="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center hover:border-[#009388] transition cursor-pointer bg-slate-50">
-                          <Upload className="w-8 h-8 text-[#009388] mx-auto mb-2" />
-                          <div className="font-bold text-slate-800">Tarik & Lepas Berkas Excel/CSV di Sini</div>
-                          <div className="text-[11px] text-slate-500 mt-1">
-                            Mendukung file dari SIAK, Prodeskel, SDGs Desa, atau DPT
-                          </div>
-                        </div>
-
-                        <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1 text-[11px] text-slate-600">
-                          <div className="font-bold text-slate-800">Kolom yang Terbaca Otomatis:</div>
-                          <div>• NIK (16 digit) & No. KK (16 digit)</div>
-                          <div>• Nama Lengkap, Tempat & Tanggal Lahir</div>
-                          <div>• Dusun (Manis, Pahing, Puhun, Wage, Kliwon)</div>
-                          <div>• RT, RW, dan Alamat Lengkap</div>
-                        </div>
+                      <div>
+                        <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                          Penulis / Narasumber
+                        </label>
+                        <input
+                          type="text"
+                          value={editingNews.author}
+                          onChange={(e) =>
+                            setEditingNews({ ...editingNews, author: e.target.value })
+                          }
+                          placeholder="Contoh: Kasi Pelayanan"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-[#009388]"
+                        />
                       </div>
+                    </div>
 
-                      <div className="mt-6 flex items-center justify-end gap-2.5">
-                        <button
-                          onClick={() => setIsImportModalOpen(false)}
-                          className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition"
-                        >
-                          Tutup
-                        </button>
-                        <button
-                          onClick={() => {
-                            alert("Simulasi impor berhasil! Database kependudukan Supabase akan memproses sinkronisasi saat integrasi database diaktifkan.");
-                            setIsImportModalOpen(false);
-                          }}
-                          className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm transition"
-                        >
-                          Mulai Proses Import
-                        </button>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Ringkasan Isi Berita
+                      </label>
+                      <textarea
+                        rows={3}
+                        value={editingNews.summary}
+                        onChange={(e) =>
+                          setEditingNews({ ...editingNews, summary: e.target.value })
+                        }
+                        placeholder="Ringkasan singkat yang ditampilkan pada kartu berita..."
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        URL Gambar Sampul
+                      </label>
+                      <input
+                        type="text"
+                        value={editingNews.imageUrl}
+                        onChange={(e) =>
+                          setEditingNews({ ...editingNews, imageUrl: e.target.value })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Status Publikasi
+                      </label>
+                      <div className="flex items-center gap-3">
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="newsStatus"
+                            checked={editingNews.status === "Terbit"}
+                            onChange={() =>
+                              setEditingNews({ ...editingNews, status: "Terbit" })
+                            }
+                            className="text-[#009388] focus:ring-[#009388]"
+                          />
+                          <span className="font-semibold text-slate-800">Terbit (Tampil di Web Publik)</span>
+                        </label>
+                        <label className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="newsStatus"
+                            checked={editingNews.status === "Draf"}
+                            onChange={() =>
+                              setEditingNews({ ...editingNews, status: "Draf" })
+                            }
+                            className="text-[#009388] focus:ring-[#009388]"
+                          />
+                          <span className="font-semibold text-slate-800">Draf (Hanya Admin)</span>
+                        </label>
                       </div>
                     </div>
                   </div>
-                )}
+
+                  <div className="mt-6 flex items-center justify-end gap-2.5">
+                    <button
+                      onClick={() => setIsNewsModalOpen(false)}
+                      className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={handleSaveNews}
+                      className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Simpan Artikel</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Edit Pagu & Realisasi Bidang APBDes */}
+            {isEditBidangModalOpen && editingBidang && (
+              <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center">
+                        <PieChart className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base text-slate-900">
+                          Sesuaikan Anggaran Bidang {editingBidang.id}
+                        </h3>
+                        <p className="text-[11px] text-slate-500">{editingBidang.nama}</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsEditBidangModalOpen(false)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-4 space-y-3 text-xs">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Pagu Anggaran (Rupiah)
+                      </label>
+                      <input
+                        type="number"
+                        value={editingBidang.pagu}
+                        onChange={(e) =>
+                          setEditingBidang({
+                            ...editingBidang,
+                            pagu: Number(e.target.value),
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Realisasi Belanja Berjalan (Rupiah)
+                      </label>
+                      <input
+                        type="number"
+                        value={editingBidang.realisasi}
+                        onChange={(e) =>
+                          setEditingBidang({
+                            ...editingBidang,
+                            realisasi: Number(e.target.value),
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Keterangan Alokasi / Kegiatan Utama
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={editingBidang.keterangan}
+                        onChange={(e) =>
+                          setEditingBidang({
+                            ...editingBidang,
+                            keterangan: e.target.value,
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                      <span className="text-slate-600">Estimasi Persentase Serapan:</span>
+                      <strong className="text-[#009388] font-mono text-sm">
+                        {editingBidang.pagu > 0
+                          ? Math.round((editingBidang.realisasi / editingBidang.pagu) * 100)
+                          : 0}
+                        %
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-end gap-2.5">
+                    <button
+                      onClick={() => setIsEditBidangModalOpen(false)}
+                      className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={handleSaveBidang}
+                      className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Simpan Nilai Bidang</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Edit Totals APBDes */}
+            {isEditTotalsModalOpen && (
+              <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center">
+                        <Edit3 className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base text-slate-900">
+                          Sesuaikan Total Anggaran APBDes
+                        </h3>
+                        <p className="text-[11px] text-slate-500">Angka utama ringkasan transparansi anggaran</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsEditTotalsModalOpen(false)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-4 space-y-3 text-xs">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Total Pendapatan Desa (Rupiah)
+                      </label>
+                      <input
+                        type="number"
+                        value={apbdesTotals.pendapatan}
+                        onChange={(e) =>
+                          setApbdesTotals({
+                            ...apbdesTotals,
+                            pendapatan: Number(e.target.value),
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Total Belanja Desa (Rupiah)
+                      </label>
+                      <input
+                        type="number"
+                        value={apbdesTotals.belanja}
+                        onChange={(e) =>
+                          setApbdesTotals({
+                            ...apbdesTotals,
+                            belanja: Number(e.target.value),
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                        Persentase Serapan Berjalan (%)
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={apbdesTotals.serapan}
+                        onChange={(e) =>
+                          setApbdesTotals({
+                            ...apbdesTotals,
+                            serapan: Number(e.target.value),
+                          })
+                        }
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:ring-1 focus:ring-[#009388]"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-end gap-2.5">
+                    <button
+                      onClick={() => setIsEditTotalsModalOpen(false)}
+                      className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition"
+                    >
+                      Batal
+                    </button>
+                    <button
+                      onClick={() => setIsEditTotalsModalOpen(false)}
+                      className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm transition flex items-center gap-1.5"
+                    >
+                      <Check className="w-4 h-4" />
+                      <span>Simpan Ringkasan</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Modal Simulasi Bulk Import */}
+            {isImportModalOpen && (
+              <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+                <div className="bg-white rounded-2xl max-w-lg w-full p-6 shadow-2xl border border-slate-200">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center">
+                        <Upload className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-bold text-base text-slate-900">
+                          Import Master Data Kependudukan
+                        </h3>
+                        <p className="text-[11px] text-slate-500">Format Excel (.xlsx), CSV, atau Export SIAK</p>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setIsImportModalOpen(false)}
+                      className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                    >
+                      <X className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  <div className="mt-4 space-y-4 text-xs">
+                    <div className="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center hover:border-[#009388] transition cursor-pointer bg-slate-50">
+                      <Upload className="w-8 h-8 text-[#009388] mx-auto mb-2" />
+                      <div className="font-bold text-slate-800">Tarik & Lepas Berkas Excel/CSV di Sini</div>
+                      <div className="text-[11px] text-slate-500 mt-1">
+                        Mendukung file dari SIAK, Prodeskel, SDGs Desa, atau DPT
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200 space-y-1 text-[11px] text-slate-600">
+                      <div className="font-bold text-slate-800">Kolom yang Terbaca Otomatis:</div>
+                      <div>• NIK (16 digit) & No. KK (16 digit)</div>
+                      <div>• Nama Lengkap, Tempat & Tanggal Lahir</div>
+                      <div>• Dusun (Manis, Pahing, Puhun, Wage, Kliwon)</div>
+                      <div>• RT, RW, dan Alamat Lengkap</div>
+                    </div>
+                  </div>
+
+                  <div className="mt-6 flex items-center justify-end gap-2.5">
+                    <button
+                      onClick={() => setIsImportModalOpen(false)}
+                      className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition"
+                    >
+                      Tutup
+                    </button>
+                    <button
+                      onClick={() => {
+                        alert("Simulasi impor berhasil! Database kependudukan Supabase akan memproses sinkronisasi saat integrasi database diaktifkan.");
+                        setIsImportModalOpen(false);
+                      }}
+                      className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm transition"
+                    >
+                      Mulai Proses Import
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
             </div>
           </main>
+        </div>
+      )}
+      {/* Floating Sync & Feedback Notification Toast */}
+      {syncNotification && (
+        <div className="fixed bottom-6 right-6 z-50 bg-[#003733] text-white px-5 py-3.5 rounded-2xl shadow-2xl border border-emerald-400/40 flex items-center gap-3 animate-in fade-in slide-in-from-bottom-3 duration-200">
+          <CheckCircle2 className="w-5 h-5 text-emerald-400 flex-shrink-0" />
+          <div className="text-xs font-semibold">{syncNotification}</div>
+          <button
+            onClick={() => setSyncNotification(null)}
+            className="p-1 rounded-lg hover:bg-white/10 text-white/70 hover:text-white transition"
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
         </div>
       )}
     </div>
