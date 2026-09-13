@@ -11,22 +11,67 @@
   --color-kuningan-gold-light: #fef6e6;
 }
 
+/* Print Setup for Village Administration (A4 and F4 Support) */
 @media print {
+  @page {
+    margin: 12mm 15mm;
+  }
+  
+  body {
+    background: white !important;
+    color: black !important;
+  }
+
   body * {
     visibility: hidden;
   }
+
   #print-area, #print-area * {
     visibility: visible;
   }
+
   #print-area {
     position: absolute;
     left: 0;
     top: 0;
-    width: 100%;
-    margin: 0;
-    padding: 0;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
   }
+
   .no-print {
     display: none !important;
   }
+}
+
+/* Realistic Physical Scanner Simulation for Digital Archive */
+.scan-effect {
+  position: relative;
+  background-color: #faf8f5 !important;
+  filter: contrast(108%) brightness(98%);
+  transform: rotate(0.2deg);
+  box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.2), 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+.scan-effect::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(rgba(0, 0, 0, 0.025) 1px, transparent 0);
+  background-size: 4px 4px;
+  opacity: 0.8;
+}
+
+.scan-watermark {
+  background: repeating-linear-gradient(
+    -45deg,
+    rgba(0, 147, 136, 0.03),
+    rgba(0, 147, 136, 0.03) 20px,
+    transparent 20px,
+    transparent 40px
+  );
 }
