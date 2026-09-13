@@ -46,6 +46,9 @@
    - [PRD.md](file:///home/jrilym/Projects/Next/desa/PRD.md)
    - [SRS.md](file:///home/jrilym/Projects/Next/desa/SRS.md)
    - [DEVELOPMENT_LOG.md](file:///home/jrilym/Projects/Next/desa/DEVELOPMENT_LOG.md)
+3. Bedah & Adaptasi Desain Referensi `https://kadugede.godesa.id` (Phase 2 SDLC):
+   - Menganalisis konten lokal Kabupaten Kuningan: 5 Dusun tradisional (Manis, Pahing, Puhun, Wage, Kliwon), susunan pamong desa, data demografi, jadwal loket, transparansi APBDes, rekapitulasi surat keluar, dan status IDM/SDGs.
+   - Mengimplementasikan seluruh komponen tersebut ke dalam prototipe visual interaktif di [mockups/index.html](file:///home/jrilym/Projects/Next/desa/mockups/index.html) dengan peningkatan standar modern (*Modern Emerald Civic Tech*, clean bento layout, tipografi jernih *Plus Jakarta Sans*, dan anti-slop).
 
 ---
 
