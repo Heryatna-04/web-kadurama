@@ -62,9 +62,17 @@
    - Migrasi dan rekayasa ulang seluruh UI ke [frontend/src/app/page.tsx](file:///home/jrilym/Projects/Next/desa/frontend/src/app/page.tsx) dengan status reaktif React (tab, live preview surat, switcher portal-backpanel, live print CSS).
    - Inisialisasi Express server di [backend/src/index.ts](file:///home/jrilym/Projects/Next/desa/backend/src/index.ts).
    - Validasi kedua build: `npm run build` di frontend dan backend sukses 0 error.
+6. Refinement UI, Ornamen Gerbang Kuningan, Animasi GSAP & Panduan Wawancara SDLC:
+   - Cropping presisi landmark Gerbang Kuda Kuningan dari [image.png](file:///home/jrilym/Projects/Next/desa/image.png), menghapus badge "1 SEPTEMBER 2026" dan menghasilkan asset transparan [frontend/public/kuningan-gate-transparent.png](file:///home/jrilym/Projects/Next/desa/frontend/public/kuningan-gate-transparent.png).
+   - Hero Section Refactor: Menghapus card "5 Dusun Khas" yang canggung dan menggantinya dengan civic showcase card berlatar landmark gerbang Kuningan beraksen emas serta watermark ambient.
+   - Integrasi GSAP & ScrollTrigger (dynamic import tanpa SSR hydration mismatch): Animasi entrance Hero (badge, title, desc, action buttons, gate card) dan APBDes counter animation (counter angka pendapatan, belanja, serapan, dan animasi progress bar 0% ke 82.4%).
+   - Penyesuaian jenis surat sementara menjadi tepat 3 jenis: SKU, SKTM, DOMISILI (SKCK dihapus).
+   - Navbar 2-baris presisi rata kiri-kanan, ikon rumah tunggal untuk beranda, label "LAYANAN", hover dropdown bridge tanpa celah, dan tombol panel admin murni ikon (tersembunyi di mobile).
+   - Penyusunan panduan wawancara SDLC komprehensif di [PANDUAN_WAWANCARA_DESA.md](file:///home/jrilym/Projects/Next/desa/PANDUAN_WAWANCARA_DESA.md) untuk persiapan rapat dengan perangkat desa.
 
 ---
 
 ## 🎯 Pekerjaan Selanjutnya (Next Action)
-- [ ] Presentasi pitch & demo prototipe aplikasi Next.js ke calon klien Desa Kadurama.
+- [ ] Presentasi pitch & wawancara kebutuhan sistem ke calon klien Desa Kadurama menggunakan [PANDUAN_WAWANCARA_DESA.md](file:///home/jrilym/Projects/Next/desa/PANDUAN_WAWANCARA_DESA.md).
+- [ ] Konfirmasi format kertas baku (A4 / F4) serta template surat resmi desa setelah rapat.
 - [ ] Setelah deal disepakati: Setup Supabase Database PostgreSQL & sambungkan API Express.
