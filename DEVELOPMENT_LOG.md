@@ -162,6 +162,18 @@
      - Carousel otomatis bergeser maju setiap 5 detik (5000ms).
      - Otomatis dijeda (*paused*) ketika kursor mouse warga berada di atas area kanvas foto (*hover*) untuk kenyamanan membaca data kependudukan dan fasilitas.
 
+15. Perbaikan Auto-Slide Carousel (Pause saat Hover & Reset Timer saat Geser Manual):
+   - Isolasi Status Hover Menggunakan `useRef` & `useCallback`:
+     - Mengatasi masalah interval timer yang bertumpuk atau berjalan saat kursor pengguna sedang berada di atas kanvas carousel.
+     - Menggunakan `isDusunHoveredRef` dan `autoSlideTimerRef` untuk menghentikan interval secara instan (`clearInterval`) begitu kursor masuk (`onMouseEnter` dan `onTouchStart`).
+     - Selama kursor berada di atas foto atau card, timer 100% berhenti (paused), sehingga warga tidak akan mengalami slide berpindah mendadak saat sedang membaca data.
+   - Reset Total Countdown Saat Interaksi Manual:
+     - Ketika tombol panah kanan, panah kiri, atau titik indikator diklik, fungsi `resetAutoSlideTimer()` langsung membersihkan timer lama dan memulai hitung mundur 5 detik yang baru dari 0 jika tidak sedang di-hover.
+     - Ketika kursor meninggalkan area gambar (`onMouseLeave` dan `onTouchEnd`), timer 5 detik dimulai kembali secara segar (*fresh 5000ms countdown*).
+   - Pengamanan State Transisi (Safety Guard):
+     - Menambahkan batasan `dusunTrackIndex >= 4` dan `<= 0` pada handler klik manual agar klik cepat beruntun tidak melompat melebihi batas buffer track.
+     - Menambahkan *safety fallback timeout* 650ms untuk menjamin reposisi instan tetap berjalan meskipun event `transitionEnd` terlambat dari browser.
+
 ---
 
 ## 🎯 Status & Pekerjaan Selanjutnya (Next Action)
@@ -173,9 +185,11 @@
 - [x] Redesign Hero Section & Profil 3 Dusun dengan standard taste frontend anti-slop.
 - [x] Implementasi Full-Photo Cinematic Carousel Profil 3 Dusun (Opsi 1: anti card-bertumpuk).
 - [x] Implementasi Infinite Seamless Loop (1, 2, 3, 1, 2, 3) & Auto-Slide 5s dengan navigasi panah di dalam gambar.
+- [x] Perbaikan Timer Auto-Slide (100% pause saat hover, dan instan reset timer saat klik panah/indikator).
 - [x] Verifikasi build Next.js 16 (Turbopack) sukses 100% tanpa error TypeScript/JSX.
 - [ ] Persiapan skema migrasi tabel Supabase (`sensus_kk`, `fasilitas_desa`) jika data akan dipersistensikan ke backend PostgreSQL.
 - [ ] Uji coba lapangan simulasi pendataan sensus oleh Kepala Dusun.
+
 
 
 

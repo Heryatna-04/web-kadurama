@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import {
   FileText,
@@ -1359,20 +1359,63 @@ export default function Home() {
   // Public Dusun Showcase State (Infinite Seamless Carousel)
   const [dusunTrackIndex, setDusunTrackIndex] = useState(1); // 1 = Manis, 2 = Pahing, 3 = Puhun (0 & 4 are clones)
   const [isDusunTransitioning, setIsDusunTransitioning] = useState(true);
-  const [isDusunAutoPlay, setIsDusunAutoPlay] = useState(true);
+  const autoSlideTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const isDusunHoveredRef = useRef(false);
 
   // Active Real Index (0 = Manis, 1 = Pahing, 2 = Puhun)
   const currentDusunRealIndex =
     dusunTrackIndex === 0 ? 2 : dusunTrackIndex === 4 ? 0 : dusunTrackIndex - 1;
 
+  // Function to start or reset the 5-second timer cleanly
+  const resetAutoSlideTimer = useCallback(() => {
+    if (autoSlideTimerRef.current) {
+      clearInterval(autoSlideTimerRef.current);
+      autoSlideTimerRef.current = null;
+    }
+    // If currently hovered, do not set new interval (pause)
+    if (isDusunHoveredRef.current) return;
+
+    autoSlideTimerRef.current = setInterval(() => {
+      if (!isDusunHoveredRef.current) {
+        setIsDusunTransitioning(true);
+        setDusunTrackIndex((prev) => (prev >= 4 ? 4 : prev + 1));
+      }
+    }, 5000);
+  }, []);
+
+  // When hovering starts: PAUSE timer immediately
+  const handleCarouselMouseEnter = () => {
+    isDusunHoveredRef.current = true;
+    if (autoSlideTimerRef.current) {
+      clearInterval(autoSlideTimerRef.current);
+      autoSlideTimerRef.current = null;
+    }
+  };
+
+  // When hovering ends: RESUME timer fresh for full 5 seconds
+  const handleCarouselMouseLeave = () => {
+    isDusunHoveredRef.current = false;
+    resetAutoSlideTimer();
+  };
+
   const handleNextDusun = () => {
+    if (dusunTrackIndex >= 4) return;
     setIsDusunTransitioning(true);
     setDusunTrackIndex((prev) => prev + 1);
+    resetAutoSlideTimer();
   };
 
   const handlePrevDusun = () => {
+    if (dusunTrackIndex <= 0) return;
     setIsDusunTransitioning(true);
     setDusunTrackIndex((prev) => prev - 1);
+    resetAutoSlideTimer();
+  };
+
+  const handleDotClick = (realIdx: number) => {
+    setIsDusunTransitioning(true);
+    setDusunTrackIndex(realIdx + 1);
+    resetAutoSlideTimer();
   };
 
   const handleDusunTransitionEnd = () => {
@@ -1395,15 +1438,32 @@ export default function Home() {
     }
   }, [isDusunTransitioning]);
 
-  // Auto-slide every 5 seconds, paused on hover
+  // Safety fallback: if transitionEnd is delayed or missed by browser
   useEffect(() => {
-    if (!isDusunAutoPlay) return;
-    const interval = setInterval(() => {
-      setIsDusunTransitioning(true);
-      setDusunTrackIndex((prev) => prev + 1);
-    }, 5000);
-    return () => clearInterval(interval);
-  }, [isDusunAutoPlay, dusunTrackIndex]);
+    if (dusunTrackIndex === 4) {
+      const safetyTimer = setTimeout(() => {
+        setIsDusunTransitioning(false);
+        setDusunTrackIndex(1);
+      }, 650);
+      return () => clearTimeout(safetyTimer);
+    } else if (dusunTrackIndex === 0) {
+      const safetyTimer = setTimeout(() => {
+        setIsDusunTransitioning(false);
+        setDusunTrackIndex(3);
+      }, 650);
+      return () => clearTimeout(safetyTimer);
+    }
+  }, [dusunTrackIndex]);
+
+  // Initialize auto-slide timer on mount, clean up on unmount
+  useEffect(() => {
+    resetAutoSlideTimer();
+    return () => {
+      if (autoSlideTimerRef.current) {
+        clearInterval(autoSlideTimerRef.current);
+      }
+    };
+  }, [resetAutoSlideTimer]);
 
   // Public Map & Facility State
   const [activeFacilityId, setActiveFacilityId] = useState<number>(1);
@@ -2563,8 +2623,10 @@ export default function Home() {
 
               {/* FULL-PHOTO CINEMATIC CAROUSEL STAGE (INFINITE FORWARD LOOP & AUTO-SLIDE) */}
               <div
-                onMouseEnter={() => setIsDusunAutoPlay(false)}
-                onMouseLeave={() => setIsDusunAutoPlay(true)}
+                onMouseEnter={handleCarouselMouseEnter}
+                onMouseLeave={handleCarouselMouseLeave}
+                onTouchStart={handleCarouselMouseEnter}
+                onTouchEnd={handleCarouselMouseLeave}
                 className="relative overflow-hidden rounded-3xl shadow-2xl bg-slate-950 border border-slate-800 group"
               >
                 {/* Floating Left Edge Arrow (Di Dalam Gambar) */}
@@ -2959,10 +3021,7 @@ export default function Home() {
                   return (
                     <button
                       key={idx}
-                      onClick={() => {
-                        setIsDusunTransitioning(true);
-                        setDusunTrackIndex(idx + 1);
-                      }}
+                      onClick={() => handleDotClick(idx)}
                       aria-label={`Lihat Dusun ${idx + 1}`}
                       className={`transition-all duration-300 cursor-pointer ${
                         isActive
