@@ -52,10 +52,20 @@ export default function MasterPanelPage() {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   // Form login jika belum terotentikasi
+  const [selectedRoleEmail, setSelectedRoleEmail] = useState("master@kadurama.com");
   const [loginEmail, setLoginEmail] = useState("master@kadurama.com");
   const [loginPassword, setLoginPassword] = useState("kadurama2026");
   const [loginError, setLoginError] = useState("");
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
+
+  const handleSelectRole = (email: string) => {
+    setSelectedRoleEmail(email);
+    setLoginEmail(email);
+    setLoginError("");
+  };
+
+  const selectedAccountInfo =
+    APARATUR_ACCOUNTS.find((a) => a.email === selectedRoleEmail) || APARATUR_ACCOUNTS[0];
 
   // --------------------------------------------------------------------------
   // STATE NAVIGASI TAB UTAMA
@@ -728,6 +738,40 @@ export default function MasterPanelPage() {
               <div className="p-3 bg-red-50 text-red-700 rounded-xl border border-red-200 flex items-center gap-2">
                 <AlertTriangle className="w-4 h-4 flex-shrink-0" />
                 <span>{loginError}</span>
+              </div>
+            )}
+
+            {/* 1. Pilih Akun / Role Pamong dari Database */}
+            <div>
+              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                Pilih Akun / Peran Pamong (Database)
+              </label>
+              <select
+                value={selectedRoleEmail}
+                onChange={(e) => handleSelectRole(e.target.value)}
+                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#009388]"
+              >
+                <option value="master@kadurama.com">Super Admin • Developer & Master Admin (Semua Hak Akses)</option>
+                <option value="sekdes@kadurama.com">Sekretaris Desa • Dadang Kurnia (Verifikasi & Koordinasi)</option>
+                <option value="kadus.manis@kadurama.com">Kepala Dusun I Manis • Ahmad Dahlan</option>
+                <option value="kadus.pahing@kadurama.com">Kepala Dusun II Pahing • Rohmat Hidayat</option>
+                <option value="kadus.wage@kadurama.com">Kepala Dusun III Wage • Agus Setiawan</option>
+                <option value="keuangan@kadurama.com">Kaur Keuangan • Ismail Saleh, S.E (APBDes & Realisasi)</option>
+                <option value="kesra@kadurama.com">Kasi Kesra • Iskandar Zulkarnaen (Desil & Bansos)</option>
+                <option value="operator@kadurama.com">Operator Balai Desa • Staf Pelayanan Warga</option>
+              </select>
+            </div>
+
+            {/* Kartu Profil Akun Terpilih */}
+            {selectedAccountInfo && (
+              <div className="p-3 bg-emerald-50/80 rounded-xl border border-emerald-200/80 flex items-center justify-between text-[11px]">
+                <div>
+                  <div className="font-bold text-[#003733]">{selectedAccountInfo.nama}</div>
+                  <div className="text-slate-600 text-[10px]">{selectedAccountInfo.jabatan}</div>
+                </div>
+                <span className="px-2.5 py-1 rounded-md bg-[#003733] text-emerald-200 font-bold text-[10px] uppercase tracking-wide">
+                  {selectedAccountInfo.dusun !== "all" ? `Dusun ${selectedAccountInfo.dusun}` : "Semua Wilayah"}
+                </span>
               </div>
             )}
 

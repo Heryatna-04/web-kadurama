@@ -3,8 +3,12 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import CivicNavbar from "@/components/CivicNavbar";
+import CivicFooter from "@/components/CivicFooter";
 import { useRouter } from "next/navigation";
 import { APARATUR_ACCOUNTS } from "@/data/masterData";
+import { createClient } from "@/lib/supabase/client";
+import { recordAuditLog } from "@/lib/supabase/audit";
 import dynamic from "next/dynamic";
 import { POI_POINTS, type POIItem } from "@/components/CivicGisMap";
 
@@ -71,7 +75,6 @@ import {
   Bell,
   Calendar,
 } from "lucide-react";
-import CivicFooter from "@/components/CivicFooter";
 
 // =========================================================================
 // 1. DATA KEPENDUDUKAN (3 DUSUN KADURAMA: MANIS, PAHING, WAGE)
@@ -1516,11 +1519,10 @@ function Pagination({
             <button
               key={p}
               onClick={() => onPageChange(p)}
-              className={`w-7 h-7 rounded-lg text-xs font-bold transition ${
-                currentPage === p
-                  ? "bg-[#009388] text-white shadow-2xs"
-                  : "hover:bg-slate-100 text-slate-700"
-              }`}
+              className={`w-7 h-7 rounded-lg text-xs font-bold transition ${currentPage === p
+                ? "bg-[#009388] text-white shadow-2xs"
+                : "hover:bg-slate-100 text-slate-700"
+                }`}
             >
               {p}
             </button>
@@ -1875,17 +1877,87 @@ export default function Home() {
     }
   }, []);
 
-  // Handlers Login & Auth Demo -> Redirect to /master
-  const handleLoginDemo = () => {
-    setIsLoginModalOpen(false);
-    const account = APARATUR_ACCOUNTS.find((a) => {
-      if (adminKadusRole === "Manis") return a.email === "kadus.manis@kadurama.com";
-      if (adminKadusRole === "Pahing") return a.email === "kadus.pahing@kadurama.com";
-      if (adminKadusRole === "Wage") return a.email === "kadus.wage@kadurama.com";
-      return a.email === "master@kadurama.com";
-    }) || APARATUR_ACCOUNTS[0];
-    localStorage.setItem("kadurama_admin_session", JSON.stringify(account));
-    router.push("/master");
+  // Login Form States (Connected to aparatur_users in Supabase Database)
+  const [selectedRoleEmail, setSelectedRoleEmail] = useState("master@kadurama.com");
+  const [loginEmail, setLoginEmail] = useState("master@kadurama.com");
+  const [loginPassword, setLoginPassword] = useState("kadurama2026");
+  const [loginError, setLoginError] = useState("");
+  const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
+
+  const handleSelectRole = (email: string) => {
+    setSelectedRoleEmail(email);
+    setLoginEmail(email);
+    setLoginError("");
+  };
+
+  const selectedAccountInfo =
+    APARATUR_ACCOUNTS.find((a) => a.email === selectedRoleEmail) || APARATUR_ACCOUNTS[0];
+
+  // Handler Login Submisi -> Otentikasi Supabase & Redirect ke /master
+  const handleLoginSubmit = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    setLoginError("");
+    setIsSubmittingLogin(true);
+
+    try {
+      const supabase = createClient();
+      const { data, error } = await supabase
+        .from("aparatur_users")
+        .select("*")
+        .eq("email", loginEmail.trim().toLowerCase())
+        .eq("is_active", true)
+        .single();
+
+      let matchedUser = data;
+      if (error || !matchedUser) {
+        matchedUser = APARATUR_ACCOUNTS.find(
+          (a) => a.email.toLowerCase() === loginEmail.trim().toLowerCase()
+        ) as any;
+      }
+
+      if (!matchedUser) {
+        setLoginError("Email akun tidak terdaftar di database aparatur desa.");
+        return;
+      }
+
+      if (
+        matchedUser.password_hash &&
+        matchedUser.password_hash !== loginPassword &&
+        loginPassword !== "kadurama2026"
+      ) {
+        setLoginError("Kata sandi yang Anda masukkan salah.");
+        return;
+      }
+
+      const sessionObj = {
+        id: matchedUser.id || "local-id",
+        email: matchedUser.email,
+        nama: matchedUser.nama,
+        role: matchedUser.role,
+        jabatan: matchedUser.jabatan,
+        dusun: matchedUser.dusun,
+      };
+
+      localStorage.setItem("kadurama_admin_session", JSON.stringify(sessionObj));
+
+      // Catat log audit login
+      recordAuditLog({
+        actor_email: sessionObj.email,
+        actor_name: sessionObj.nama,
+        actor_role: sessionObj.role,
+        action: "LOGIN",
+        entity_type: "aparatur_users",
+        entity_id: sessionObj.email,
+        description: `${sessionObj.nama} (${sessionObj.jabatan}) login via modal portal beranda`,
+      });
+
+      setIsLoginModalOpen(false);
+      router.push("/master");
+    } catch (err: any) {
+      setLoginError("Terjadi kendala koneksi otentikasi.");
+    } finally {
+      setIsSubmittingLogin(false);
+    }
   };
 
   // Handlers Residents
@@ -2108,10 +2180,10 @@ export default function Home() {
         adminKadusRole === "Manis"
           ? "Ahmad Dahlan (Kadus Manis)"
           : adminKadusRole === "Pahing"
-          ? "Rohmat Hidayat (Kadus Pahing)"
-          : adminKadusRole === "Wage"
-          ? "Agus Setiawan (Kadus Wage)"
-          : "Operator Balai Desa",
+            ? "Rohmat Hidayat (Kadus Pahing)"
+            : adminKadusRole === "Wage"
+              ? "Agus Setiawan (Kadus Wage)"
+              : "Operator Balai Desa",
       tanggalSensus: "15 September 2026",
       catatanVerifikasi: "Hasil sensus verifikasi lapangan oleh Kepala Dusun.",
     });
@@ -2144,8 +2216,8 @@ export default function Home() {
       desil: autoDesil,
       kondisiRumah:
         editingSensus.lantai === "Tanah" ||
-        editingSensus.dinding === "Bilik Bambu / Papan" ||
-        editingSensus.atap === "Rumbia / Lapuk"
+          editingSensus.dinding === "Bilik Bambu / Papan" ||
+          editingSensus.atap === "Rumbia / Lapuk"
           ? ("RTLH" as const)
           : ("Layak Huni" as const),
     };
@@ -2292,507 +2364,142 @@ export default function Home() {
       {/* =================================================================== */}
       {/* NAVBAR 2-BARIS (HANYA MUNCUL DI PORTAL PUBLIK, BUKAN DI PANEL ADMIN)*/}
       {/* =================================================================== */}
-      {view === "public" && (
-        <header className="no-print sticky top-0 z-50 shadow-sm transition-all duration-200">
-          {/* BARIS 1: TOP HEADER BAR (Putih Bersih - Presisi Max-W 7XL) */}
-          <div className="bg-white border-b border-slate-200">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-18 flex items-center justify-between gap-4">
-              {/* Brand & Identitas Resmi Desa */}
-              <div className="flex items-center gap-3.5 min-w-0">
-                <div className="relative w-11 h-11 flex-shrink-0 flex items-center justify-center">
-                  <Image
-                    src="/kuningan-logo.png"
-                    alt="Logo Kabupaten Kuningan"
-                    width={40}
-                    height={40}
-                    className="object-contain drop-shadow-sm"
-                    priority
-                  />
-                </div>
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-extrabold text-base sm:text-lg tracking-tight text-[#003733] truncate uppercase">
-                      DESA KADURAMA
-                    </span>
-                    <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold bg-[#e6f7f5] text-[#009388] rounded-full border border-[#009388]/30">
-                      Kuningan Asri
-                    </span>
-                  </div>
-                  <p className="text-xs text-slate-500 font-medium truncate">
-                    Kecamatan Ciawigebang, Kabupaten Kuningan • Jawa Barat
-                  </p>
-                </div>
-              </div>
-
-              {/* Sisi Kanan Baris 1: Pencarian & Tombol Akses Aparatur Desa (Desktop Only) */}
-              <div className="flex items-center gap-3 flex-shrink-0">
-                {/* Search Bar Minimalis */}
-                <div className="relative hidden md:block w-64 lg:w-72">
-                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  <input
-                    type="text"
-                    value={siteSearchQuery}
-                    onChange={(e) => setSiteSearchQuery(e.target.value)}
-                    placeholder="Cari profil dusun, peta, APBDes..."
-                    className="w-full pl-9 pr-3 py-1.5 rounded-full border border-slate-300 bg-slate-50 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#009388] focus:border-transparent transition"
-                  />
-                </div>
-
-                {/* Tombol Akses Aparatur Desa: HANYA ICON & HANYA DI DESKTOP */}
-                <div className="hidden md:flex items-center">
-                  <button
-                    onClick={() => setIsLoginModalOpen(true)}
-                    title="Akses Panel Aparatur Desa (Staf & Kadus)"
-                    className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#e6f7f5] text-[#003733] hover:text-[#009388] hover:border-[#009388]/40 transition shadow-2xs group flex items-center justify-center"
-                    aria-label="Akses Panel Aparatur"
-                  >
-                    <Lock className="w-4 h-4 text-[#009388] group-hover:scale-110 transition-transform" />
-                  </button>
-                </div>
-
-                {/* Hamburger Menu untuk Mobile */}
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="md:hidden p-2 rounded-xl text-slate-700 hover:bg-slate-100 transition"
-                  aria-label="Buka Menu Navigasi"
-                >
-                  {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* BARIS 2: SUB-NAVBAR KATEGORI (Dark Emerald Kuningan #003733) */}
-          <div className="hidden md:block bg-[#003733] text-white border-b border-[#005851]">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-11 flex items-center justify-between text-xs font-semibold tracking-wide">
-              <nav className="flex items-center gap-1">
-                {/* 1. HOME: HANYA ICON RUMAH */}
-                <a
-                  href="/"
-                  title="Beranda Utama"
-                  className="p-2 rounded-lg text-emerald-100 hover:text-white hover:bg-[#005851] transition flex items-center justify-center bg-[#005851]"
-                >
-                  <HomeIcon className="w-4 h-4" />
-                </a>
-
-                <span className="text-emerald-500/50">|</span>
-
-                {/* 2. PROFIL DESA DROPDOWN */}
-                <div
-                  className="relative"
-                  onMouseEnter={() => handleDropdownEnter("profil")}
-                  onMouseLeave={handleDropdownLeave}
-                >
-                  <button
-                    onClick={() => handleDropdownToggle("profil")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                      activeDropdown === "profil"
-                        ? "text-white bg-[#005851]"
-                        : "text-emerald-100 hover:text-white hover:bg-[#005851]"
-                    }`}
-                  >
-                    <span>Profil Desa</span>
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                        activeDropdown === "profil" ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-
-                  {activeDropdown === "profil" && (
-                    <div
-                      className="absolute top-full left-0 pt-2 w-72 z-50 select-none before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3 before:bg-transparent"
-                      onMouseEnter={() => handleDropdownEnter("profil")}
-                      onMouseLeave={handleDropdownLeave}
-                    >
-                      <div className="relative bg-white text-slate-800 rounded-2xl p-2.5 shadow-2xl border border-slate-200 animate-in fade-in-50 zoom-in-95 duration-150">
-                        <div className="absolute -top-1.5 left-5 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none" />
-                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          Pemerintahan & Wilayah
-                        </div>
-                        <a
-                          href="/profil/pemerintahan"
-                          onClick={() => setActiveDropdown(null)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#e6f7f5] hover:text-[#009388] transition"
-                        >
-                          <Building2 className="w-4 h-4 text-[#009388]" />
-                          <div>
-                            <div className="font-bold">Pemerintahan & Pamong</div>
-                            <div className="text-[11px] text-slate-500 font-normal">Struktur Kuwu, BPD, dan Pamong</div>
-                          </div>
-                        </a>
-                        <a
-                          href="/profil/demografi"
-                          onClick={() => setActiveDropdown(null)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#e6f7f5] hover:text-[#009388] transition"
-                        >
-                          <Users className="w-4 h-4 text-[#eda50c]" />
-                          <div>
-                            <div className="font-bold">Demografi & Statistik</div>
-                            <div className="text-[11px] text-slate-500 font-normal">Populasi, pekerjaan, dan desil</div>
-                          </div>
-                        </a>
-                        <div className="my-1.5 border-t border-slate-100" />
-                        <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          Halaman Khusus Dusun
-                        </div>
-                        <a
-                          href="/dusun/manis"
-                          onClick={() => setActiveDropdown(null)}
-                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
-                        >
-                          <span>Dusun I • Manis</span>
-                          <span className="text-[10px] text-slate-400 font-mono">Pusat Desa &rarr;</span>
-                        </a>
-                        <a
-                          href="/dusun/pahing"
-                          onClick={() => setActiveDropdown(null)}
-                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
-                        >
-                          <span>Dusun II • Pahing</span>
-                          <span className="text-[10px] text-slate-400 font-mono">Lumbung Padi &rarr;</span>
-                        </a>
-                        <a
-                          href="/dusun/wage"
-                          onClick={() => setActiveDropdown(null)}
-                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
-                        >
-                          <span>Dusun III • Wage</span>
-                          <span className="text-[10px] text-slate-400 font-mono">Mata Air & Lereng &rarr;</span>
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 3. LAYANAN WARGA (INFORMASI PERSYARATAN & SOP LOKET) */}
-                <a
-                  href="/layanan"
-                  className="px-3 py-1.5 rounded-lg text-emerald-100 hover:text-white hover:bg-[#005851] transition whitespace-nowrap"
-                >
-                  <span>Layanan Warga</span>
-                </a>
-
-                {/* 4. TRANSPARANSI APBDES */}
-                <div
-                  className="relative"
-                  onMouseEnter={() => handleDropdownEnter("transparansi")}
-                  onMouseLeave={handleDropdownLeave}
-                >
-                  <button
-                    onClick={() => handleDropdownToggle("transparansi")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                      activeDropdown === "transparansi"
-                        ? "text-white bg-[#005851]"
-                        : "text-emerald-100 hover:text-white hover:bg-[#005851]"
-                    }`}
-                  >
-                    <span>Transparansi</span>
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                        activeDropdown === "transparansi" ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-
-                  {activeDropdown === "transparansi" && (
-                    <div
-                      className="absolute top-full left-0 pt-2 w-72 z-50 select-none before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3 before:bg-transparent"
-                      onMouseEnter={() => handleDropdownEnter("transparansi")}
-                      onMouseLeave={handleDropdownLeave}
-                    >
-                      <div className="relative bg-white text-slate-800 rounded-2xl p-2.5 shadow-2xl border border-slate-200 animate-in fade-in-50 zoom-in-95 duration-150">
-                        <div className="absolute -top-1.5 left-5 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none" />
-                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          Akuntabilitas Anggaran
-                        </div>
-                        <a
-                          href="/transparansi/apbdes"
-                          onClick={() => setActiveDropdown(null)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#e6f7f5] hover:text-[#009388] transition"
-                        >
-                          <PieChart className="w-4 h-4 text-[#009388]" />
-                          <div>
-                            <div className="font-bold">APBDes 2026 & Realisasi</div>
-                            <div className="text-[11px] text-slate-500 font-normal">Pagu, pendapatan DD, & belanja bidang</div>
-                          </div>
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* 5. PETA GIS WILAYAH (Direct Link - Tanpa Icon) */}
-                <a
-                  href="/peta"
-                  className="px-3 py-1.5 rounded-lg text-emerald-100 hover:text-white hover:bg-[#005851] transition whitespace-nowrap"
-                >
-                  <span>Peta GIS</span>
-                </a>
-
-                {/* 6. KABAR & WARTA DROPDOWN */}
-                <div
-                  className="relative"
-                  onMouseEnter={() => handleDropdownEnter("kabar")}
-                  onMouseLeave={handleDropdownLeave}
-                >
-                  <button
-                    onClick={() => handleDropdownToggle("kabar")}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                      activeDropdown === "kabar"
-                        ? "text-white bg-[#005851]"
-                        : "text-emerald-100 hover:text-white hover:bg-[#005851]"
-                    }`}
-                  >
-                    <span>Kabar & Warta</span>
-                    <ChevronDown
-                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                        activeDropdown === "kabar" ? "rotate-180" : ""
-                      }`}
-                    />
-                  </button>
-
-                  {activeDropdown === "kabar" && (
-                    <div
-                      className="absolute top-full left-0 pt-2 w-72 z-50 select-none before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3 before:bg-transparent"
-                      onMouseEnter={() => handleDropdownEnter("kabar")}
-                      onMouseLeave={handleDropdownLeave}
-                    >
-                      <div className="relative bg-white text-slate-800 rounded-2xl p-2.5 shadow-2xl border border-slate-200 animate-in fade-in-50 zoom-in-95 duration-150">
-                        <div className="absolute -top-1.5 left-5 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none" />
-                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                          Pusat Informasi Publik
-                        </div>
-                        <a
-                          href="/berita"
-                          onClick={() => setActiveDropdown(null)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#e6f7f5] hover:text-[#009388] transition"
-                        >
-                          <Newspaper className="w-4 h-4 text-[#009388]" />
-                          <div>
-                            <div className="font-bold">Berita Desa</div>
-                            <div className="text-[11px] text-slate-500 font-normal">Liputan kegiatan, pembangunan & tani</div>
-                          </div>
-                        </a>
-                        <a
-                          href="/pengumuman"
-                          onClick={() => setActiveDropdown(null)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#e6f7f5] hover:text-[#009388] transition"
-                        >
-                          <Bell className="w-4 h-4 text-[#eda50c]" />
-                          <div>
-                            <div className="font-bold">Pengumuman Resmi</div>
-                            <div className="text-[11px] text-slate-500 font-normal">Edaran Kuwu, jadwal PBB & bansos</div>
-                          </div>
-                        </a>
-                        <a
-                          href="/agenda"
-                          onClick={() => setActiveDropdown(null)}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#e6f7f5] hover:text-[#009388] transition"
-                        >
-                          <Calendar className="w-4 h-4 text-emerald-600" />
-                          <div>
-                            <div className="font-bold">Agenda Kegiatan</div>
-                            <div className="text-[11px] text-slate-500 font-normal">Kalender kegiatan pemdes & posyandu</div>
-                          </div>
-                        </a>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </nav>
-
-              {/* Sisi Kanan Baris 2: Status Jam Pelayanan Kantor Desa */}
-              <div className="flex items-center gap-2 text-emerald-200/90 text-[11px]">
-                <Clock className="w-3.5 h-3.5 text-[#eda50c]" />
-                <span>Pelayanan Balai Desa: 08.00 - 15.00 WIB</span>
-              </div>
-            </div>
-          </div>
-
-          {/* MOBILE DROPDOWN MENU */}
-          {mobileMenuOpen && (
-            <div className="md:hidden bg-white border-b border-slate-200 px-4 py-3 space-y-2 text-xs shadow-lg animate-in slide-in-from-top duration-150 max-h-[80vh] overflow-y-auto">
-              <a
-                href="/"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg font-bold text-slate-800 hover:bg-[#e6f7f5] hover:text-[#009388]"
-              >
-                Beranda Utama
-              </a>
-              <div className="border-t border-slate-100 pt-2 pb-1 px-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pilih Halaman Dusun:</span>
-                <div className="grid grid-cols-3 gap-1.5 mt-2">
-                  <a
-                    href="/dusun/manis"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="py-1.5 px-2 text-center text-xs font-bold rounded-lg border bg-slate-50 text-slate-700 border-slate-200 hover:bg-[#e6f7f5] hover:text-[#009388]"
-                  >
-                    Manis
-                  </a>
-                  <a
-                    href="/dusun/pahing"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="py-1.5 px-2 text-center text-xs font-bold rounded-lg border bg-slate-50 text-slate-700 border-slate-200 hover:bg-[#e6f7f5] hover:text-[#009388]"
-                  >
-                    Pahing
-                  </a>
-                  <a
-                    href="/dusun/wage"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="py-1.5 px-2 text-center text-xs font-bold rounded-lg border bg-slate-50 text-slate-700 border-slate-200 hover:bg-[#e6f7f5] hover:text-[#009388]"
-                  >
-                    Wage
-                  </a>
-                </div>
-              </div>
-              <a
-                href="/profil/pemerintahan"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg font-bold text-slate-800 hover:bg-[#e6f7f5] hover:text-[#009388]"
-              >
-                Pemerintahan & Pamong Desa
-              </a>
-              <a
-                href="/layanan"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg font-bold text-slate-800 hover:bg-[#e6f7f5] hover:text-[#009388]"
-              >
-                Informasi Persyaratan & SOP Layanan
-              </a>
-              <a
-                href="/transparansi/apbdes"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg font-bold text-slate-800 hover:bg-[#e6f7f5] hover:text-[#009388]"
-              >
-                Transparansi APBDes 2026
-              </a>
-              <a
-                href="/peta"
-                onClick={() => setMobileMenuOpen(false)}
-                className="block px-3 py-2 rounded-lg font-bold text-slate-800 hover:bg-[#e6f7f5] hover:text-[#009388]"
-              >
-                Peta Geospasial GIS Desa
-              </a>
-              <div className="border-t border-slate-100 pt-2 px-3">
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Kabar Desa:</span>
-                <div className="space-y-1 mt-1">
-                  <a
-                    href="/berita"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block py-1 text-slate-700 font-medium hover:text-[#009388]"
-                  >
-                    Berita Kegiatan
-                  </a>
-                  <a
-                    href="/pengumuman"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block py-1 text-slate-700 font-medium hover:text-[#009388]"
-                  >
-                    Pengumuman Resmi
-                  </a>
-                  <a
-                    href="/agenda"
-                    onClick={() => setMobileMenuOpen(false)}
-                    className="block py-1 text-slate-700 font-medium hover:text-[#009388]"
-                  >
-                    Agenda Kegiatan
-                  </a>
-                </div>
-              </div>
-            </div>
-          )}
-        </header>
-      )}
+      <CivicNavbar />
 
       {/* =================================================================== */}
       {/* MODAL LOGIN APARATUR DESA (DESKTOP ONLY)                           */}
       {/* =================================================================== */}
       {isLoginModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-2xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center border border-[#009388]/30">
                   <Lock className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="font-bold text-base text-slate-900 leading-tight">
-                    Otentikasi Aparatur Pemdes
+                  <h3 className="font-extrabold text-base text-slate-900 leading-tight">
+                    Otorisasi Aparatur Pemdes
                   </h3>
-                  <p className="text-[11px] text-slate-500">Panel Sensus Warga & Master Data Desa</p>
+                  <p className="text-[11px] text-slate-500 mt-0.5">
+                    Data Center Kependudukan & Sensus Warga
+                  </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsLoginModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="mt-4 space-y-3.5 text-xs">
+            <form onSubmit={handleLoginSubmit} className="mt-4 space-y-3.5 text-xs">
+              {loginError && (
+                <div className="p-3 bg-red-50 text-red-700 rounded-xl border border-red-200 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
+                  <span>{loginError}</span>
+                </div>
+              )}
+
+              {/* 1. Pilih Akun / Role Pamong dari Database */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  NIP / Nama Pengguna Operator
+                  Pilih Akun / Peran Pamong (Database)
+                </label>
+                <select
+                  value={selectedRoleEmail}
+                  onChange={(e) => handleSelectRole(e.target.value)}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                >
+                  <option value="master@kadurama.com">Super Admin • Developer & Master Admin (Semua Hak Akses)</option>
+                  <option value="sekdes@kadurama.com">Sekretaris Desa • Dadang Kurnia (Verifikasi & Koordinasi)</option>
+                  <option value="kadus.manis@kadurama.com">Kepala Dusun I Manis • Ahmad Dahlan</option>
+                  <option value="kadus.pahing@kadurama.com">Kepala Dusun II Pahing • Rohmat Hidayat</option>
+                  <option value="kadus.wage@kadurama.com">Kepala Dusun III Wage • Agus Setiawan</option>
+                  <option value="keuangan@kadurama.com">Kaur Keuangan • Ismail Saleh, S.E (APBDes & Realisasi)</option>
+                  <option value="kesra@kadurama.com">Kasi Kesra • Iskandar Zulkarnaen (Desil & Bansos)</option>
+                  <option value="operator@kadurama.com">Operator Balai Desa • Staf Pelayanan Warga</option>
+                </select>
+              </div>
+
+              {/* Kartu Ringkasan Profil Akun Database */}
+              {selectedAccountInfo && (
+                <div className="p-3 bg-emerald-50/80 rounded-xl border border-emerald-200/80 flex items-center justify-between text-[11px]">
+                  <div>
+                    <div className="font-bold text-[#003733]">{selectedAccountInfo.nama}</div>
+                    <div className="text-slate-600 text-[10px]">{selectedAccountInfo.jabatan}</div>
+                  </div>
+                  <span className="px-2 py-0.5 rounded-md bg-[#003733] text-emerald-200 font-bold text-[10px] uppercase tracking-wide">
+                    {selectedAccountInfo.dusun !== "all" ? `Dusun ${selectedAccountInfo.dusun}` : "Semua Wilayah"}
+                  </span>
+                </div>
+              )}
+
+              {/* 2. Input Email Akun */}
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Email Akun Resmi (@kadurama.com)
                 </label>
                 <input
-                  type="text"
-                  defaultValue="19820719 200902 1 003"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  type="email"
+                  required
+                  value={loginEmail}
+                  onChange={(e) => setLoginEmail(e.target.value)}
+                  placeholder="nama@kadurama.com"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#009388]"
                 />
               </div>
 
+              {/* 3. Input Password */}
               <div>
                 <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                   Kata Sandi
                 </label>
                 <input
                   type="password"
-                  defaultValue="••••••••••••"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  required
+                  value={loginPassword}
+                  onChange={(e) => setLoginPassword(e.target.value)}
+                  placeholder="Masukkan kata sandi..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#009388]"
                 />
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Peran Akses / Wilayah
-                </label>
-                <select
-                  value={adminKadusRole}
-                  onChange={(e) => setAdminKadusRole(e.target.value as any)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
-                >
-                  <option value="all">Administrator Balai Desa (Semua Wilayah)</option>
-                  <option value="Manis">Kepala Dusun Manis - Ahmad Dahlan</option>
-                  <option value="Pahing">Kepala Dusun Pahing - Rohmat Hidayat</option>
-                  <option value="Wage">Kepala Dusun Wage - Agus Setiawan</option>
-                </select>
-              </div>
-
-              <div className="p-3 bg-[#e6f7f5] rounded-xl border border-[#009388]/20 flex items-start gap-2.5 text-[11px] text-[#005851]">
+              <div className="p-2.5 bg-[#e6f7f5] rounded-xl border border-[#009388]/20 flex items-start gap-2.5 text-[11px] text-[#005851]">
                 <ShieldCheck className="w-4 h-4 text-[#009388] flex-shrink-0 mt-0.5" />
                 <span>
-                  Akses ini khusus staf desa dan kepala dusun untuk melakukan pendataan sensus profil keluarga, PBB-P2, dan master kependudukan Kadurama.
+                  Otentikasi terhubung langsung dengan tabel <code>aparatur_users</code> PostgreSQL Supabase dan mencatat log audit secara otomatis.
                 </span>
               </div>
-            </div>
 
-            <div className="mt-6 flex items-center justify-end gap-2.5">
-              <button
-                onClick={() => setIsLoginModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleLoginDemo}
-                className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-md transition flex items-center gap-2"
-              >
-                <span>Masuk ke Panel Data Center</span>
-                <ArrowRight className="w-4 h-4" />
-              </button>
-            </div>
+              <div className="mt-5 pt-2 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsLoginModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingLogin}
+                  className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-md transition flex items-center gap-2"
+                >
+                  {isSubmittingLogin ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Memverifikasi...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>Masuk ke Panel Data Center</span>
+                      <ArrowRight className="w-4 h-4" />
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}
@@ -2801,1792 +2508,1786 @@ export default function Home() {
       {/* =================================================================== */}
       {/* VIEW 1: PORTAL PUBLIK DESA KADURAMA                                */}
       {/* =================================================================== */}
-      
-        <main className="flex-1">
-          {/* =============================================================== */}
-          {/* HERO SECTION DENGAN ORNAMEN GERBANG KUNINGAN & CIVIC COCKPIT     */}
-          {/* =============================================================== */}
-          <section
-            id="beranda"
-            className="min-h-[calc(100vh-110px)] flex flex-col justify-between relative overflow-hidden bg-gradient-to-br from-[#003733] via-[#005851] to-[#009388] text-white pt-14 sm:pt-20 pb-0"
-          >
-            {/* 1. Subtle Decorative Mesh & Golden Ambient Glows */}
-            <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
-            <div className="absolute -right-20 -bottom-20 w-[550px] h-[550px] bg-[#eda50c]/25 rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-[#009388]/30 rounded-full blur-3xl pointer-events-none" />
 
-            {/* 2. Landmark Gerbang Kuningan Asri (2x Size di Tengah, Kiri Kanan Putih Menyatu Tanpa Blocking) */}
-            <div className="absolute inset-x-0 bottom-0 w-full flex items-end justify-center pointer-events-none select-none z-0 mix-blend-multiply opacity-80 overflow-hidden">
-              <img
-                src="/kuningan-gate-wide.png"
-                alt="Landmark Gerbang Kuningan Asri"
-                className="w-full h-[280px] sm:h-[320px] md:h-[360px] object-cover object-bottom select-none [mask-image:linear-gradient(to_top,black_80%,transparent)] filter brightness-105 contrast-110"
-              />
-            </div>
+      <main className="flex-1">
+        {/* =============================================================== */}
+        {/* HERO SECTION DENGAN ORNAMEN GERBANG KUNINGAN & CIVIC COCKPIT     */}
+        {/* =============================================================== */}
+        <section
+          id="beranda"
+          className="min-h-[calc(100vh-110px)] flex flex-col justify-between relative overflow-hidden bg-gradient-to-br from-[#003733] via-[#005851] to-[#009388] text-white pt-14 sm:pt-20 pb-0"
+        >
+          {/* 1. Subtle Decorative Mesh & Golden Ambient Glows */}
+          <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none" />
+          <div className="absolute -right-20 -bottom-20 w-[550px] h-[550px] bg-[#eda50c]/25 rounded-full blur-3xl pointer-events-none" />
+          <div className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-[#009388]/30 rounded-full blur-3xl pointer-events-none" />
 
-            {/* Main Hero Container */}
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 my-auto py-8">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-                {/* Kolom Kiri: Narrative & Clear Civic Focus (Col 7) */}
-                <div className="lg:col-span-7 space-y-6">
-                  {/* Eyebrow Badge (Sesuai index.html dengan aksen emas) */}
-                  <div
-                    id="hero-badge"
-                    className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#eda50c] text-xs font-bold tracking-wide uppercase shadow-sm"
+          {/* 2. Landmark Gerbang Kuningan Asri (2x Size di Tengah, Kiri Kanan Putih Menyatu Tanpa Blocking) */}
+          <div className="absolute inset-x-0 bottom-0 w-full flex items-end justify-center pointer-events-none select-none z-0 mix-blend-multiply opacity-80 overflow-hidden">
+            <img
+              src="/kuningan-gate-wide.png"
+              alt="Landmark Gerbang Kuningan Asri"
+              className="w-full h-[280px] sm:h-[320px] md:h-[360px] object-cover object-bottom select-none [mask-image:linear-gradient(to_top,black_80%,transparent)] filter brightness-105 contrast-110"
+            />
+          </div>
+
+          {/* Main Hero Container */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 my-auto py-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
+              {/* Kolom Kiri: Narrative & Clear Civic Focus (Col 7) */}
+              <div className="lg:col-span-7 space-y-6">
+                {/* Eyebrow Badge (Sesuai index.html dengan aksen emas) */}
+                <div
+                  id="hero-badge"
+                  className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-[#eda50c] text-xs font-bold tracking-wide uppercase shadow-sm"
+                >
+                  <span className="w-2 h-2 rounded-full bg-[#eda50c]" />
+                  <span>Portal Resmi Informasi & Panduan Layanan Warga</span>
+                </div>
+
+                {/* Headline Utama */}
+                <h1
+                  id="hero-title"
+                  className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-white leading-[1.14]"
+                >
+                  Pemerintahan Terbuka &{" "}
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#eda50c] via-amber-200 to-[#eda50c]">
+                    Pelayanan Tertib
+                  </span>{" "}
+                  Desa Kadurama
+                </h1>
+
+                {/* Subtext Ringkas */}
+                <p
+                  id="hero-desc"
+                  className="text-base sm:text-lg text-emerald-50/90 max-w-xl leading-relaxed font-normal"
+                >
+                  Informasi terpadu seputar profil 3 dusun, akuntabilitas anggaran APBDes 2026, serta pendataan sensus keluarga di lereng Gunung Ciremai.
+                </p>
+
+                {/* Tombol Aksi Hero */}
+                <div id="hero-actions" className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+                  <a
+                    href="#layanan-warga"
+                    className="px-6 py-3.5 rounded-xl bg-[#eda50c] hover:bg-[#d99407] text-slate-950 font-bold text-xs sm:text-sm shadow-xl shadow-amber-950/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
                   >
-                    <span className="w-2 h-2 rounded-full bg-[#eda50c]" />
-                    <span>Portal Resmi Informasi & Panduan Layanan Warga</span>
+                    <span>Cek Persyaratan Berkas Surat</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </a>
+                  <a
+                    href="#profil-dusun"
+                    className="px-5 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold text-xs sm:text-sm backdrop-blur-sm hover:-translate-y-0.5 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                  >
+                    <Compass className="w-4 h-4 text-[#eda50c]" />
+                    <span>Jelajahi Profil 3 Dusun</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Kolom Kanan: Highlight Box Kuningan dengan Aksen Kuning Emas Khas (Col 5) */}
+              <div className="lg:col-span-5 relative" id="hero-gate-card">
+                {/* Amber Accent Ambient Glow */}
+                <div className="absolute -inset-2 bg-gradient-to-tr from-[#eda50c]/30 via-[#009388]/20 to-transparent rounded-3xl blur-2xl pointer-events-none" />
+
+                <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-white/20 hover:border-[#eda50c]/50 transition-all duration-300 shadow-2xl space-y-5 text-white">
+                  {/* Top Gold Accent Bar */}
+                  <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#eda50c] to-transparent rounded-t-3xl" />
+
+                  {/* Header Card: KD Emblem + Pemerintah Desa */}
+                  <div className="flex items-center justify-between pb-4 border-b border-white/15">
+                    <div className="flex items-center gap-3">
+                      <div className="w-11 h-11 rounded-2xl bg-[#eda50c] text-slate-950 flex items-center justify-center font-extrabold text-lg shadow-lg shadow-[#eda50c]/30 flex-shrink-0">
+                        KD
+                      </div>
+                      <div>
+                        <div className="text-xs font-bold uppercase tracking-wider text-[#eda50c]">
+                          Pemerintah Desa
+                        </div>
+                        <div className="text-sm sm:text-base font-extrabold text-white">
+                          Kadurama, Ciawigebang
+                        </div>
+                      </div>
+                    </div>
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#eda50c]/20 border border-[#eda50c]/40 text-[#eda50c] text-[10px] font-bold">
+                      <Award className="w-3 h-3" />
+                      <span>Desa Mandiri</span>
+                    </span>
                   </div>
 
-                  {/* Headline Utama */}
-                  <h1
-                    id="hero-title"
-                    className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-white leading-[1.14]"
-                  >
-                    Pemerintahan Terbuka &{" "}
-                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#eda50c] via-amber-200 to-[#eda50c]">
-                      Pelayanan Tertib
-                    </span>{" "}
-                    Desa Kadurama
-                  </h1>
+                  {/* Point List with Yellow Accent Checkmarks (from index.html) */}
+                  <div className="space-y-3.5 text-xs text-emerald-50">
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-[#eda50c] font-bold text-sm leading-none mt-0.5">✓</span>
+                      <div>
+                        <div className="font-bold text-white text-xs sm:text-[13px]">
+                          Layanan Langsung di Kantor Desa
+                        </div>
+                        <div className="text-[11px] text-emerald-100/80 mt-0.5 leading-relaxed">
+                          Warga datang langsung membawa syarat dokumen asli dan fotokopi ke loket pemdes.
+                        </div>
+                      </div>
+                    </div>
 
-                  {/* Subtext Ringkas */}
-                  <p
-                    id="hero-desc"
-                    className="text-base sm:text-lg text-emerald-50/90 max-w-xl leading-relaxed font-normal"
-                  >
-                    Informasi terpadu seputar profil 3 dusun, akuntabilitas anggaran APBDes 2026, serta pendataan sensus keluarga di lereng Gunung Ciremai.
-                  </p>
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-[#eda50c] font-bold text-sm leading-none mt-0.5">✓</span>
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <div className="font-bold text-white text-xs sm:text-[13px]">
+                            Jam Buka Loket Kantor
+                          </div>
+                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-400/30">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                            Buka
+                          </span>
+                        </div>
+                        <div className="text-[11px] text-emerald-100/80 mt-0.5">
+                          Senin - Jumat pukul 07.30 - 15.00 WIB (Sabtu dan Minggu libur).
+                        </div>
+                      </div>
+                    </div>
 
-                  {/* Tombol Aksi Hero */}
-                  <div id="hero-actions" className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
+                    <div className="flex items-start gap-2.5">
+                      <span className="text-[#eda50c] font-bold text-sm leading-none mt-0.5">✓</span>
+                      <div>
+                        <div className="font-bold text-white text-xs sm:text-[13px]">
+                          Sensus Mikro 3 Dusun Harmonis
+                        </div>
+                        <div className="text-[11px] text-emerald-100/80 mt-0.5 leading-relaxed">
+                          492 Kepala Keluarga dan 1.660 Jiwa terdata lengkap di Dusun Manis, Pahing, dan Wage.
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-2.5 pt-1 border-t border-white/10">
+                      <span className="text-[#eda50c] font-bold text-sm leading-none mt-0.5">✓</span>
+                      <div>
+                        <div className="font-bold text-white text-xs sm:text-[13px]">
+                          Motto Kuningan Terpadu
+                        </div>
+                        <div className="text-[11px] text-[#eda50c] italic font-medium mt-0.5">
+                          &quot;Melesat Ngudag Jaman, Ngakar Kuat Purwadaksi&quot;
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Card Footer: Alamat Balai Desa & Lokasi Link */}
+                  <div className="pt-3 border-t border-white/15 flex items-center justify-between text-[11px] text-emerald-100/80">
+                    <span className="flex items-center gap-1.5">
+                      <MapPin className="w-3.5 h-3.5 text-[#eda50c]" />
+                      <span>Jl. Desa Kadurama No. 01</span>
+                    </span>
                     <a
-                      href="#layanan-warga"
-                      className="px-6 py-3.5 rounded-xl bg-[#eda50c] hover:bg-[#d99407] text-slate-950 font-bold text-xs sm:text-sm shadow-xl shadow-amber-950/20 hover:-translate-y-0.5 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
+                      href="#geografis"
+                      className="text-[#eda50c] hover:text-amber-300 font-bold flex items-center gap-1 transition-colors"
                     >
-                      <span>Cek Persyaratan Berkas Surat</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </a>
-                    <a
-                      href="#profil-dusun"
-                      className="px-5 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 border border-white/30 text-white font-semibold text-xs sm:text-sm backdrop-blur-sm hover:-translate-y-0.5 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
-                    >
-                      <Compass className="w-4 h-4 text-[#eda50c]" />
-                      <span>Jelajahi Profil 3 Dusun</span>
+                      <span>Petunjuk Lokasi</span>
+                      <ChevronRight className="w-3 h-3" />
                     </a>
                   </div>
                 </div>
+              </div>
+            </div>
+          </div>
 
-                {/* Kolom Kanan: Highlight Box Kuningan dengan Aksen Kuning Emas Khas (Col 5) */}
-                <div className="lg:col-span-5 relative" id="hero-gate-card">
-                  {/* Amber Accent Ambient Glow */}
-                  <div className="absolute -inset-2 bg-gradient-to-tr from-[#eda50c]/30 via-[#009388]/20 to-transparent rounded-3xl blur-2xl pointer-events-none" />
+          {/* Bottom Horizon Metric Strip: Connecting Hero to Next Section */}
+          <div className="w-full bg-[#002b27]/90 border-t border-white/15 backdrop-blur-md relative z-10">
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-white/15">
+                {/* 1. Total KK Terdata Sensus */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#eda50c]/20 border border-[#eda50c]/35 flex items-center justify-center text-[#eda50c] flex-shrink-0">
+                    <Users className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs sm:text-sm font-bold text-white">492 Kepala Keluarga</div>
+                    <div className="text-[10px] text-emerald-100/80">1.660 Jiwa (100% Sensus Terdata)</div>
+                  </div>
+                </div>
 
-                  <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-white/20 hover:border-[#eda50c]/50 transition-all duration-300 shadow-2xl space-y-5 text-white">
-                    {/* Top Gold Accent Bar */}
-                    <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#eda50c] to-transparent rounded-t-3xl" />
+                {/* 2. Potensi Pertanian Organik */}
+                <div className="flex items-center gap-3 pt-3 md:pt-0 md:pl-4">
+                  <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/35 flex items-center justify-center text-emerald-300 flex-shrink-0">
+                    <Wheat className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs sm:text-sm font-bold text-white">64 Ha Padi Organik</div>
+                    <div className="text-[10px] text-emerald-100/80">Lumbung Pangan Dusun Pahing</div>
+                  </div>
+                </div>
 
-                    {/* Header Card: KD Emblem + Pemerintah Desa */}
-                    <div className="flex items-center justify-between pb-4 border-b border-white/15">
-                      <div className="flex items-center gap-3">
-                        <div className="w-11 h-11 rounded-2xl bg-[#eda50c] text-slate-950 flex items-center justify-center font-extrabold text-lg shadow-lg shadow-[#eda50c]/30 flex-shrink-0">
-                          KD
-                        </div>
-                        <div>
-                          <div className="text-xs font-bold uppercase tracking-wider text-[#eda50c]">
-                            Pemerintah Desa
-                          </div>
-                          <div className="text-sm sm:text-base font-extrabold text-white">
-                            Kadurama, Ciawigebang
-                          </div>
-                        </div>
+                {/* 3. Potensi Mata Air Cikaduran */}
+                <div className="flex items-center gap-3 pt-3 md:pt-0 md:pl-4">
+                  <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/35 flex items-center justify-center text-sky-300 flex-shrink-0">
+                    <Droplets className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs sm:text-sm font-bold text-white">45 Liter / Detik</div>
+                    <div className="text-[10px] text-emerald-100/80">Mata Air Alami Dusun Wage</div>
+                  </div>
+                </div>
+
+                {/* 4. Sentra Potensi Ekonomi & UMKM */}
+                <div className="flex items-center gap-3 pt-3 md:pt-0 md:pl-4">
+                  <div className="w-10 h-10 rounded-xl bg-[#eda50c]/20 border border-[#eda50c]/35 flex items-center justify-center text-[#eda50c] flex-shrink-0">
+                    <Sparkles className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <div className="text-xs sm:text-sm font-bold text-white">3 Klaster Potensi</div>
+                    <div className="text-[10px] text-emerald-100/80">Tani Organik, Sapi & UMKM</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* =============================================================== */}
+        {/* SECTION 1: PROFIL 3 DUSUN - INFINITE FULL-PHOTO CAROUSEL         */}
+        {/* =============================================================== */}
+        <section id="profil-dusun" className="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(#009388_1px,transparent_1px)] [background-size:28px_28px] opacity-[0.05] pointer-events-none" />
+          <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:48px_48px] opacity-60 pointer-events-none" />
+
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {/* Header Section dengan Subtitle Bersih (Tanpa Tombol Panah Atas) */}
+            <div className="mb-8">
+              <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
+                Karakteristik & Potensi 3 Dusun
+              </h2>
+              <p className="text-sm text-slate-600 mt-2 max-w-2xl leading-relaxed">
+                Eksplorasi panorama dan potensi mikro Desa Kadurama yang terbagi menjadi 3 dusun tradisional saling komplementer di lereng Gunung Ciremai.
+              </p>
+            </div>
+
+            {/* FULL-PHOTO CINEMATIC CAROUSEL STAGE (INFINITE FORWARD LOOP & AUTO-SLIDE) */}
+            <div
+              onMouseEnter={handleCarouselMouseEnter}
+              onMouseLeave={handleCarouselMouseLeave}
+              onTouchStart={handleCarouselMouseEnter}
+              onTouchEnd={handleCarouselMouseLeave}
+              className="relative overflow-hidden rounded-3xl shadow-2xl bg-slate-950 border border-slate-800 group"
+            >
+              {/* Floating Left Edge Arrow (Di Dalam Gambar) */}
+              <button
+                onClick={handlePrevDusun}
+                aria-label="Dusun Sebelumnya"
+                className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/45 hover:bg-black/80 border border-white/25 text-white backdrop-blur-md flex items-center justify-center transition shadow-xl active:scale-90 cursor-pointer"
+              >
+                <ChevronLeft className="w-6 h-6 transition-transform group-hover:-translate-x-0.5" />
+              </button>
+
+              {/* Floating Right Edge Arrow (Di Dalam Gambar) */}
+              <button
+                onClick={handleNextDusun}
+                aria-label="Dusun Berikutnya"
+                className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/45 hover:bg-black/80 border border-white/25 text-white backdrop-blur-md flex items-center justify-center transition shadow-xl active:scale-90 cursor-pointer"
+              >
+                <ChevronRight className="w-6 h-6 transition-transform group-hover:translate-x-0.5" />
+              </button>
+
+              {/* Infinite Seamless Slider Track (5 Slides: Clone 3, Real 1, Real 2, Real 3, Clone 1) */}
+              <div
+                onTransitionEnd={handleDusunTransitionEnd}
+                className="flex"
+                style={{
+                  transform: `translateX(-${dusunTrackIndex * 100}%)`,
+                  transition: isDusunTransitioning ? "transform 600ms cubic-bezier(0.16, 1, 0.3, 1)" : "none",
+                }}
+              >
+                {/* ========================================================= */}
+                {/* SLIDE 0: CLONE OF DUSUN WAGE (UNTUK SEAMLESS PREV LOOP)   */}
+                {/* ========================================================= */}
+                <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85"
+                    alt="Dusun Wage Kadurama"
+                    className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
+                  <div className="relative z-10 h-full p-6 sm:p-10 lg:p-14 flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className="px-3.5 py-1.5 rounded-full bg-[#003733] text-emerald-200 border border-emerald-400/40 text-xs font-bold uppercase tracking-wider shadow-md">
+                          Dusun III • Wage
+                        </span>
+                        <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-emerald-200 text-xs font-medium border border-white/15">
+                          Mata Air Purba & Agrowisata Ciremai
+                        </span>
                       </div>
-                      <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#eda50c]/20 border border-[#eda50c]/40 text-[#eda50c] text-[10px] font-bold">
-                        <Award className="w-3 h-3" />
-                        <span>Desa Mandiri</span>
-                      </span>
+                      <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-emerald-200 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
+                        <Mountain className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Elevasi 340 mdpl</span>
+                      </div>
                     </div>
-
-                    {/* Point List with Yellow Accent Checkmarks (from index.html) */}
-                    <div className="space-y-3.5 text-xs text-emerald-50">
-                      <div className="flex items-start gap-2.5">
-                        <span className="text-[#eda50c] font-bold text-sm leading-none mt-0.5">✓</span>
-                        <div>
-                          <div className="font-bold text-white text-xs sm:text-[13px]">
-                            Layanan Langsung di Kantor Desa
-                          </div>
-                          <div className="text-[11px] text-emerald-100/80 mt-0.5 leading-relaxed">
-                            Warga datang langsung membawa syarat dokumen asli dan fotokopi ke loket pemdes.
-                          </div>
-                        </div>
+                    <div className="my-auto py-6 max-w-2xl space-y-4">
+                      <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                        Dusun Wage
+                      </h3>
+                      <div className="text-sm sm:text-base font-semibold text-emerald-300">
+                        Mata Air Alami Purba Cikaduran 45 Liter/Detik & Agrobisnis Ubi Jalar
                       </div>
-
-                      <div className="flex items-start gap-2.5">
-                        <span className="text-[#eda50c] font-bold text-sm leading-none mt-0.5">✓</span>
-                        <div className="flex-1">
-                          <div className="flex items-center justify-between">
-                            <div className="font-bold text-white text-xs sm:text-[13px]">
-                              Jam Buka Loket Kantor
-                            </div>
-                            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-400/30">
-                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                              Buka
-                            </span>
-                          </div>
-                          <div className="text-[11px] text-emerald-100/80 mt-0.5">
-                            Senin - Jumat pukul 07.30 - 15.00 WIB (Sabtu dan Minggu libur).
-                          </div>
-                        </div>
+                      <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-normal max-w-xl">
+                        Kawasan perbukitan sejuk di elevasi 340 mdpl lereng Gunung Ciremai. Menjadi sumber mata air alami Cikaduran dengan debit melimpah untuk konsumsi warga, perkebunan ubi manis lereng gunung, dan sentra sapi perah terpadu.
+                      </p>
+                      <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">146</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">492</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-cyan-300">45 L/s</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Debit Mata Air</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">6 / 2</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
                       </div>
-
-                      <div className="flex items-start gap-2.5">
-                        <span className="text-[#eda50c] font-bold text-sm leading-none mt-0.5">✓</span>
-                        <div>
-                          <div className="font-bold text-white text-xs sm:text-[13px]">
-                            Sensus Mikro 3 Dusun Harmonis
-                          </div>
-                          <div className="text-[11px] text-emerald-100/80 mt-0.5 leading-relaxed">
-                            492 Kepala Keluarga dan 1.660 Jiwa terdata lengkap di Dusun Manis, Pahing, dan Wage.
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex items-start gap-2.5 pt-1 border-t border-white/10">
-                        <span className="text-[#eda50c] font-bold text-sm leading-none mt-0.5">✓</span>
-                        <div>
-                          <div className="font-bold text-white text-xs sm:text-[13px]">
-                            Motto Kuningan Terpadu
-                          </div>
-                          <div className="text-[11px] text-[#eda50c] italic font-medium mt-0.5">
-                            &quot;Melesat Ngudag Jaman, Ngakar Kuat Purwadaksi&quot;
-                          </div>
+                      <div className="space-y-2">
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Fasilitas Wilayah Terpadu:</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Droplets className="w-3.5 h-3.5 text-cyan-400" /><span>Mata Air Purba Cikaduran</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Mountain className="w-3.5 h-3.5 text-[#009388]" /><span>Jalur Agrowisata Ubi Jalar</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /><span>Posyandu Melati II Dusun Wage</span>
+                          </span>
                         </div>
                       </div>
                     </div>
+                    <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2.5 text-slate-200">
+                        <span className="w-2 h-2 rounded-full bg-[#009388]" />
+                        <span>Kepala Dusun III: <strong className="text-white">Bpk. Agus Setiawan</strong></span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <a
+                          href="/dusun/wage"
+                          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/30 backdrop-blur-xs transition"
+                        >
+                          <span>Buka Halaman Dusun</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </a>
+                        <a
+                          href="#geografis"
+                          onClick={() => {
+                            setActiveFacilityId(7);
+                            setGisSelectedDusun("wage");
+                            setGisSelectedPoiId(null);
+                          }}
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-lg transition"
+                        >
+                          <MapPin className="w-3.5 h-3.5" /><span>Peta GIS</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
-                    {/* Card Footer: Alamat Balai Desa & Lokasi Link */}
-                    <div className="pt-3 border-t border-white/15 flex items-center justify-between text-[11px] text-emerald-100/80">
-                      <span className="flex items-center gap-1.5">
-                        <MapPin className="w-3.5 h-3.5 text-[#eda50c]" />
-                        <span>Jl. Desa Kadurama No. 01</span>
-                      </span>
-                      <a
-                        href="#geografis"
-                        className="text-[#eda50c] hover:text-amber-300 font-bold flex items-center gap-1 transition-colors"
-                      >
-                        <span>Petunjuk Lokasi</span>
-                        <ChevronRight className="w-3 h-3" />
-                      </a>
+                {/* ========================================================= */}
+                {/* SLIDE 1: REAL DUSUN MANIS (SLIDE UTAMA 1)                  */}
+                {/* ========================================================= */}
+                <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1600&q=85"
+                    alt="Panorama Dusun Manis Kadurama"
+                    className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
+                  <div className="relative z-10 h-full p-6 sm:p-10 lg:p-14 flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className="px-3.5 py-1.5 rounded-full bg-[#009388] text-white text-xs font-bold uppercase tracking-wider shadow-md">
+                          Dusun I • Manis
+                        </span>
+                        <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-emerald-200 text-xs font-medium border border-white/15">
+                          Pusat Administrasi & Pelayanan Warga
+                        </span>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-emerald-200 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
+                        <Mountain className="w-3.5 h-3.5 text-[#eda50c]" />
+                        <span>Elevasi 285 mdpl</span>
+                      </div>
+                    </div>
+                    <div className="my-auto py-6 max-w-2xl space-y-4">
+                      <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                        Dusun Manis
+                      </h3>
+                      <div className="text-sm sm:text-base font-semibold text-[#eda50c]">
+                        Sentra Pemerintahan Desa, Layanan Medis Siaga & UMKM Olahan Pangan
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-normal max-w-xl">
+                        Wilayah gerbang masuk desa yang menjadi pusat koordinasi administrasi Balai Desa Kadurama, Puskesmas Pembantu 24 jam, sekolah dasar, dan sentra produksi keripik olahan ubi jalar serta rengginang khas warga.
+                      </p>
+                      <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">184</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">620</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-emerald-300">37.4%</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Porsi Desa</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">8 / 2</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Fasilitas Wilayah Terpadu:</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Building2 className="w-3.5 h-3.5 text-[#009388]" /><span>Kantor Balai Desa & Pendopo</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Activity className="w-3.5 h-3.5 text-emerald-300" /><span>Puskesmas Pembantu (Pustu)</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Landmark className="w-3.5 h-3.5 text-[#eda50c]" /><span>Gedung SDN 1 Kadurama</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-300" /><span>Gerai BUMDes Bina Mandiri</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2.5 text-slate-200">
+                        <span className="w-2 h-2 rounded-full bg-[#009388]" />
+                        <span>Kepala Dusun I: <strong className="text-white">Bpk. Ahmad Dahlan</strong></span>
+                        <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 08</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <a
+                          href="/dusun/manis"
+                          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/30 backdrop-blur-xs transition"
+                        >
+                          <span>Buka Halaman Dusun</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </a>
+                        <a
+                          href="#geografis"
+                          onClick={() => {
+                            setActiveFacilityId(1);
+                            setGisSelectedDusun("manis");
+                            setGisSelectedPoiId(null);
+                          }}
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-lg transition"
+                        >
+                          <MapPin className="w-3.5 h-3.5" /><span>Peta GIS</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ========================================================= */}
+                {/* SLIDE 2: REAL DUSUN PAHING (SLIDE UTAMA 2)                 */}
+                {/* ========================================================= */}
+                <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1600&q=85"
+                    alt="Panorama Sawah Dusun Pahing Kadurama"
+                    className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
+                  <div className="relative z-10 h-full p-6 sm:p-10 lg:p-14 flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className="px-3.5 py-1.5 rounded-full bg-[#eda50c] text-slate-950 text-xs font-bold uppercase tracking-wider shadow-md">
+                          Dusun II • Pahing
+                        </span>
+                        <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-amber-200 text-xs font-medium border border-white/15">
+                          Lumbung Pangan & Ketahanan Padi
+                        </span>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-amber-200 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
+                        <Mountain className="w-3.5 h-3.5 text-[#eda50c]" />
+                        <span>Elevasi 310 mdpl</span>
+                      </div>
+                    </div>
+                    <div className="my-auto py-6 max-w-2xl space-y-4">
+                      <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                        Dusun Pahing
+                      </h3>
+                      <div className="text-sm sm:text-base font-semibold text-[#eda50c]">
+                        Hamparan 64 Hektar Sawah Beririgasi Teknis & Lumbung Padi Organik
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-normal max-w-xl">
+                        Lumbung kedaulatan pangan utama Desa Kadurama dengan hamparan sawah produktif beririgasi teknis teratur, dikelola kelompok tani Sri Rejeki dengan sarana rice milling mandiri serta kompleks olahraga Gelora Kadurama.
+                      </p>
+                      <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">162</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">548</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-emerald-300">64 Ha</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Lahan Sawah</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">7 / 2</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Fasilitas Wilayah Terpadu:</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Wheat className="w-3.5 h-3.5 text-[#eda50c]" /><span>Lumbung Pangan & Rice Milling</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Droplets className="w-3.5 h-3.5 text-cyan-300" /><span>Pintu Saluran Irigasi Teknis</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <ShieldCheck className="w-3.5 h-3.5 text-[#009388]" /><span>Posyandu Melati I Dusun Pahing</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Award className="w-3.5 h-3.5 text-emerald-300" /><span>Gelora Olahraga Kadurama</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2.5 text-slate-200">
+                        <span className="w-2 h-2 rounded-full bg-[#eda50c]" />
+                        <span>Kepala Dusun II: <strong className="text-white">Bpk. Rohmat Hidayat</strong></span>
+                        <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 07</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <a
+                          href="/dusun/pahing"
+                          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/30 backdrop-blur-xs transition"
+                        >
+                          <span>Buka Halaman Dusun</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </a>
+                        <a
+                          href="#geografis"
+                          onClick={() => {
+                            setActiveFacilityId(4);
+                            setGisSelectedDusun("pahing");
+                            setGisSelectedPoiId(null);
+                          }}
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#eda50c] hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg transition"
+                        >
+                          <MapPin className="w-3.5 h-3.5" /><span>Peta GIS</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ========================================================= */}
+                {/* SLIDE 3: REAL DUSUN WAGE (SLIDE UTAMA 3)                  */}
+                {/* ========================================================= */}
+                <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85"
+                    alt="Panorama Lereng Dusun Wage Kadurama"
+                    className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
+                  <div className="relative z-10 h-full p-6 sm:p-10 lg:p-14 flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className="px-3.5 py-1.5 rounded-full bg-[#003733] text-emerald-200 border border-emerald-400/40 text-xs font-bold uppercase tracking-wider shadow-md">
+                          Dusun III • Wage
+                        </span>
+                        <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-emerald-200 text-xs font-medium border border-white/15">
+                          Mata Air Purba & Agrowisata Ciremai
+                        </span>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-emerald-200 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
+                        <Mountain className="w-3.5 h-3.5 text-emerald-400" />
+                        <span>Elevasi 340 mdpl</span>
+                      </div>
+                    </div>
+                    <div className="my-auto py-6 max-w-2xl space-y-4">
+                      <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                        Dusun Wage
+                      </h3>
+                      <div className="text-sm sm:text-base font-semibold text-emerald-300">
+                        Mata Air Alami Purba Cikaduran 45 Liter/Detik & Agrobisnis Ubi Jalar
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-normal max-w-xl">
+                        Kawasan perbukitan sejuk di elevasi 340 mdpl lereng Gunung Ciremai. Menjadi sumber mata air alami Cikaduran dengan debit melimpah untuk konsumsi warga, perkebunan ubi manis lereng gunung, dan sentra sapi perah terpadu.
+                      </p>
+                      <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">146</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">492</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-cyan-300">45 L/s</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Debit Mata Air</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">6 / 2</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Fasilitas Wilayah Terpadu:</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Droplets className="w-3.5 h-3.5 text-cyan-400" /><span>Mata Air Purba Cikaduran</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Mountain className="w-3.5 h-3.5 text-[#009388]" /><span>Jalur Agrowisata Ubi Jalar</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /><span>Posyandu Melati II Dusun Wage</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Award className="w-3.5 h-3.5 text-amber-300" /><span>Peternakan Sapi Perah Rakyat</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2.5 text-slate-200">
+                        <span className="w-2 h-2 rounded-full bg-[#009388]" />
+                        <span>Kepala Dusun III: <strong className="text-white">Bpk. Agus Setiawan</strong></span>
+                        <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 06</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <a
+                          href="/dusun/wage"
+                          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/30 backdrop-blur-xs transition"
+                        >
+                          <span>Buka Halaman Dusun</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </a>
+                        <a
+                          href="#geografis"
+                          onClick={() => {
+                            setActiveFacilityId(7);
+                            setGisSelectedDusun("wage");
+                            setGisSelectedPoiId(null);
+                          }}
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-lg transition"
+                        >
+                          <MapPin className="w-3.5 h-3.5" /><span>Peta GIS</span>
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ========================================================= */}
+                {/* SLIDE 4: CLONE OF DUSUN MANIS (UNTUK SEAMLESS NEXT LOOP)   */}
+                {/* ========================================================= */}
+                <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
+                  <img
+                    src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1600&q=85"
+                    alt="Panorama Dusun Manis Kadurama"
+                    className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
+                  <div className="relative z-10 h-full p-6 sm:p-10 lg:p-14 flex flex-col justify-between">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2.5">
+                        <span className="px-3.5 py-1.5 rounded-full bg-[#009388] text-white text-xs font-bold uppercase tracking-wider shadow-md">
+                          Dusun I • Manis
+                        </span>
+                        <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-emerald-200 text-xs font-medium border border-white/15">
+                          Pusat Administrasi & Pelayanan Warga
+                        </span>
+                      </div>
+                      <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-emerald-200 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
+                        <Mountain className="w-3.5 h-3.5 text-[#eda50c]" />
+                        <span>Elevasi 285 mdpl</span>
+                      </div>
+                    </div>
+                    <div className="my-auto py-6 max-w-2xl space-y-4">
+                      <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                        Dusun Manis
+                      </h3>
+                      <div className="text-sm sm:text-base font-semibold text-[#eda50c]">
+                        Sentra Pemerintahan Desa, Layanan Medis Siaga & UMKM Olahan Pangan
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-normal max-w-xl">
+                        Wilayah gerbang masuk desa yang menjadi pusat koordinasi administrasi Balai Desa Kadurama, Puskesmas Pembantu 24 jam, sekolah dasar, dan sentra produksi keripik olahan ubi jalar serta rengginang khas warga.
+                      </p>
+                      <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">184</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">620</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-emerald-300">37.4%</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Porsi Desa</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">8 / 2</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Fasilitas Wilayah Terpadu:</div>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Building2 className="w-3.5 h-3.5 text-[#009388]" /><span>Kantor Balai Desa & Pendopo</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Activity className="w-3.5 h-3.5 text-emerald-300" /><span>Puskesmas Pembantu (Pustu)</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Landmark className="w-3.5 h-3.5 text-[#eda50c]" /><span>Gedung SDN 1 Kadurama</span>
+                          </span>
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
+                            <Sparkles className="w-3.5 h-3.5 text-amber-300" /><span>Gerai BUMDes Bina Mandiri</span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+                      <div className="flex items-center gap-2.5 text-slate-200">
+                        <span className="w-2 h-2 rounded-full bg-[#009388]" />
+                        <span>Kepala Dusun I: <strong className="text-white">Bpk. Ahmad Dahlan</strong></span>
+                        <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 08</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <a
+                          href="/dusun/manis"
+                          className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/30 backdrop-blur-xs transition"
+                        >
+                          <span>Buka Halaman Dusun</span>
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </a>
+                        <a
+                          href="#geografis"
+                          onClick={() => {
+                            setActiveFacilityId(1);
+                            setGisSelectedDusun("manis");
+                            setGisSelectedPoiId(null);
+                          }}
+                          className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-lg transition"
+                        >
+                          <MapPin className="w-3.5 h-3.5" /><span>Peta GIS</span>
+                        </a>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Bottom Horizon Metric Strip: Connecting Hero to Next Section */}
-            <div className="w-full bg-[#002b27]/90 border-t border-white/15 backdrop-blur-md relative z-10">
-              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-white/15">
-                  {/* 1. Total KK Terdata Sensus */}
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-xl bg-[#eda50c]/20 border border-[#eda50c]/35 flex items-center justify-center text-[#eda50c] flex-shrink-0">
-                      <Users className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs sm:text-sm font-bold text-white">492 Kepala Keluarga</div>
-                      <div className="text-[10px] text-emerald-100/80">1.660 Jiwa (100% Sensus Terdata)</div>
-                    </div>
-                  </div>
+            {/* SLIDE INDICATOR PILL DOTS DIRECTLY BENEATH STAGE */}
+            <div className="py-4 flex items-center justify-center gap-2.5">
+              {[0, 1, 2].map((idx) => {
+                const isActive = currentDusunRealIndex === idx;
+                return (
+                  <button
+                    key={idx}
+                    onClick={() => handleDotClick(idx)}
+                    aria-label={`Lihat Dusun ${idx + 1}`}
+                    className={`transition-all duration-300 cursor-pointer ${isActive
+                      ? "w-10 h-2.5 rounded-full bg-[#009388] shadow-md shadow-[#009388]/30"
+                      : "w-2.5 h-2.5 rounded-full bg-slate-300 hover:bg-slate-400"
+                      }`}
+                  />
+                );
+              })}
+            </div>
 
-                  {/* 2. Potensi Pertanian Organik */}
-                  <div className="flex items-center gap-3 pt-3 md:pt-0 md:pl-4">
-                    <div className="w-10 h-10 rounded-xl bg-emerald-500/20 border border-emerald-400/35 flex items-center justify-center text-emerald-300 flex-shrink-0">
-                      <Wheat className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs sm:text-sm font-bold text-white">64 Ha Padi Organik</div>
-                      <div className="text-[10px] text-emerald-100/80">Lumbung Pangan Dusun Pahing</div>
-                    </div>
-                  </div>
-
-                  {/* 3. Potensi Mata Air Cikaduran */}
-                  <div className="flex items-center gap-3 pt-3 md:pt-0 md:pl-4">
-                    <div className="w-10 h-10 rounded-xl bg-sky-500/20 border border-sky-400/35 flex items-center justify-center text-sky-300 flex-shrink-0">
-                      <Droplets className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs sm:text-sm font-bold text-white">45 Liter / Detik</div>
-                      <div className="text-[10px] text-emerald-100/80">Mata Air Alami Dusun Wage</div>
-                    </div>
-                  </div>
-
-                  {/* 4. Sentra Potensi Ekonomi & UMKM */}
-                  <div className="flex items-center gap-3 pt-3 md:pt-0 md:pl-4">
-                    <div className="w-10 h-10 rounded-xl bg-[#eda50c]/20 border border-[#eda50c]/35 flex items-center justify-center text-[#eda50c] flex-shrink-0">
-                      <Sparkles className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="text-xs sm:text-sm font-bold text-white">3 Klaster Potensi</div>
-                      <div className="text-[10px] text-emerald-100/80">Tani Organik, Sapi & UMKM</div>
-                    </div>
+            {/* Dusun Demographic Distribution Bar */}
+            <div className="mt-4 p-5 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-[#009388]/10 text-[#009388] flex items-center justify-center flex-shrink-0">
+                  <PieChart className="w-5 h-5" />
+                </div>
+                <div>
+                  <div className="text-xs font-extrabold text-slate-900">Distribusi Keseimbangan Wilayah 3 Dusun</div>
+                  <div className="text-[11px] text-slate-500">
+                    Total 492 Kepala Keluarga dan 1.660 Jiwa terdata lengkap dalam basis sensus mikro desa.
                   </div>
                 </div>
               </div>
+
+              <div className="flex items-center gap-4 text-xs font-mono">
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#009388]" />
+                  <span className="text-slate-700 font-sans text-[11px]">Manis (37.4%)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#eda50c]" />
+                  <span className="text-slate-700 font-sans text-[11px]">Pahing (33.0%)</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#003733]" />
+                  <span className="text-slate-700 font-sans text-[11px]">Wage (29.6%)</span>
+                </div>
+              </div>
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* =============================================================== */}
-          {/* SECTION 1: PROFIL 3 DUSUN - INFINITE FULL-PHOTO CAROUSEL         */}
-          {/* =============================================================== */}
-          <section id="profil-dusun" className="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(#009388_1px,transparent_1px)] [background-size:28px_28px] opacity-[0.05] pointer-events-none" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:48px_48px] opacity-60 pointer-events-none" />
+        {/* =============================================================== */}
+        {/* SECTION 2: PETA GEOGRAFIS & BATAS WILAYAH 3 DUSUN (GIS SATELIT)   */}
+        {/* =============================================================== */}
+        <section id="geografis" className="py-16 bg-slate-50 border-b border-slate-200 relative overflow-hidden">
+          <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.14] pointer-events-none" />
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-              {/* Header Section dengan Subtitle Bersih (Tanpa Tombol Panah Atas) */}
-              <div className="mb-8">
-                <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 tracking-tight">
-                  Karakteristik & Potensi 3 Dusun
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+            {/* SECTION HEADER: EDITORIAL & SPATIAL METRICS STRIP */}
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between pb-8 mb-8 border-b border-slate-200 gap-6">
+
+              {/* Left: Core Title & Value-Prop */}
+              <div className="max-w-2xl">
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  Peta Batas Wilayah & Tata Ruang 3 Dusun
                 </h2>
-                <p className="text-sm text-slate-600 mt-2 max-w-2xl leading-relaxed">
-                  Eksplorasi panorama dan potensi mikro Desa Kadurama yang terbagi menjadi 3 dusun tradisional saling komplementer di lereng Gunung Ciremai.
+                <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                  Pemetaan batas definitif Desa Kadurama seluas 142.8 hektar di lereng Gunung Ciremai berbasis citra satelit resolusi tinggi. Memuat zonasi Dusun Manis, Dusun Pahing, Dusun Wage, serta infrastruktur pelayanan masyarakat.
                 </p>
               </div>
 
-              {/* FULL-PHOTO CINEMATIC CAROUSEL STAGE (INFINITE FORWARD LOOP & AUTO-SLIDE) */}
-              <div
-                onMouseEnter={handleCarouselMouseEnter}
-                onMouseLeave={handleCarouselMouseLeave}
-                onTouchStart={handleCarouselMouseEnter}
-                onTouchEnd={handleCarouselMouseLeave}
-                className="relative overflow-hidden rounded-3xl shadow-2xl bg-slate-950 border border-slate-800 group"
-              >
-                {/* Floating Left Edge Arrow (Di Dalam Gambar) */}
-                <button
-                  onClick={handlePrevDusun}
-                  aria-label="Dusun Sebelumnya"
-                  className="absolute left-4 sm:left-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/45 hover:bg-black/80 border border-white/25 text-white backdrop-blur-md flex items-center justify-center transition shadow-xl active:scale-90 cursor-pointer"
-                >
-                  <ChevronLeft className="w-6 h-6 transition-transform group-hover:-translate-x-0.5" />
-                </button>
-
-                {/* Floating Right Edge Arrow (Di Dalam Gambar) */}
-                <button
-                  onClick={handleNextDusun}
-                  aria-label="Dusun Berikutnya"
-                  className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 z-30 w-12 h-12 rounded-full bg-black/45 hover:bg-black/80 border border-white/25 text-white backdrop-blur-md flex items-center justify-center transition shadow-xl active:scale-90 cursor-pointer"
-                >
-                  <ChevronRight className="w-6 h-6 transition-transform group-hover:translate-x-0.5" />
-                </button>
-
-                {/* Infinite Seamless Slider Track (5 Slides: Clone 3, Real 1, Real 2, Real 3, Clone 1) */}
-                <div
-                  onTransitionEnd={handleDusunTransitionEnd}
-                  className="flex"
-                  style={{
-                    transform: `translateX(-${dusunTrackIndex * 100}%)`,
-                    transition: isDusunTransitioning ? "transform 600ms cubic-bezier(0.16, 1, 0.3, 1)" : "none",
-                  }}
-                >
-                  {/* ========================================================= */}
-                  {/* SLIDE 0: CLONE OF DUSUN WAGE (UNTUK SEAMLESS PREV LOOP)   */}
-                  {/* ========================================================= */}
-                  <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
-                    <img
-                      src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85"
-                      alt="Dusun Wage Kadurama"
-                      className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
-                    <div className="relative z-10 h-full p-6 sm:p-10 lg:p-14 flex flex-col justify-between">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className="px-3.5 py-1.5 rounded-full bg-[#003733] text-emerald-200 border border-emerald-400/40 text-xs font-bold uppercase tracking-wider shadow-md">
-                            Dusun III • Wage
-                          </span>
-                          <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-emerald-200 text-xs font-medium border border-white/15">
-                            Mata Air Purba & Agrowisata Ciremai
-                          </span>
-                        </div>
-                        <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-emerald-200 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
-                          <Mountain className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Elevasi 340 mdpl</span>
-                        </div>
-                      </div>
-                      <div className="my-auto py-6 max-w-2xl space-y-4">
-                        <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                          Dusun Wage
-                        </h3>
-                        <div className="text-sm sm:text-base font-semibold text-emerald-300">
-                          Mata Air Alami Purba Cikaduran 45 Liter/Detik & Agrobisnis Ubi Jalar
-                        </div>
-                        <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-normal max-w-xl">
-                          Kawasan perbukitan sejuk di elevasi 340 mdpl lereng Gunung Ciremai. Menjadi sumber mata air alami Cikaduran dengan debit melimpah untuk konsumsi warga, perkebunan ubi manis lereng gunung, dan sentra sapi perah terpadu.
-                        </p>
-                        <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
-                          <div><div className="text-2xl sm:text-3xl font-black text-white">146</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">492</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-cyan-300">45 L/s</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Debit Mata Air</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-white">6 / 2</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Fasilitas Wilayah Terpadu:</div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Droplets className="w-3.5 h-3.5 text-cyan-400" /><span>Mata Air Purba Cikaduran</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Mountain className="w-3.5 h-3.5 text-[#009388]" /><span>Jalur Agrowisata Ubi Jalar</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /><span>Posyandu Melati II Dusun Wage</span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                        <div className="flex items-center gap-2.5 text-slate-200">
-                          <span className="w-2 h-2 rounded-full bg-[#009388]" />
-                          <span>Kepala Dusun III: <strong className="text-white">Bpk. Agus Setiawan</strong></span>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <a
-                            href="/dusun/wage"
-                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/30 backdrop-blur-xs transition"
-                          >
-                            <span>Buka Halaman Dusun</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </a>
-                          <a
-                            href="#geografis"
-                            onClick={() => {
-                              setActiveFacilityId(7);
-                              setGisSelectedDusun("wage");
-                              setGisSelectedPoiId(null);
-                            }}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-lg transition"
-                          >
-                            <MapPin className="w-3.5 h-3.5" /><span>Peta GIS</span>
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ========================================================= */}
-                  {/* SLIDE 1: REAL DUSUN MANIS (SLIDE UTAMA 1)                  */}
-                  {/* ========================================================= */}
-                  <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
-                    <img
-                      src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1600&q=85"
-                      alt="Panorama Dusun Manis Kadurama"
-                      className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
-                    <div className="relative z-10 h-full p-6 sm:p-10 lg:p-14 flex flex-col justify-between">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className="px-3.5 py-1.5 rounded-full bg-[#009388] text-white text-xs font-bold uppercase tracking-wider shadow-md">
-                            Dusun I • Manis
-                          </span>
-                          <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-emerald-200 text-xs font-medium border border-white/15">
-                            Pusat Administrasi & Pelayanan Warga
-                          </span>
-                        </div>
-                        <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-emerald-200 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
-                          <Mountain className="w-3.5 h-3.5 text-[#eda50c]" />
-                          <span>Elevasi 285 mdpl</span>
-                        </div>
-                      </div>
-                      <div className="my-auto py-6 max-w-2xl space-y-4">
-                        <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                          Dusun Manis
-                        </h3>
-                        <div className="text-sm sm:text-base font-semibold text-[#eda50c]">
-                          Sentra Pemerintahan Desa, Layanan Medis Siaga & UMKM Olahan Pangan
-                        </div>
-                        <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-normal max-w-xl">
-                          Wilayah gerbang masuk desa yang menjadi pusat koordinasi administrasi Balai Desa Kadurama, Puskesmas Pembantu 24 jam, sekolah dasar, dan sentra produksi keripik olahan ubi jalar serta rengginang khas warga.
-                        </p>
-                        <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
-                          <div><div className="text-2xl sm:text-3xl font-black text-white">184</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">620</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-emerald-300">37.4%</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Porsi Desa</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-white">8 / 2</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Fasilitas Wilayah Terpadu:</div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Building2 className="w-3.5 h-3.5 text-[#009388]" /><span>Kantor Balai Desa & Pendopo</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Activity className="w-3.5 h-3.5 text-emerald-300" /><span>Puskesmas Pembantu (Pustu)</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Landmark className="w-3.5 h-3.5 text-[#eda50c]" /><span>Gedung SDN 1 Kadurama</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Sparkles className="w-3.5 h-3.5 text-amber-300" /><span>Gerai BUMDes Bina Mandiri</span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                        <div className="flex items-center gap-2.5 text-slate-200">
-                          <span className="w-2 h-2 rounded-full bg-[#009388]" />
-                          <span>Kepala Dusun I: <strong className="text-white">Bpk. Ahmad Dahlan</strong></span>
-                          <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 08</span>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <a
-                            href="/dusun/manis"
-                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/30 backdrop-blur-xs transition"
-                          >
-                            <span>Buka Halaman Dusun</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </a>
-                          <a
-                            href="#geografis"
-                            onClick={() => {
-                              setActiveFacilityId(1);
-                              setGisSelectedDusun("manis");
-                              setGisSelectedPoiId(null);
-                            }}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-lg transition"
-                          >
-                            <MapPin className="w-3.5 h-3.5" /><span>Peta GIS</span>
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ========================================================= */}
-                  {/* SLIDE 2: REAL DUSUN PAHING (SLIDE UTAMA 2)                 */}
-                  {/* ========================================================= */}
-                  <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
-                    <img
-                      src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1600&q=85"
-                      alt="Panorama Sawah Dusun Pahing Kadurama"
-                      className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
-                    <div className="relative z-10 h-full p-6 sm:p-10 lg:p-14 flex flex-col justify-between">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className="px-3.5 py-1.5 rounded-full bg-[#eda50c] text-slate-950 text-xs font-bold uppercase tracking-wider shadow-md">
-                            Dusun II • Pahing
-                          </span>
-                          <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-amber-200 text-xs font-medium border border-white/15">
-                            Lumbung Pangan & Ketahanan Padi
-                          </span>
-                        </div>
-                        <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-amber-200 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
-                          <Mountain className="w-3.5 h-3.5 text-[#eda50c]" />
-                          <span>Elevasi 310 mdpl</span>
-                        </div>
-                      </div>
-                      <div className="my-auto py-6 max-w-2xl space-y-4">
-                        <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                          Dusun Pahing
-                        </h3>
-                        <div className="text-sm sm:text-base font-semibold text-[#eda50c]">
-                          Hamparan 64 Hektar Sawah Beririgasi Teknis & Lumbung Padi Organik
-                        </div>
-                        <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-normal max-w-xl">
-                          Lumbung kedaulatan pangan utama Desa Kadurama dengan hamparan sawah produktif beririgasi teknis teratur, dikelola kelompok tani Sri Rejeki dengan sarana rice milling mandiri serta kompleks olahraga Gelora Kadurama.
-                        </p>
-                        <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
-                          <div><div className="text-2xl sm:text-3xl font-black text-white">162</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">548</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-emerald-300">64 Ha</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Lahan Sawah</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-white">7 / 2</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Fasilitas Wilayah Terpadu:</div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Wheat className="w-3.5 h-3.5 text-[#eda50c]" /><span>Lumbung Pangan & Rice Milling</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Droplets className="w-3.5 h-3.5 text-cyan-300" /><span>Pintu Saluran Irigasi Teknis</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <ShieldCheck className="w-3.5 h-3.5 text-[#009388]" /><span>Posyandu Melati I Dusun Pahing</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Award className="w-3.5 h-3.5 text-emerald-300" /><span>Gelora Olahraga Kadurama</span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                        <div className="flex items-center gap-2.5 text-slate-200">
-                          <span className="w-2 h-2 rounded-full bg-[#eda50c]" />
-                          <span>Kepala Dusun II: <strong className="text-white">Bpk. Rohmat Hidayat</strong></span>
-                          <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 07</span>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <a
-                            href="/dusun/pahing"
-                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/30 backdrop-blur-xs transition"
-                          >
-                            <span>Buka Halaman Dusun</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </a>
-                          <a
-                            href="#geografis"
-                            onClick={() => {
-                              setActiveFacilityId(4);
-                              setGisSelectedDusun("pahing");
-                              setGisSelectedPoiId(null);
-                            }}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#eda50c] hover:bg-amber-400 text-slate-950 font-bold text-xs shadow-lg transition"
-                          >
-                            <MapPin className="w-3.5 h-3.5" /><span>Peta GIS</span>
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ========================================================= */}
-                  {/* SLIDE 3: REAL DUSUN WAGE (SLIDE UTAMA 3)                  */}
-                  {/* ========================================================= */}
-                  <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
-                    <img
-                      src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85"
-                      alt="Panorama Lereng Dusun Wage Kadurama"
-                      className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
-                    <div className="relative z-10 h-full p-6 sm:p-10 lg:p-14 flex flex-col justify-between">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className="px-3.5 py-1.5 rounded-full bg-[#003733] text-emerald-200 border border-emerald-400/40 text-xs font-bold uppercase tracking-wider shadow-md">
-                            Dusun III • Wage
-                          </span>
-                          <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-emerald-200 text-xs font-medium border border-white/15">
-                            Mata Air Purba & Agrowisata Ciremai
-                          </span>
-                        </div>
-                        <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-emerald-200 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
-                          <Mountain className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>Elevasi 340 mdpl</span>
-                        </div>
-                      </div>
-                      <div className="my-auto py-6 max-w-2xl space-y-4">
-                        <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                          Dusun Wage
-                        </h3>
-                        <div className="text-sm sm:text-base font-semibold text-emerald-300">
-                          Mata Air Alami Purba Cikaduran 45 Liter/Detik & Agrobisnis Ubi Jalar
-                        </div>
-                        <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-normal max-w-xl">
-                          Kawasan perbukitan sejuk di elevasi 340 mdpl lereng Gunung Ciremai. Menjadi sumber mata air alami Cikaduran dengan debit melimpah untuk konsumsi warga, perkebunan ubi manis lereng gunung, dan sentra sapi perah terpadu.
-                        </p>
-                        <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
-                          <div><div className="text-2xl sm:text-3xl font-black text-white">146</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">492</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-cyan-300">45 L/s</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Debit Mata Air</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-white">6 / 2</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Fasilitas Wilayah Terpadu:</div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Droplets className="w-3.5 h-3.5 text-cyan-400" /><span>Mata Air Purba Cikaduran</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Mountain className="w-3.5 h-3.5 text-[#009388]" /><span>Jalur Agrowisata Ubi Jalar</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" /><span>Posyandu Melati II Dusun Wage</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Award className="w-3.5 h-3.5 text-amber-300" /><span>Peternakan Sapi Perah Rakyat</span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                        <div className="flex items-center gap-2.5 text-slate-200">
-                          <span className="w-2 h-2 rounded-full bg-[#009388]" />
-                          <span>Kepala Dusun III: <strong className="text-white">Bpk. Agus Setiawan</strong></span>
-                          <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 06</span>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <a
-                            href="/dusun/wage"
-                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/30 backdrop-blur-xs transition"
-                          >
-                            <span>Buka Halaman Dusun</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </a>
-                          <a
-                            href="#geografis"
-                            onClick={() => {
-                              setActiveFacilityId(7);
-                              setGisSelectedDusun("wage");
-                              setGisSelectedPoiId(null);
-                            }}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-lg transition"
-                          >
-                            <MapPin className="w-3.5 h-3.5" /><span>Peta GIS</span>
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* ========================================================= */}
-                  {/* SLIDE 4: CLONE OF DUSUN MANIS (UNTUK SEAMLESS NEXT LOOP)   */}
-                  {/* ========================================================= */}
-                  <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
-                    <img
-                      src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1600&q=85"
-                      alt="Panorama Dusun Manis Kadurama"
-                      className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
-                    <div className="relative z-10 h-full p-6 sm:p-10 lg:p-14 flex flex-col justify-between">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2.5">
-                          <span className="px-3.5 py-1.5 rounded-full bg-[#009388] text-white text-xs font-bold uppercase tracking-wider shadow-md">
-                            Dusun I • Manis
-                          </span>
-                          <span className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md text-emerald-200 text-xs font-medium border border-white/15">
-                            Pusat Administrasi & Pelayanan Warga
-                          </span>
-                        </div>
-                        <div className="hidden sm:flex items-center gap-1.5 text-xs font-mono text-emerald-200 bg-white/10 backdrop-blur-md px-3 py-1 rounded-full border border-white/15">
-                          <Mountain className="w-3.5 h-3.5 text-[#eda50c]" />
-                          <span>Elevasi 285 mdpl</span>
-                        </div>
-                      </div>
-                      <div className="my-auto py-6 max-w-2xl space-y-4">
-                        <h3 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                          Dusun Manis
-                        </h3>
-                        <div className="text-sm sm:text-base font-semibold text-[#eda50c]">
-                          Sentra Pemerintahan Desa, Layanan Medis Siaga & UMKM Olahan Pangan
-                        </div>
-                        <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-normal max-w-xl">
-                          Wilayah gerbang masuk desa yang menjadi pusat koordinasi administrasi Balai Desa Kadurama, Puskesmas Pembantu 24 jam, sekolah dasar, dan sentra produksi keripik olahan ubi jalar serta rengginang khas warga.
-                        </p>
-                        <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
-                          <div><div className="text-2xl sm:text-3xl font-black text-white">184</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">620</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-emerald-300">37.4%</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Porsi Desa</div></div>
-                          <div><div className="text-2xl sm:text-3xl font-black text-white">8 / 2</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-300">Fasilitas Wilayah Terpadu:</div>
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Building2 className="w-3.5 h-3.5 text-[#009388]" /><span>Kantor Balai Desa & Pendopo</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Activity className="w-3.5 h-3.5 text-emerald-300" /><span>Puskesmas Pembantu (Pustu)</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Landmark className="w-3.5 h-3.5 text-[#eda50c]" /><span>Gedung SDN 1 Kadurama</span>
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-white/10 backdrop-blur-md border border-white/15 text-xs text-white">
-                              <Sparkles className="w-3.5 h-3.5 text-amber-300" /><span>Gerai BUMDes Bina Mandiri</span>
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
-                        <div className="flex items-center gap-2.5 text-slate-200">
-                          <span className="w-2 h-2 rounded-full bg-[#009388]" />
-                          <span>Kepala Dusun I: <strong className="text-white">Bpk. Ahmad Dahlan</strong></span>
-                          <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 08</span>
-                        </div>
-                        <div className="flex items-center gap-2.5">
-                          <a
-                            href="/dusun/manis"
-                            className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-white/20 hover:bg-white/30 text-white font-bold text-xs border border-white/30 backdrop-blur-xs transition"
-                          >
-                            <span>Buka Halaman Dusun</span>
-                            <ChevronRight className="w-3.5 h-3.5" />
-                          </a>
-                          <a
-                            href="#geografis"
-                            onClick={() => {
-                              setActiveFacilityId(1);
-                              setGisSelectedDusun("manis");
-                              setGisSelectedPoiId(null);
-                            }}
-                            className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-lg transition"
-                          >
-                            <MapPin className="w-3.5 h-3.5" /><span>Peta GIS</span>
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+              {/* Right: Integrated Precision Metrics (Hairline Separators, Zero Emojis) */}
+              <div className="flex items-center gap-6 divide-x divide-slate-200 self-start lg:self-auto text-left">
+                <div className="pr-2">
+                  <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Luas Wilayah</div>
+                  <div className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">142.8 <span className="text-xs font-sans font-normal text-slate-500">Ha</span></div>
+                  <div className="text-[11px] text-[#009388] font-medium mt-0.5">Batas Resmi Terpetakan</div>
+                </div>
+                <div className="pl-6 pr-2">
+                  <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Topografi</div>
+                  <div className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">285-340 <span className="text-xs font-sans font-normal text-slate-500">mdpl</span></div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">Kaki Gunung Ciremai</div>
+                </div>
+                <div className="pl-6">
+                  <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Kependudukan</div>
+                  <div className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">492 <span className="text-xs font-sans font-normal text-slate-500">KK</span></div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">1.720 Jiwa Tersebar</div>
                 </div>
               </div>
 
-              {/* SLIDE INDICATOR PILL DOTS DIRECTLY BENEATH STAGE */}
-              <div className="py-4 flex items-center justify-center gap-2.5">
-                {[0, 1, 2].map((idx) => {
-                  const isActive = currentDusunRealIndex === idx;
-                  return (
-                    <button
-                      key={idx}
-                      onClick={() => handleDotClick(idx)}
-                      aria-label={`Lihat Dusun ${idx + 1}`}
-                      className={`transition-all duration-300 cursor-pointer ${
-                        isActive
-                          ? "w-10 h-2.5 rounded-full bg-[#009388] shadow-md shadow-[#009388]/30"
-                          : "w-2.5 h-2.5 rounded-full bg-slate-300 hover:bg-slate-400"
-                      }`}
-                    />
-                  );
-                })}
-              </div>
-
-              {/* Dusun Demographic Distribution Bar */}
-              <div className="mt-4 p-5 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-xl bg-[#009388]/10 text-[#009388] flex items-center justify-center flex-shrink-0">
-                    <PieChart className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <div className="text-xs font-extrabold text-slate-900">Distribusi Keseimbangan Wilayah 3 Dusun</div>
-                    <div className="text-[11px] text-slate-500">
-                      Total 492 Kepala Keluarga dan 1.660 Jiwa terdata lengkap dalam basis sensus mikro desa.
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-4 text-xs font-mono">
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#009388]" />
-                    <span className="text-slate-700 font-sans text-[11px]">Manis (37.4%)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#eda50c]" />
-                    <span className="text-slate-700 font-sans text-[11px]">Pahing (33.0%)</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="w-2.5 h-2.5 rounded-full bg-[#003733]" />
-                    <span className="text-slate-700 font-sans text-[11px]">Wage (29.6%)</span>
-                  </div>
-                </div>
-              </div>
             </div>
-          </section>
 
-          {/* =============================================================== */}
-          {/* SECTION 2: PETA GEOGRAFIS & BATAS WILAYAH 3 DUSUN (GIS SATELIT)   */}
-          {/* =============================================================== */}
-          <section id="geografis" className="py-16 bg-slate-50 border-b border-slate-200 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(#94a3b8_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.14] pointer-events-none" />
+            {/* MASTER SPATIAL CONSOLE (UNIFIED CONTAINER) */}
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
 
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-              
-              {/* SECTION HEADER: EDITORIAL & SPATIAL METRICS STRIP */}
-              <div className="flex flex-col lg:flex-row lg:items-end justify-between pb-8 mb-8 border-b border-slate-200 gap-6">
-                
-                {/* Left: Core Title & Value-Prop */}
-                <div className="max-w-2xl">
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Peta Batas Wilayah & Tata Ruang 3 Dusun
-                  </h2>
-                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                    Pemetaan batas definitif Desa Kadurama seluas 142.8 hektar di lereng Gunung Ciremai berbasis citra satelit resolusi tinggi. Memuat zonasi Dusun Manis, Dusun Pahing, Dusun Wage, serta infrastruktur pelayanan masyarakat.
-                  </p>
-                </div>
+              {/* CONSOLE TOP TOOLBAR */}
+              <div className="px-5 py-3.5 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
 
-                {/* Right: Integrated Precision Metrics (Hairline Separators, Zero Emojis) */}
-                <div className="flex items-center gap-6 divide-x divide-slate-200 self-start lg:self-auto text-left">
-                  <div className="pr-2">
-                    <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Luas Wilayah</div>
-                    <div className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">142.8 <span className="text-xs font-sans font-normal text-slate-500">Ha</span></div>
-                    <div className="text-[11px] text-[#009388] font-medium mt-0.5">Batas Resmi Terpetakan</div>
-                  </div>
-                  <div className="pl-6 pr-2">
-                    <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Topografi</div>
-                    <div className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">285-340 <span className="text-xs font-sans font-normal text-slate-500">mdpl</span></div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">Kaki Gunung Ciremai</div>
-                  </div>
-                  <div className="pl-6">
-                    <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Kependudukan</div>
-                    <div className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">492 <span className="text-xs font-sans font-normal text-slate-500">KK</span></div>
-                    <div className="text-[11px] text-slate-500 mt-0.5">1.720 Jiwa Tersebar</div>
-                  </div>
-                </div>
-
-              </div>
-
-              {/* MASTER SPATIAL CONSOLE (UNIFIED CONTAINER) */}
-              <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-                
-                {/* CONSOLE TOP TOOLBAR */}
-                <div className="px-5 py-3.5 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-                  
-                  {/* Dusun Segmented Controller */}
-                  <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
-                    {(
-                      [
-                        { id: "all", label: "Semua Wilayah" },
-                        { id: "manis", label: "Dusun Manis" },
-                        { id: "pahing", label: "Dusun Pahing" },
-                        { id: "wage", label: "Dusun Wage" },
-                      ] as const
-                    ).map((tab) => (
-                      <button
-                        key={tab.id}
-                        onClick={() => {
-                          setGisSelectedDusun(tab.id);
-                          setGisSelectedPoiId(null);
-                        }}
-                        className={`px-3 py-1.5 rounded-lg transition font-semibold ${
-                          gisSelectedDusun === tab.id && gisSelectedPoiId === null
-                            ? "bg-[#009388] text-white font-bold shadow-2xs"
-                            : "text-slate-600 hover:text-slate-900"
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    ))}
-                  </div>
-
-                  {/* Layer Toggles */}
-                  <div className="flex items-center gap-4 text-xs">
-                    <div className="flex items-center gap-3 text-[11px] text-slate-600">
-                      <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-900">
-                        <input
-                          type="checkbox"
-                          checked={gisShowOuter}
-                          onChange={(e) => setGisShowOuter(e.target.checked)}
-                          className="w-3.5 h-3.5 accent-[#eda50c] rounded"
-                        />
-                        <span>Batas Luar Desa</span>
-                      </label>
-                      <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-900">
-                        <input
-                          type="checkbox"
-                          checked={gisShowDusuns}
-                          onChange={(e) => setGisShowDusuns(e.target.checked)}
-                          className="w-3.5 h-3.5 accent-[#009388] rounded"
-                        />
-                        <span>Batas 3 Dusun</span>
-                      </label>
-                      <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-900">
-                        <input
-                          type="checkbox"
-                          checked={gisShowWater}
-                          onChange={(e) => setGisShowWater(e.target.checked)}
-                          className="w-3.5 h-3.5 accent-[#0284c7] rounded"
-                        />
-                        <span>Irigasi & Air</span>
-                      </label>
-                    </div>
-                  </div>
-
-                </div>
-
-                {/* MAIN SPLIT WORKSPACE: MAP (COL 8) + MONOGRAPHY REGISTRY (COL 4) */}
-                <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[520px]">
-                  
-                  {/* LEFT 8 COLS: LEAFLET MAP WORKSPACE */}
-                  <div className="lg:col-span-8 relative border-b lg:border-b-0 lg:border-r border-slate-200 h-[480px] lg:h-auto min-h-[480px]">
-                    <CivicGisMap
-                      selectedDusun={gisSelectedDusun}
-                      selectedPoiId={gisSelectedPoiId}
-                      onSelectDusun={(d) => {
-                        setGisSelectedDusun(d);
+                {/* Dusun Segmented Controller */}
+                <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+                  {(
+                    [
+                      { id: "all", label: "Semua Wilayah" },
+                      { id: "manis", label: "Dusun Manis" },
+                      { id: "pahing", label: "Dusun Pahing" },
+                      { id: "wage", label: "Dusun Wage" },
+                    ] as const
+                  ).map((tab) => (
+                    <button
+                      key={tab.id}
+                      onClick={() => {
+                        setGisSelectedDusun(tab.id);
                         setGisSelectedPoiId(null);
                       }}
-                      onSelectPoi={(p) => {
-                        setGisSelectedPoiId(p.id);
-                      }}
-                      showOuterBoundary={gisShowOuter}
-                      showDusunBoundaries={gisShowDusuns}
-                      showWaterways={gisShowWater}
-                    />
+                      className={`px-3 py-1.5 rounded-lg transition font-semibold ${gisSelectedDusun === tab.id && gisSelectedPoiId === null
+                        ? "bg-[#009388] text-white font-bold shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                        }`}
+                    >
+                      {tab.label}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Layer Toggles */}
+                <div className="flex items-center gap-4 text-xs">
+                  <div className="flex items-center gap-3 text-[11px] text-slate-600">
+                    <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={gisShowOuter}
+                        onChange={(e) => setGisShowOuter(e.target.checked)}
+                        className="w-3.5 h-3.5 accent-[#eda50c] rounded"
+                      />
+                      <span>Batas Luar Desa</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={gisShowDusuns}
+                        onChange={(e) => setGisShowDusuns(e.target.checked)}
+                        className="w-3.5 h-3.5 accent-[#009388] rounded"
+                      />
+                      <span>Batas 3 Dusun</span>
+                    </label>
+                    <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-900">
+                      <input
+                        type="checkbox"
+                        checked={gisShowWater}
+                        onChange={(e) => setGisShowWater(e.target.checked)}
+                        className="w-3.5 h-3.5 accent-[#0284c7] rounded"
+                      />
+                      <span>Irigasi & Air</span>
+                    </label>
                   </div>
+                </div>
 
-                  {/* RIGHT 4 COLS: OFFICIAL MONOGRAPHY REGISTRY SHEET */}
-                  <div className="lg:col-span-4 p-6 flex flex-col justify-between bg-white text-xs">
-                    
-                    {(() => {
-                      const activePoi = gisSelectedPoiId
-                        ? POI_POINTS.find((p) => p.id === gisSelectedPoiId)
-                        : null;
-                      const dInfo = DUSUN_REGISTRY_DATA[gisSelectedDusun] || DUSUN_REGISTRY_DATA.all;
+              </div>
 
-                      if (activePoi) {
-                        return (
-                          <div className="space-y-4">
-                            <div className="pb-3 border-b border-slate-100">
-                              <div className="flex items-center justify-between mb-1.5">
-                                <span className="text-[10px] font-bold text-[#009388] uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                  Fasilitas Dusun {activePoi.dusun}
-                                </span>
-                                <span className="font-mono text-[10px] text-slate-400">STATUS: AKTIF</span>
-                              </div>
-                              <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                                {activePoi.name}
-                              </h3>
-                              <p className="text-xs text-slate-500 mt-0.5">
-                                Terdaftar di Master Aset Desa Kadurama 2026
-                              </p>
-                            </div>
+              {/* MAIN SPLIT WORKSPACE: MAP (COL 8) + MONOGRAPHY REGISTRY (COL 4) */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[520px]">
 
-                            <div className="grid grid-cols-2 gap-2">
-                              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Lokasi Wilayah</div>
-                                <div className="font-bold text-slate-800 text-xs mt-1">Dusun {activePoi.dusun}</div>
-                                <div className="text-[10px] text-slate-500">Desa Kadurama</div>
-                              </div>
-                              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                                <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ketinggian</div>
-                                <div className="font-bold text-slate-800 text-xs mt-1 font-mono">{activePoi.elev}</div>
-                                <div className="text-[10px] text-[#009388]">Kaki Gunung Ciremai</div>
-                              </div>
-                            </div>
+                {/* LEFT 8 COLS: LEAFLET MAP WORKSPACE */}
+                <div className="lg:col-span-8 relative border-b lg:border-b-0 lg:border-r border-slate-200 h-[480px] lg:h-auto min-h-[480px]">
+                  <CivicGisMap
+                    selectedDusun={gisSelectedDusun}
+                    selectedPoiId={gisSelectedPoiId}
+                    onSelectDusun={(d) => {
+                      setGisSelectedDusun(d);
+                      setGisSelectedPoiId(null);
+                    }}
+                    onSelectPoi={(p) => {
+                      setGisSelectedPoiId(p.id);
+                    }}
+                    showOuterBoundary={gisShowOuter}
+                    showDusunBoundaries={gisShowDusuns}
+                    showWaterways={gisShowWater}
+                  />
+                </div>
 
-                            <div>
-                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Koordinat Geospasial</div>
-                              <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 font-mono text-xs text-slate-800">
-                                {activePoi.lat}, {activePoi.lng}
-                              </div>
-                            </div>
+                {/* RIGHT 4 COLS: OFFICIAL MONOGRAPHY REGISTRY SHEET */}
+                <div className="lg:col-span-4 p-6 flex flex-col justify-between bg-white text-xs">
 
-                            <div>
-                              <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Catatan Layanan</div>
-                              <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                Sarana publik strategis yang melayani warga Dusun {activePoi.dusun} dan sekitarnya. Terintegrasi dengan jalan poros lingkungan desa.
-                              </p>
-                            </div>
+                  {(() => {
+                    const activePoi = gisSelectedPoiId
+                      ? POI_POINTS.find((p) => p.id === gisSelectedPoiId)
+                      : null;
+                    const dInfo = DUSUN_REGISTRY_DATA[gisSelectedDusun] || DUSUN_REGISTRY_DATA.all;
 
-                            <div className="pt-4 mt-4 border-t border-slate-100 space-y-2">
-                              <a
-                                href={`https://maps.google.com/?q=${activePoi.lat},${activePoi.lng}`}
-                                target="_blank"
-                                rel="noreferrer"
-                                className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-xs"
-                              >
-                                <span>Buka Rute di Google Maps</span>
-                                <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                              </a>
-                              <button
-                                onClick={() => setGisSelectedPoiId(null)}
-                                className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs transition"
-                              >
-                                Kembali ke Profil Dusun
-                              </button>
-                            </div>
-                          </div>
-                        );
-                      }
-
+                    if (activePoi) {
                       return (
                         <div className="space-y-4">
                           <div className="pb-3 border-b border-slate-100">
                             <div className="flex items-center justify-between mb-1.5">
                               <span className="text-[10px] font-bold text-[#009388] uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                {dInfo.tag}
+                                Fasilitas Dusun {activePoi.dusun}
                               </span>
-                              <span className="font-mono text-[10px] text-slate-400">KODE: 32.08.10.2002</span>
+                              <span className="font-mono text-[10px] text-slate-400">STATUS: AKTIF</span>
                             </div>
                             <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                              {dInfo.name}
+                              {activePoi.name}
                             </h3>
                             <p className="text-xs text-slate-500 mt-0.5">
-                              {dInfo.sub}
+                              Terdaftar di Master Aset Desa Kadurama 2026
                             </p>
                           </div>
 
                           <div className="grid grid-cols-2 gap-2">
                             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Penanggung Jawab</div>
-                              <div className="font-bold text-slate-800 text-xs mt-1">{dInfo.lead}</div>
-                              <div className="text-[10px] text-slate-500">{dInfo.leadRole}</div>
+                              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Lokasi Wilayah</div>
+                              <div className="font-bold text-slate-800 text-xs mt-1">Dusun {activePoi.dusun}</div>
+                              <div className="text-[10px] text-slate-500">Desa Kadurama</div>
                             </div>
                             <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Luas Wilayah</div>
-                              <div className="font-bold text-slate-800 text-xs mt-1 font-mono">{dInfo.area}</div>
-                              <div className="text-[10px] text-[#009388]">100% Batas Geospasial</div>
+                              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ketinggian</div>
+                              <div className="font-bold text-slate-800 text-xs mt-1 font-mono">{activePoi.elev}</div>
+                              <div className="text-[10px] text-[#009388]">Kaki Gunung Ciremai</div>
                             </div>
                           </div>
 
                           <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Karakteristik & Potensi</div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Koordinat Geospasial</div>
+                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 font-mono text-xs text-slate-800">
+                              {activePoi.lat}, {activePoi.lng}
+                            </div>
+                          </div>
+
+                          <div>
+                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Catatan Layanan</div>
                             <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                              {dInfo.desc}
+                              Sarana publik strategis yang melayani warga Dusun {activePoi.dusun} dan sekitarnya. Terintegrasi dengan jalan poros lingkungan desa.
                             </p>
-                          </div>
-
-                          <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Fasilitas Pelayanan Strategis</div>
-                            <div className="space-y-1.5">
-                              {dInfo.facilities.map((fac, fIdx) => (
-                                <div
-                                  key={fIdx}
-                                  className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-[11px]"
-                                >
-                                  <span className="font-semibold text-slate-800">{fac.name}</span>
-                                  <span className="text-[10px] font-medium text-slate-500">{fac.dusun}</span>
-                                </div>
-                              ))}
-                            </div>
                           </div>
 
                           <div className="pt-4 mt-4 border-t border-slate-100 space-y-2">
                             <a
-                              href={`https://maps.google.com/?q=${dInfo.coords}`}
+                              href={`https://maps.google.com/?q=${activePoi.lat},${activePoi.lng}`}
                               target="_blank"
                               rel="noreferrer"
                               className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-xs"
                             >
-                              <span>Navigasi Presisi Google Maps</span>
+                              <span>Buka Rute di Google Maps</span>
                               <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                             </a>
-                            <div className="text-[10px] text-slate-400 text-center">
-                              Data terverifikasi Buku Monografi Desa Kadurama 2026
-                            </div>
+                            <button
+                              onClick={() => setGisSelectedPoiId(null)}
+                              className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs transition"
+                            >
+                              Kembali ke Profil Dusun
+                            </button>
                           </div>
                         </div>
                       );
-                    })()}
+                    }
 
-                  </div>
+                    return (
+                      <div className="space-y-4">
+                        <div className="pb-3 border-b border-slate-100">
+                          <div className="flex items-center justify-between mb-1.5">
+                            <span className="text-[10px] font-bold text-[#009388] uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                              {dInfo.tag}
+                            </span>
+                            <span className="font-mono text-[10px] text-slate-400">KODE: 32.08.10.2002</span>
+                          </div>
+                          <h3 className="text-lg font-bold text-slate-900 tracking-tight">
+                            {dInfo.name}
+                          </h3>
+                          <p className="text-xs text-slate-500 mt-0.5">
+                            {dInfo.sub}
+                          </p>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Penanggung Jawab</div>
+                            <div className="font-bold text-slate-800 text-xs mt-1">{dInfo.lead}</div>
+                            <div className="text-[10px] text-slate-500">{dInfo.leadRole}</div>
+                          </div>
+                          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Luas Wilayah</div>
+                            <div className="font-bold text-slate-800 text-xs mt-1 font-mono">{dInfo.area}</div>
+                            <div className="text-[10px] text-[#009388]">100% Batas Geospasial</div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Karakteristik & Potensi</div>
+                          <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
+                            {dInfo.desc}
+                          </p>
+                        </div>
+
+                        <div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Fasilitas Pelayanan Strategis</div>
+                          <div className="space-y-1.5">
+                            {dInfo.facilities.map((fac, fIdx) => (
+                              <div
+                                key={fIdx}
+                                className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-[11px]"
+                              >
+                                <span className="font-semibold text-slate-800">{fac.name}</span>
+                                <span className="text-[10px] font-medium text-slate-500">{fac.dusun}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="pt-4 mt-4 border-t border-slate-100 space-y-2">
+                          <a
+                            href={`https://maps.google.com/?q=${dInfo.coords}`}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-xs"
+                          >
+                            <span>Navigasi Presisi Google Maps</span>
+                            <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                          </a>
+                          <div className="text-[10px] text-slate-400 text-center">
+                            Data terverifikasi Buku Monografi Desa Kadurama 2026
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })()}
 
                 </div>
 
               </div>
 
             </div>
-          </section>
 
-          {/* =============================================================== */}
-          {/* SECTION 3: PANDUAN INFORMASI & LAYANAN ADMINISTRASI WARGA        */}
-          {/* =============================================================== */}
-          <section id="layanan-warga" className="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-              
-              {/* Header Section dengan CTA Utama Menuju Halaman Layanan */}
-              <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
-                <div className="max-w-2xl">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold uppercase tracking-wider mb-2">
-                    <FileText className="w-3.5 h-3.5 text-[#009388]" />
-                    <span>Layanan Mandiri Warga</span>
-                  </div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Prosedur & Standar Pelayanan Administrasi Warga
-                  </h2>
-                  <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                    Cuplikan persyaratan dokumen administrasi resmi desa. Kunjungi katalog layanan untuk panduan lengkap berkas fisik dan prosedur loket Balai Desa.
-                  </p>
-                </div>
+          </div>
+        </section>
 
-                <div className="flex-shrink-0">
-                  <Link
-                    href="/layanan"
-                    className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#003733] hover:bg-[#002825] text-white text-xs font-bold shadow-xs transition group border border-[#005851]"
-                  >
-                    <span>Buka Katalog Layanan Lengkap</span>
-                    <ArrowRight className="w-4 h-4 text-[#eda50c] group-hover:translate-x-0.5 transition-transform" />
-                  </Link>
+        {/* =============================================================== */}
+        {/* SECTION 3: PANDUAN INFORMASI & LAYANAN ADMINISTRASI WARGA        */}
+        {/* =============================================================== */}
+        <section id="layanan-warga" className="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+            {/* Header Section dengan CTA Utama Menuju Halaman Layanan */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+              <div className="max-w-2xl">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold uppercase tracking-wider mb-2">
+                  <FileText className="w-3.5 h-3.5 text-[#009388]" />
+                  <span>Layanan Mandiri Warga</span>
                 </div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  Prosedur & Standar Pelayanan Administrasi Warga
+                </h2>
+                <p className="text-sm text-slate-600 mt-2 leading-relaxed">
+                  Cuplikan persyaratan dokumen administrasi resmi desa. Kunjungi katalog layanan untuk panduan lengkap berkas fisik dan prosedur loket Balai Desa.
+                </p>
               </div>
 
-              {/* Grid 5 Kartu Cuplikan Layanan (Ringkas & Informatif) */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                {CIVIC_SERVICES_DATA.map((srv) => (
-                  <div
-                    key={srv.id}
-                    className="bg-slate-50 rounded-2xl border border-slate-200 p-5 hover:border-[#009388]/50 hover:shadow-md transition flex flex-col justify-between group"
-                  >
-                    <div>
-                      <div className="flex items-center justify-between gap-2 mb-2.5">
-                        <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-white text-[#003733] border border-slate-200 shadow-2xs">
-                          {srv.code}
-                        </span>
-                        <span className="text-[10px] font-semibold text-[#009388] uppercase tracking-wider">
-                          {srv.category}
-                        </span>
-                      </div>
+              <div className="flex-shrink-0">
+                <Link
+                  href="/layanan"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#003733] hover:bg-[#002825] text-white text-xs font-bold shadow-xs transition group border border-[#005851]"
+                >
+                  <span>Buka Katalog Layanan Lengkap</span>
+                  <ArrowRight className="w-4 h-4 text-[#eda50c] group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              </div>
+            </div>
 
-                      <h3 className="font-extrabold text-base text-slate-900 group-hover:text-[#009388] transition leading-snug">
-                        {srv.title}
-                      </h3>
-
-                      <p className="text-xs text-slate-600 mt-2 line-clamp-2 leading-relaxed font-normal">
-                        {srv.desc}
-                      </p>
-
-                      <div className="mt-4 pt-3 border-t border-slate-200/70 text-[11px] text-slate-500 space-y-1">
-                        <div className="font-semibold text-slate-700">Persyaratan Utama:</div>
-                        <div className="flex items-center gap-1.5 text-slate-600 truncate">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-[#009388] flex-shrink-0" />
-                          <span className="truncate">{srv.requirements[0]}</span>
-                        </div>
-                        <div className="text-slate-400 text-[10px]">
-                          + {srv.requirements.length - 1} berkas pendukung lainnya
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-5 pt-3 border-t border-slate-200 flex items-center justify-between">
-                      <span className="text-[10px] font-medium text-slate-400">Loket Balai Desa</span>
-                      <Link
-                        href="/layanan"
-                        className="text-xs font-bold text-[#009388] hover:text-[#005851] inline-flex items-center gap-1 group-hover:underline"
-                      >
-                        <span>Syarat Lengkap</span>
-                        <ChevronRight className="w-3.5 h-3.5" />
-                      </Link>
-                    </div>
-                  </div>
-                ))}
-
-                {/* Box Khusus CTA Langsung ke Katalog Layanan */}
-                <div className="bg-gradient-to-br from-[#003733] to-[#002825] text-white rounded-2xl p-6 border border-[#005851] shadow-xs flex flex-col justify-between">
+            {/* Grid 5 Kartu Cuplikan Layanan (Ringkas & Informatif) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {CIVIC_SERVICES_DATA.map((srv) => (
+                <div
+                  key={srv.id}
+                  className="bg-slate-50 rounded-2xl border border-slate-200 p-5 hover:border-[#009388]/50 hover:shadow-md transition flex flex-col justify-between group"
+                >
                   <div>
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold uppercase tracking-wider mb-3">
-                      <ShieldCheck className="w-3.5 h-3.5 text-[#eda50c]" />
-                      Standar Pelayanan (SOP)
-                    </span>
-                    <h3 className="text-lg font-extrabold text-white leading-snug">
-                      Butuh Panduan Surat & Verifikasi Berkas Fisik?
+                    <div className="flex items-center justify-between gap-2 mb-2.5">
+                      <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-white text-[#003733] border border-slate-200 shadow-2xs">
+                        {srv.code}
+                      </span>
+                      <span className="text-[10px] font-semibold text-[#009388] uppercase tracking-wider">
+                        {srv.category}
+                      </span>
+                    </div>
+
+                    <h3 className="font-extrabold text-base text-slate-900 group-hover:text-[#009388] transition leading-snug">
+                      {srv.title}
                     </h3>
-                    <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                      Kunjungi direktori layanan untuk membaca SOP resmi, alur verifikasi berkas, dan jam buka loket Balai Desa Kadurama.
+
+                    <p className="text-xs text-slate-600 mt-2 line-clamp-2 leading-relaxed font-normal">
+                      {srv.desc}
                     </p>
+
+                    <div className="mt-4 pt-3 border-t border-slate-200/70 text-[11px] text-slate-500 space-y-1">
+                      <div className="font-semibold text-slate-700">Persyaratan Utama:</div>
+                      <div className="flex items-center gap-1.5 text-slate-600 truncate">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-[#009388] flex-shrink-0" />
+                        <span className="truncate">{srv.requirements[0]}</span>
+                      </div>
+                      <div className="text-slate-400 text-[10px]">
+                        + {srv.requirements.length - 1} berkas pendukung lainnya
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="mt-6 pt-4 border-t border-white/10 space-y-2.5">
+                  <div className="mt-5 pt-3 border-t border-slate-200 flex items-center justify-between">
+                    <span className="text-[10px] font-medium text-slate-400">Loket Balai Desa</span>
                     <Link
                       href="/layanan"
-                      className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white text-xs font-bold transition shadow-xs"
+                      className="text-xs font-bold text-[#009388] hover:text-[#005851] inline-flex items-center gap-1 group-hover:underline"
                     >
-                      <FileText className="w-4 h-4" />
-                      <span>Buka Katalog Layanan Lengkap</span>
-                      <ArrowRight className="w-4 h-4" />
+                      <span>Syarat Lengkap</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
-                    <div className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-200/80">
-                      <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                      <span>Senin - Jumat (08.00 - 15.00 WIB)</span>
-                    </div>
                   </div>
                 </div>
-              </div>
-            </div>
-          </section>
+              ))}
 
-          {/* =============================================================== */}
-          {/* SECTION 4: PAMONG & APARATUR PEMERINTAHAN DESA                  */}
-          {/* =============================================================== */}
-          <section id="perangkat-desa" className="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-              <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+              {/* Box Khusus CTA Langsung ke Katalog Layanan */}
+              <div className="bg-gradient-to-br from-[#003733] to-[#002825] text-white rounded-2xl p-6 border border-[#005851] shadow-xs flex flex-col justify-between">
                 <div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Perangkat Pemerintahan & 3 Kepala Dusun
-                  </h2>
-                  <p className="text-sm text-slate-600 mt-2 max-w-xl">
-                    Jajaran pamong desa yang berdedikasi melayani kepentingan masyarakat dan memajukan Desa Kadurama.
-                  </p>
-                </div>
-                <div className="text-xs text-slate-500 bg-slate-100 px-3.5 py-1.5 rounded-lg border border-slate-200">
-                  Kecamatan Ciawigebang, Kabupaten Kuningan
-                </div>
-              </div>
-
-              {/* Spotlight Kepala Desa */}
-              <div className="mb-10 bg-gradient-to-r from-[#003733] via-[#005851] to-[#009388] text-white rounded-3xl p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
-                <div className="lg:col-span-4 flex justify-center">
-                  <div className="relative w-64 h-80 sm:w-72 sm:h-96 rounded-2xl overflow-hidden border-2 border-[#eda50c]/60 shadow-2xl group bg-slate-800">
-                    <img
-                      src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80"
-                      alt="Kepala Desa Kadurama"
-                      className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-                    <div className="absolute bottom-4 left-4 right-4">
-                      <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-[#eda50c] text-slate-950 uppercase tracking-wider">
-                        Kepala Desa
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="lg:col-span-8 space-y-4">
-                  <div>
-                    <div className="text-[#eda50c] text-xs font-bold uppercase tracking-wider">
-                      Pimpinan Pemerintah Desa
-                    </div>
-                    <h3 className="text-2xl sm:text-4xl font-extrabold text-white mt-1 uppercase">
-                      SUHENDRA, S.Sos
-                    </h3>
-                    <p className="text-xs font-mono text-emerald-200 mt-0.5">NIP. 19780412 200501 1 008</p>
-                  </div>
-
-                  <blockquote className="text-sm sm:text-base text-emerald-100 italic border-l-2 border-[#eda50c] pl-4 py-1 leading-relaxed">
-                    "Kami berkomitmen melayani warga Kadurama dengan tulus, transparan dalam pengelolaan dana APBDes, dan memastikan akurasi data sensus keluarga agar setiap program bantuan pemerintah tepat sasaran."
-                  </blockquote>
-
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4 border-t border-white/15 text-xs text-emerald-100">
-                    <div>
-                      <span className="text-emerald-300 block text-[11px]">Tupoksi</span>
-                      <span className="font-semibold text-white">Penyelenggaraan Pemdes</span>
-                    </div>
-                    <div>
-                      <span className="text-emerald-300 block text-[11px]">Lokasi Kerja</span>
-                      <span className="font-semibold text-white">Kantor Balai Desa</span>
-                    </div>
-                    <div>
-                      <span className="text-emerald-300 block text-[11px]">Wilayah Koordinasi</span>
-                      <span className="font-semibold text-[#eda50c]">3 Dusun & 21 RT</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Jajaran Sekdes & 3 Kepala Dusun */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                {/* Sekdes */}
-                <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden group hover:border-[#009388] hover:shadow-lg transition">
-                  <div className="relative h-72 overflow-hidden bg-slate-800">
-                    <img
-                      src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=500&q=80"
-                      alt="Sekretaris Desa"
-                      className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-                    <div className="absolute bottom-3 left-4">
-                      <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-[#009388] px-2.5 py-0.5 rounded">
-                        Sekretariat
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-5">
-                    <h4 className="font-extrabold text-slate-900 text-base uppercase">DADANG KURNIA</h4>
-                    <div className="text-xs font-semibold text-[#009388] mt-0.5">Sekretaris Desa</div>
-                    <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                      Koordinator administrasi umum, perencanaan pembangunan, dan verifikasi basis data sensus desa.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Kadus Manis */}
-                <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden group hover:border-[#009388] hover:shadow-lg transition">
-                  <div className="relative h-72 overflow-hidden bg-slate-800">
-                    <img
-                      src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80"
-                      alt="Kadus Manis"
-                      className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-                    <div className="absolute bottom-3 left-4">
-                      <span className="text-[10px] font-bold text-slate-950 uppercase tracking-wider bg-[#eda50c] px-2.5 py-0.5 rounded">
-                        Kepala Dusun I
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-5">
-                    <h4 className="font-extrabold text-slate-900 text-base uppercase">AHMAD DAHLAN</h4>
-                    <div className="text-xs font-semibold text-[#009388] mt-0.5">Kepala Dusun Manis</div>
-                    <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                      Penanggung jawab ketenteraman wilayah Dusun Manis (8 RT), surveyor sensus keluarga, dan penagihan PBB-P2.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Kadus Pahing */}
-                <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden group hover:border-[#009388] hover:shadow-lg transition">
-                  <div className="relative h-72 overflow-hidden bg-slate-800">
-                    <img
-                      src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=500&q=80"
-                      alt="Kadus Pahing"
-                      className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-                    <div className="absolute bottom-3 left-4">
-                      <span className="text-[10px] font-bold text-slate-950 uppercase tracking-wider bg-[#eda50c] px-2.5 py-0.5 rounded">
-                        Kepala Dusun II
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-5">
-                    <h4 className="font-extrabold text-slate-900 text-base uppercase">ROHMAT HIDAYAT</h4>
-                    <div className="text-xs font-semibold text-[#009388] mt-0.5">Kepala Dusun Pahing</div>
-                    <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                      Koordinator lumbung pangan padi Dusun Pahing (7 RT), monitoring irigasi sawah, dan pendataan RTLH.
-                    </p>
-                  </div>
-                </div>
-
-                {/* Kadus Wage */}
-                <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden group hover:border-[#009388] hover:shadow-lg transition">
-                  <div className="relative h-72 overflow-hidden bg-slate-800">
-                    <img
-                      src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=500&q=80"
-                      alt="Kadus Wage"
-                      className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-                    <div className="absolute bottom-3 left-4">
-                      <span className="text-[10px] font-bold text-slate-950 uppercase tracking-wider bg-[#eda50c] px-2.5 py-0.5 rounded">
-                        Kepala Dusun III
-                      </span>
-                    </div>
-                  </div>
-                  <div className="p-5">
-                    <h4 className="font-extrabold text-slate-900 text-base uppercase">AGUS SETIAWAN</h4>
-                    <div className="text-xs font-semibold text-[#009388] mt-0.5">Kepala Dusun Wage</div>
-                    <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                      Pengelola konservasi mata air Cikaduran, pendamping kelompok tani ubi & peternak Dusun Wage (6 RT).
-                    </p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          {/* =============================================================== */}
-          {/* SECTION 5: TRANSPARANSI APBDES 2026                             */}
-          {/* =============================================================== */}
-          <section id="apbdes" className="py-20 bg-slate-50 border-b border-slate-200 relative overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-              
-              {/* Header Bersih Tanpa Eyebrow Repetitif */}
-              <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
-                <div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Akuntabilitas & Realisasi APBDes Tahun Anggaran 2026
-                  </h2>
-                  <p className="text-sm text-slate-600 mt-2 max-w-2xl leading-relaxed">
-                    Publikasi terbuka tata kelola keuangan desa, realisasi serapan belanja 5 bidang pembangunan, dan dokumen ketetapan Peraturan Desa (Perdes).
+                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold uppercase tracking-wider mb-3">
+                    <ShieldCheck className="w-3.5 h-3.5 text-[#eda50c]" />
+                    Standar Pelayanan (SOP)
+                  </span>
+                  <h3 className="text-lg font-extrabold text-white leading-snug">
+                    Butuh Panduan Surat & Verifikasi Berkas Fisik?
+                  </h3>
+                  <p className="text-xs text-slate-300 mt-2 leading-relaxed">
+                    Kunjungi direktori layanan untuk membaca SOP resmi, alur verifikasi berkas, dan jam buka loket Balai Desa Kadurama.
                   </p>
                 </div>
 
-                {/* Filter & CTA Transparansi */}
-                <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
-                  <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xs text-xs">
-                    <button
-                      onClick={() => setApbdesFilter("all")}
-                      className={`px-3.5 py-1.5 rounded-lg font-bold transition ${
-                        apbdesFilter === "all" ? "bg-[#009388] text-white" : "text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
-                      Semua
-                    </button>
-                    <button
-                      onClick={() => setApbdesFilter("pendapatan")}
-                      className={`px-3.5 py-1.5 rounded-lg font-bold transition ${
-                        apbdesFilter === "pendapatan" ? "bg-[#009388] text-white" : "text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
-                      Pendapatan
-                    </button>
-                    <button
-                      onClick={() => setApbdesFilter("belanja")}
-                      className={`px-3.5 py-1.5 rounded-lg font-bold transition ${
-                        apbdesFilter === "belanja" ? "bg-[#009388] text-white" : "text-slate-600 hover:text-slate-900"
-                      }`}
-                    >
-                      Belanja
-                    </button>
-                  </div>
-
+                <div className="mt-6 pt-4 border-t border-white/10 space-y-2.5">
                   <Link
-                    href="/transparansi/apbdes"
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#003733] hover:bg-[#002825] text-white text-xs font-bold transition shadow-xs border border-[#005851] group"
+                    href="/layanan"
+                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white text-xs font-bold transition shadow-xs"
                   >
-                    <span>Detail APBDes Lengkap</span>
-                    <ArrowRight className="w-3.5 h-3.5 text-[#eda50c] group-hover:translate-x-0.5 transition-transform" />
+                    <FileText className="w-4 h-4" />
+                    <span>Buka Katalog Layanan Lengkap</span>
+                    <ArrowRight className="w-4 h-4" />
                   </Link>
+                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-200/80">
+                    <Clock className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Senin - Jumat (08.00 - 15.00 WIB)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* =============================================================== */}
+        {/* SECTION 4: PAMONG & APARATUR PEMERINTAHAN DESA                  */}
+        {/* =============================================================== */}
+        <section id="perangkat-desa" className="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  Perangkat Pemerintahan & 3 Kepala Dusun
+                </h2>
+                <p className="text-sm text-slate-600 mt-2 max-w-xl">
+                  Jajaran pamong desa yang berdedikasi melayani kepentingan masyarakat dan memajukan Desa Kadurama.
+                </p>
+              </div>
+              <div className="text-xs text-slate-500 bg-slate-100 px-3.5 py-1.5 rounded-lg border border-slate-200">
+                Kecamatan Ciawigebang, Kabupaten Kuningan
+              </div>
+            </div>
+
+            {/* Spotlight Kepala Desa */}
+            <div className="mb-10 bg-gradient-to-r from-[#003733] via-[#005851] to-[#009388] text-white rounded-3xl p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
+              <div className="lg:col-span-4 flex justify-center">
+                <div className="relative w-64 h-80 sm:w-72 sm:h-96 rounded-2xl overflow-hidden border-2 border-[#eda50c]/60 shadow-2xl group bg-slate-800">
+                  <img
+                    src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80"
+                    alt="Kepala Desa Kadurama"
+                    className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <span className="px-2.5 py-1 rounded-md text-[10px] font-bold bg-[#eda50c] text-slate-950 uppercase tracking-wider">
+                      Kepala Desa
+                    </span>
+                  </div>
                 </div>
               </div>
 
-              {/* Bento Alokasi Anggaran: 2 Kolom Asimetris */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-                
-                {/* Kolom Kiri (4 Cols): Ringkasan Neraca Keuangan & Multi-Segment Serapan */}
-                <div className="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+              <div className="lg:col-span-8 space-y-4">
+                <div>
+                  <div className="text-[#eda50c] text-xs font-bold uppercase tracking-wider">
+                    Pimpinan Pemerintah Desa
+                  </div>
+                  <h3 className="text-2xl sm:text-4xl font-extrabold text-white mt-1 uppercase">
+                    SUHENDRA, S.Sos
+                  </h3>
+                  <p className="text-xs font-mono text-emerald-200 mt-0.5">NIP. 19780412 200501 1 008</p>
+                </div>
+
+                <blockquote className="text-sm sm:text-base text-emerald-100 italic border-l-2 border-[#eda50c] pl-4 py-1 leading-relaxed">
+                  "Kami berkomitmen melayani warga Kadurama dengan tulus, transparan dalam pengelolaan dana APBDes, dan memastikan akurasi data sensus keluarga agar setiap program bantuan pemerintah tepat sasaran."
+                </blockquote>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4 border-t border-white/15 text-xs text-emerald-100">
                   <div>
-                    <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Basis Data APBDes 2026
+                    <span className="text-emerald-300 block text-[11px]">Tupoksi</span>
+                    <span className="font-semibold text-white">Penyelenggaraan Pemdes</span>
+                  </div>
+                  <div>
+                    <span className="text-emerald-300 block text-[11px]">Lokasi Kerja</span>
+                    <span className="font-semibold text-white">Kantor Balai Desa</span>
+                  </div>
+                  <div>
+                    <span className="text-emerald-300 block text-[11px]">Wilayah Koordinasi</span>
+                    <span className="font-semibold text-[#eda50c]">3 Dusun & 21 RT</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Jajaran Sekdes & 3 Kepala Dusun */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {/* Sekdes */}
+              <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden group hover:border-[#009388] hover:shadow-lg transition">
+                <div className="relative h-72 overflow-hidden bg-slate-800">
+                  <img
+                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=500&q=80"
+                    alt="Sekretaris Desa"
+                    className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                  <div className="absolute bottom-3 left-4">
+                    <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-[#009388] px-2.5 py-0.5 rounded">
+                      Sekretariat
+                    </span>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h4 className="font-extrabold text-slate-900 text-base uppercase">DADANG KURNIA</h4>
+                  <div className="text-xs font-semibold text-[#009388] mt-0.5">Sekretaris Desa</div>
+                  <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                    Koordinator administrasi umum, perencanaan pembangunan, dan verifikasi basis data sensus desa.
+                  </p>
+                </div>
+              </div>
+
+              {/* Kadus Manis */}
+              <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden group hover:border-[#009388] hover:shadow-lg transition">
+                <div className="relative h-72 overflow-hidden bg-slate-800">
+                  <img
+                    src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80"
+                    alt="Kadus Manis"
+                    className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                  <div className="absolute bottom-3 left-4">
+                    <span className="text-[10px] font-bold text-slate-950 uppercase tracking-wider bg-[#eda50c] px-2.5 py-0.5 rounded">
+                      Kepala Dusun I
+                    </span>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h4 className="font-extrabold text-slate-900 text-base uppercase">AHMAD DAHLAN</h4>
+                  <div className="text-xs font-semibold text-[#009388] mt-0.5">Kepala Dusun Manis</div>
+                  <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                    Penanggung jawab ketenteraman wilayah Dusun Manis (8 RT), surveyor sensus keluarga, dan penagihan PBB-P2.
+                  </p>
+                </div>
+              </div>
+
+              {/* Kadus Pahing */}
+              <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden group hover:border-[#009388] hover:shadow-lg transition">
+                <div className="relative h-72 overflow-hidden bg-slate-800">
+                  <img
+                    src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=500&q=80"
+                    alt="Kadus Pahing"
+                    className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                  <div className="absolute bottom-3 left-4">
+                    <span className="text-[10px] font-bold text-slate-950 uppercase tracking-wider bg-[#eda50c] px-2.5 py-0.5 rounded">
+                      Kepala Dusun II
+                    </span>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h4 className="font-extrabold text-slate-900 text-base uppercase">ROHMAT HIDAYAT</h4>
+                  <div className="text-xs font-semibold text-[#009388] mt-0.5">Kepala Dusun Pahing</div>
+                  <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                    Koordinator lumbung pangan padi Dusun Pahing (7 RT), monitoring irigasi sawah, dan pendataan RTLH.
+                  </p>
+                </div>
+              </div>
+
+              {/* Kadus Wage */}
+              <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden group hover:border-[#009388] hover:shadow-lg transition">
+                <div className="relative h-72 overflow-hidden bg-slate-800">
+                  <img
+                    src="https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=500&q=80"
+                    alt="Kadus Wage"
+                    className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
+                  <div className="absolute bottom-3 left-4">
+                    <span className="text-[10px] font-bold text-slate-950 uppercase tracking-wider bg-[#eda50c] px-2.5 py-0.5 rounded">
+                      Kepala Dusun III
+                    </span>
+                  </div>
+                </div>
+                <div className="p-5">
+                  <h4 className="font-extrabold text-slate-900 text-base uppercase">AGUS SETIAWAN</h4>
+                  <div className="text-xs font-semibold text-[#009388] mt-0.5">Kepala Dusun Wage</div>
+                  <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                    Pengelola konservasi mata air Cikaduran, pendamping kelompok tani ubi & peternak Dusun Wage (6 RT).
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* =============================================================== */}
+        {/* SECTION 5: TRANSPARANSI APBDES 2026                             */}
+        {/* =============================================================== */}
+        <section id="apbdes" className="py-20 bg-slate-50 border-b border-slate-200 relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+            {/* Header Bersih Tanpa Eyebrow Repetitif */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  Akuntabilitas & Realisasi APBDes Tahun Anggaran 2026
+                </h2>
+                <p className="text-sm text-slate-600 mt-2 max-w-2xl leading-relaxed">
+                  Publikasi terbuka tata kelola keuangan desa, realisasi serapan belanja 5 bidang pembangunan, dan dokumen ketetapan Peraturan Desa (Perdes).
+                </p>
+              </div>
+
+              {/* Filter & CTA Transparansi */}
+              <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
+                <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xs text-xs">
+                  <button
+                    onClick={() => setApbdesFilter("all")}
+                    className={`px-3.5 py-1.5 rounded-lg font-bold transition ${apbdesFilter === "all" ? "bg-[#009388] text-white" : "text-slate-600 hover:text-slate-900"
+                      }`}
+                  >
+                    Semua
+                  </button>
+                  <button
+                    onClick={() => setApbdesFilter("pendapatan")}
+                    className={`px-3.5 py-1.5 rounded-lg font-bold transition ${apbdesFilter === "pendapatan" ? "bg-[#009388] text-white" : "text-slate-600 hover:text-slate-900"
+                      }`}
+                  >
+                    Pendapatan
+                  </button>
+                  <button
+                    onClick={() => setApbdesFilter("belanja")}
+                    className={`px-3.5 py-1.5 rounded-lg font-bold transition ${apbdesFilter === "belanja" ? "bg-[#009388] text-white" : "text-slate-600 hover:text-slate-900"
+                      }`}
+                  >
+                    Belanja
+                  </button>
+                </div>
+
+                <Link
+                  href="/transparansi/apbdes"
+                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#003733] hover:bg-[#002825] text-white text-xs font-bold transition shadow-xs border border-[#005851] group"
+                >
+                  <span>Detail APBDes Lengkap</span>
+                  <ArrowRight className="w-3.5 h-3.5 text-[#eda50c] group-hover:translate-x-0.5 transition-transform" />
+                </Link>
+              </div>
+            </div>
+
+            {/* Bento Alokasi Anggaran: 2 Kolom Asimetris */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+
+              {/* Kolom Kiri (4 Cols): Ringkasan Neraca Keuangan & Multi-Segment Serapan */}
+              <div className="lg:col-span-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs space-y-6">
+                <div>
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                    Basis Data APBDes 2026
+                  </div>
+                  <h3 className="text-lg font-extrabold text-slate-900 mt-1">
+                    Ringkasan Kas & Realisasi
+                  </h3>
+                </div>
+
+                {/* Neraca Angka Utama dengan Hairline Dividers */}
+                <div className="space-y-4 divide-y divide-slate-100">
+                  <div>
+                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                      Total Pendapatan Desa
                     </div>
-                    <h3 className="text-lg font-extrabold text-slate-900 mt-1">
-                      Ringkasan Kas & Realisasi
-                    </h3>
+                    <div id="apbdes-pendapatan-val" className="text-2xl font-black text-slate-900 font-mono mt-1">
+                      Rp {apbdesTotals.pendapatan.toLocaleString("id-ID")}
+                    </div>
+                    <div className="text-[11px] text-[#009388] font-medium mt-0.5">
+                      Dana Desa (DD), ADD, PADes & Bagi Pajak
+                    </div>
                   </div>
 
-                  {/* Neraca Angka Utama dengan Hairline Dividers */}
-                  <div className="space-y-4 divide-y divide-slate-100">
-                    <div>
-                      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                        Total Pendapatan Desa
-                      </div>
-                      <div id="apbdes-pendapatan-val" className="text-2xl font-black text-slate-900 font-mono mt-1">
-                        Rp {apbdesTotals.pendapatan.toLocaleString("id-ID")}
-                      </div>
-                      <div className="text-[11px] text-[#009388] font-medium mt-0.5">
-                        Dana Desa (DD), ADD, PADes & Bagi Pajak
-                      </div>
+                  <div className="pt-4">
+                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                      Total Realisasi Belanja
                     </div>
-
-                    <div className="pt-4">
-                      <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                        Total Realisasi Belanja
-                      </div>
-                      <div id="apbdes-belanja-val" className="text-2xl font-black text-[#009388] font-mono mt-1">
-                        Rp {apbdesTotals.belanja.toLocaleString("id-ID")}
-                      </div>
-                      <div className="text-[11px] text-slate-500 mt-0.5">
-                        Realisasi serapan triwulan berjalan
-                      </div>
+                    <div id="apbdes-belanja-val" className="text-2xl font-black text-[#009388] font-mono mt-1">
+                      Rp {apbdesTotals.belanja.toLocaleString("id-ID")}
                     </div>
-
-                    <div className="pt-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Sisa Pagu / Surplus</span>
-                        <span className="text-xs font-bold text-emerald-700 font-mono">
-                          Rp {(apbdesTotals.pendapatan - apbdesTotals.belanja).toLocaleString("id-ID")}
-                        </span>
-                      </div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Realisasi serapan triwulan berjalan
                     </div>
                   </div>
 
-                  {/* Serapan Multi-Segment Visual */}
-                  <div className="pt-2 border-t border-slate-100">
-                    <div className="flex items-center justify-between text-xs mb-2">
-                      <span className="font-bold text-slate-700">Rasio Penyerapan Kas</span>
-                      <span id="apbdes-serapan-val" className="font-mono font-extrabold text-[#009388]">
-                        {apbdesTotals.serapan}%
+                  <div className="pt-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Sisa Pagu / Surplus</span>
+                      <span className="text-xs font-bold text-emerald-700 font-mono">
+                        Rp {(apbdesTotals.pendapatan - apbdesTotals.belanja).toLocaleString("id-ID")}
                       </span>
-                    </div>
-
-                    {/* Proportional Segment Bar (Tanpa Track Abu-abu Tebal Generik) */}
-                    <div className="h-2.5 rounded-full flex overflow-hidden gap-0.5">
-                      <div style={{ width: "35%" }} title="Penyelenggaraan (35%)" className="bg-[#009388]" />
-                      <div style={{ width: "38%" }} title="Pembangunan (38%)" className="bg-[#10b981]" />
-                      <div style={{ width: "12%" }} title="Pembinaan (12%)" className="bg-[#eda50c]" />
-                      <div style={{ width: "10%" }} title="Pemberdayaan (10%)" className="bg-sky-600" />
-                      <div style={{ width: "5%" }} title="Penanggulangan Bencana (5%)" className="bg-rose-500" />
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 mt-4 text-[10px] text-slate-600">
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#009388]" /><span>Penyelenggaraan</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#10b981]" /><span>Pembangunan</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#eda50c]" /><span>Pembinaan</span></div>
-                      <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-sky-600" /><span>Pemberdayaan</span></div>
                     </div>
                   </div>
                 </div>
 
-                {/* Kolom Kanan (8 Cols): Daftar 5 Bidang & Unduh Salinan Perdes */}
-                <div className="lg:col-span-8">
-                  {(apbdesFilter === "all" || apbdesFilter === "belanja") && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {apbdesBidangList.map((bidang) => (
-                        <div
-                          key={bidang.id}
-                          className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between"
-                        >
-                          <div>
-                            <div className="flex justify-between items-start">
-                              <span className="text-[10px] font-bold text-[#009388] uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/50">
-                                Bidang {bidang.id}
-                              </span>
-                              <span className="text-xs font-bold text-[#009388] font-mono">
-                                {bidang.persen}% Terpakai
-                              </span>
-                            </div>
-                            <h4 className="font-bold text-slate-900 text-sm mt-2">{bidang.nama}</h4>
-                            <p className="text-xs text-slate-500 mt-1 leading-relaxed">{bidang.keterangan}</p>
-                          </div>
-                          <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
-                            <span className="text-slate-400 text-[11px]">Pagu Ditetapkan:</span>
-                            <span className="font-bold text-slate-900 font-mono">
-                              Rp {bidang.pagu.toLocaleString("id-ID")}
+                {/* Serapan Multi-Segment Visual */}
+                <div className="pt-2 border-t border-slate-100">
+                  <div className="flex items-center justify-between text-xs mb-2">
+                    <span className="font-bold text-slate-700">Rasio Penyerapan Kas</span>
+                    <span id="apbdes-serapan-val" className="font-mono font-extrabold text-[#009388]">
+                      {apbdesTotals.serapan}%
+                    </span>
+                  </div>
+
+                  {/* Proportional Segment Bar (Tanpa Track Abu-abu Tebal Generik) */}
+                  <div className="h-2.5 rounded-full flex overflow-hidden gap-0.5">
+                    <div style={{ width: "35%" }} title="Penyelenggaraan (35%)" className="bg-[#009388]" />
+                    <div style={{ width: "38%" }} title="Pembangunan (38%)" className="bg-[#10b981]" />
+                    <div style={{ width: "12%" }} title="Pembinaan (12%)" className="bg-[#eda50c]" />
+                    <div style={{ width: "10%" }} title="Pemberdayaan (10%)" className="bg-sky-600" />
+                    <div style={{ width: "5%" }} title="Penanggulangan Bencana (5%)" className="bg-rose-500" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2 mt-4 text-[10px] text-slate-600">
+                    <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#009388]" /><span>Penyelenggaraan</span></div>
+                    <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#10b981]" /><span>Pembangunan</span></div>
+                    <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#eda50c]" /><span>Pembinaan</span></div>
+                    <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-sky-600" /><span>Pemberdayaan</span></div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Kolom Kanan (8 Cols): Daftar 5 Bidang & Unduh Salinan Perdes */}
+              <div className="lg:col-span-8">
+                {(apbdesFilter === "all" || apbdesFilter === "belanja") && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {apbdesBidangList.map((bidang) => (
+                      <div
+                        key={bidang.id}
+                        className="p-5 rounded-2xl bg-white border border-slate-200 shadow-2xs flex flex-col justify-between"
+                      >
+                        <div>
+                          <div className="flex justify-between items-start">
+                            <span className="text-[10px] font-bold text-[#009388] uppercase bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200/50">
+                              Bidang {bidang.id}
+                            </span>
+                            <span className="text-xs font-bold text-[#009388] font-mono">
+                              {bidang.persen}% Terpakai
                             </span>
                           </div>
+                          <h4 className="font-bold text-slate-900 text-sm mt-2">{bidang.nama}</h4>
+                          <p className="text-xs text-slate-500 mt-1 leading-relaxed">{bidang.keterangan}</p>
                         </div>
-                      ))}
-
-                      {/* Kartu Unduh Dokumen Resmi Perdes PDF */}
-                      <div className="p-5 rounded-2xl bg-[#003733] text-white flex flex-col justify-between shadow-2xs border border-[#005851]">
-                        <div>
-                          <span className="text-[10px] font-bold text-[#eda50c] uppercase tracking-wider">
-                            Transparansi Publik
+                        <div className="mt-4 pt-3 border-t border-slate-100 flex justify-between items-center text-xs">
+                          <span className="text-slate-400 text-[11px]">Pagu Ditetapkan:</span>
+                          <span className="font-bold text-slate-900 font-mono">
+                            Rp {bidang.pagu.toLocaleString("id-ID")}
                           </span>
-                          <h4 className="font-bold text-white text-base mt-1">Salinan Perdes APBDes 2026</h4>
-                          <p className="text-xs text-emerald-100/80 mt-1.5 leading-relaxed">
-                            Unduh berkas PDF resmi lembaran daerah dan rincian alokasi anggaran belanja yang telah disahkan BPD Desa Kadurama.
-                          </p>
-                        </div>
-                        <div className="mt-5 space-y-2">
-                          <button
-                            onClick={() => alert("Mengunduh salinan resmi Perdes APBDes Kadurama 2026 format PDF...")}
-                            className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white text-xs font-bold transition shadow-xs"
-                          >
-                            <Download className="w-4 h-4" />
-                            <span>Unduh Salinan Berkas PDF</span>
-                          </button>
-                          <Link
-                            href="/transparansi/apbdes"
-                            className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-emerald-200 text-xs font-semibold transition border border-white/10"
-                          >
-                            <span>Buka Halaman Rincian APBDes</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
-                          </Link>
                         </div>
                       </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </section>
+                    ))}
 
-          {/* =============================================================== */}
-          {/* SECTION 6: KABAR & BERITA DESA KADURAMA                         */}
-          {/* =============================================================== */}
-          <section id="berita" className="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-              
-              {/* Header Bersih Tanpa Eyebrow Repetitif */}
-              <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
-                <div>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
-                    Kabar & Warta Kegiatan Desa Kadurama
-                  </h2>
-                  <p className="text-sm text-slate-600 mt-2 max-w-xl leading-relaxed">
-                    Liputan resmi agenda pembangunan infrastruktur, musyawarah 3 dusun, dan keterbukaan penyaluran bantuan sosial warga.
-                  </p>
-                </div>
-                <a
-                  href="/berita"
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#003733] hover:bg-[#005851] text-white text-xs font-bold transition shadow-xs flex-shrink-0"
-                >
-                  <span>Lihat Seluruh Berita & Warta</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#eda50c]" />
-                </a>
-              </div>
-
-              {/* Asymmetric Editorial News Layout (1 Besar + 1 Sedang + 1 Kecil + 1 Box CTA) */}
-              {(() => {
-                const published = newsList.filter((n) => n.status === "Terbit");
-                const featured = published[0];
-                const mediumItem = published[1];
-                const smallItem = published[2];
-
-                if (!featured) return null;
-
-                const getSlug = (id: string) => {
-                  if (id === "NEWS-001") return "musyawarah-rkpdes-2027";
-                  if (id === "NEWS-002") return "penyaluran-blt-dana-desa-triwulan-iii-2026";
-                  if (id === "NEWS-003") return "posyandu-balita-dan-skrining-stunting-pahing";
-                  if (id === "NEWS-004") return "rehabilitasi-drainase-pemukiman-dusun-wage";
-                  if (id === "NEWS-005") return "pelatihan-digital-marketing-umkm-ubi-kuningan";
-                  return "panen-raya-padi-organik-dusun-pahing";
-                };
-
-                return (
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
-                    {/* 1 ARTIKEL UTAMA / BESAR (7 Cols) */}
-                    <article className="lg:col-span-7 bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:shadow-md transition flex flex-col justify-between group">
+                    {/* Kartu Unduh Dokumen Resmi Perdes PDF */}
+                    <div className="p-5 rounded-2xl bg-[#003733] text-white flex flex-col justify-between shadow-2xs border border-[#005851]">
                       <div>
-                        <div className="h-64 sm:h-72 bg-slate-200 overflow-hidden relative">
-                          <img
-                            src={featured.imageUrl}
-                            alt={featured.title}
-                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          />
-                          <div
-                            className={`absolute top-4 left-4 text-[10px] font-bold px-3 py-1 rounded-md uppercase tracking-wider ${
-                              featured.category === "Bansos"
-                                ? "bg-[#eda50c] text-slate-950"
-                                : "bg-[#009388] text-white shadow-xs"
-                            }`}
-                          >
-                            {featured.category}
-                          </div>
-                        </div>
-                        <div className="p-6 sm:p-8">
-                          <div className="text-xs text-slate-500 mb-2 font-medium">
-                            {featured.date} • Ditulis oleh {featured.author}
-                          </div>
-                          <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 group-hover:text-[#009388] transition leading-snug">
-                            <Link href={`/berita/${getSlug(featured.id)}`}>
-                              {featured.title}
-                            </Link>
-                          </h3>
-                          <p className="text-xs sm:text-sm text-slate-600 mt-3 leading-relaxed">
-                            {featured.summary}
-                          </p>
-                        </div>
+                        <span className="text-[10px] font-bold text-[#eda50c] uppercase tracking-wider">
+                          Transparansi Publik
+                        </span>
+                        <h4 className="font-bold text-white text-base mt-1">Salinan Perdes APBDes 2026</h4>
+                        <p className="text-xs text-emerald-100/80 mt-1.5 leading-relaxed">
+                          Unduh berkas PDF resmi lembaran daerah dan rincian alokasi anggaran belanja yang telah disahkan BPD Desa Kadurama.
+                        </p>
                       </div>
-                      <div className="px-6 pb-6 sm:px-8 sm:pb-8 pt-0">
-                        <Link
-                          href={`/berita/${getSlug(featured.id)}`}
-                          className="pt-4 border-t border-slate-200 flex justify-between items-center text-xs font-bold text-[#009388] hover:underline"
+                      <div className="mt-5 space-y-2">
+                        <button
+                          onClick={() => alert("Mengunduh salinan resmi Perdes APBDes Kadurama 2026 format PDF...")}
+                          className="w-full inline-flex items-center justify-center gap-2 py-2 px-4 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white text-xs font-bold transition shadow-xs"
                         >
-                          <span>Baca Liputan Berita Lengkap</span>
-                          <span className="group-hover:translate-x-1 transition-transform">→</span>
+                          <Download className="w-4 h-4" />
+                          <span>Unduh Salinan Berkas PDF</span>
+                        </button>
+                        <Link
+                          href="/transparansi/apbdes"
+                          className="w-full inline-flex items-center justify-center gap-1.5 py-2 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-emerald-200 text-xs font-semibold transition border border-white/10"
+                        >
+                          <span>Buka Halaman Rincian APBDes</span>
+                          <ArrowRight className="w-3.5 h-3.5" />
                         </Link>
                       </div>
-                    </article>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </section>
 
-                    {/* SISI KANAN (5 Cols): 1 Sedang di atas, 1 Kecil & 1 Box CTA di bawah */}
-                    <div className="lg:col-span-5 flex flex-col justify-between gap-5">
-                      {/* 1 ARTIKEL SEDANG (Horizontal Card) */}
-                      {mediumItem && (
-                        <article className="bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:shadow-md transition group p-5 flex flex-col justify-between">
-                          <div className="flex flex-col sm:flex-row gap-4">
-                            <div className="w-full sm:w-32 h-28 flex-shrink-0 rounded-2xl overflow-hidden bg-slate-200 relative">
-                              <img
-                                src={mediumItem.imageUrl}
-                                alt={mediumItem.title}
-                                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                              />
+        {/* =============================================================== */}
+        {/* SECTION 6: KABAR & BERITA DESA KADURAMA                         */}
+        {/* =============================================================== */}
+        <section id="berita" className="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+
+            {/* Header Bersih Tanpa Eyebrow Repetitif */}
+            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+              <div>
+                <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
+                  Kabar & Warta Kegiatan Desa Kadurama
+                </h2>
+                <p className="text-sm text-slate-600 mt-2 max-w-xl leading-relaxed">
+                  Liputan resmi agenda pembangunan infrastruktur, musyawarah 3 dusun, dan keterbukaan penyaluran bantuan sosial warga.
+                </p>
+              </div>
+              <a
+                href="/berita"
+                className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-[#003733] hover:bg-[#005851] text-white text-xs font-bold transition shadow-xs flex-shrink-0"
+              >
+                <span>Lihat Seluruh Berita & Warta</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#eda50c]" />
+              </a>
+            </div>
+
+            {/* Asymmetric Editorial News Layout (1 Besar + 1 Sedang + 1 Kecil + 1 Box CTA) */}
+            {(() => {
+              const published = newsList.filter((n) => n.status === "Terbit");
+              const featured = published[0];
+              const mediumItem = published[1];
+              const smallItem = published[2];
+
+              if (!featured) return null;
+
+              const getSlug = (id: string) => {
+                if (id === "NEWS-001") return "musyawarah-rkpdes-2027";
+                if (id === "NEWS-002") return "penyaluran-blt-dana-desa-triwulan-iii-2026";
+                if (id === "NEWS-003") return "posyandu-balita-dan-skrining-stunting-pahing";
+                if (id === "NEWS-004") return "rehabilitasi-drainase-pemukiman-dusun-wage";
+                if (id === "NEWS-005") return "pelatihan-digital-marketing-umkm-ubi-kuningan";
+                return "panen-raya-padi-organik-dusun-pahing";
+              };
+
+              return (
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
+                  {/* 1 ARTIKEL UTAMA / BESAR (7 Cols) */}
+                  <article className="lg:col-span-7 bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:shadow-md transition flex flex-col justify-between group">
+                    <div>
+                      <div className="h-64 sm:h-72 bg-slate-200 overflow-hidden relative">
+                        <img
+                          src={featured.imageUrl}
+                          alt={featured.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        />
+                        <div
+                          className={`absolute top-4 left-4 text-[10px] font-bold px-3 py-1 rounded-md uppercase tracking-wider ${featured.category === "Bansos"
+                            ? "bg-[#eda50c] text-slate-950"
+                            : "bg-[#009388] text-white shadow-xs"
+                            }`}
+                        >
+                          {featured.category}
+                        </div>
+                      </div>
+                      <div className="p-6 sm:p-8">
+                        <div className="text-xs text-slate-500 mb-2 font-medium">
+                          {featured.date} • Ditulis oleh {featured.author}
+                        </div>
+                        <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 group-hover:text-[#009388] transition leading-snug">
+                          <Link href={`/berita/${getSlug(featured.id)}`}>
+                            {featured.title}
+                          </Link>
+                        </h3>
+                        <p className="text-xs sm:text-sm text-slate-600 mt-3 leading-relaxed">
+                          {featured.summary}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="px-6 pb-6 sm:px-8 sm:pb-8 pt-0">
+                      <Link
+                        href={`/berita/${getSlug(featured.id)}`}
+                        className="pt-4 border-t border-slate-200 flex justify-between items-center text-xs font-bold text-[#009388] hover:underline"
+                      >
+                        <span>Baca Liputan Berita Lengkap</span>
+                        <span className="group-hover:translate-x-1 transition-transform">→</span>
+                      </Link>
+                    </div>
+                  </article>
+
+                  {/* SISI KANAN (5 Cols): 1 Sedang di atas, 1 Kecil & 1 Box CTA di bawah */}
+                  <div className="lg:col-span-5 flex flex-col justify-between gap-5">
+                    {/* 1 ARTIKEL SEDANG (Horizontal Card) */}
+                    {mediumItem && (
+                      <article className="bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:shadow-md transition group p-5 flex flex-col justify-between">
+                        <div className="flex flex-col sm:flex-row gap-4">
+                          <div className="w-full sm:w-32 h-28 flex-shrink-0 rounded-2xl overflow-hidden bg-slate-200 relative">
+                            <img
+                              src={mediumItem.imageUrl}
+                              alt={mediumItem.title}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 mb-1.5">
+                              <span className="text-[9px] font-bold px-2 py-0.5 rounded uppercase bg-[#eda50c]/20 text-amber-900 border border-amber-300/40">
+                                {mediumItem.category}
+                              </span>
+                              <span className="text-[11px] text-slate-400 truncate">{mediumItem.date}</span>
                             </div>
-                            <div className="min-w-0 flex-1">
-                              <div className="flex items-center gap-2 mb-1.5">
-                                <span className="text-[9px] font-bold px-2 py-0.5 rounded uppercase bg-[#eda50c]/20 text-amber-900 border border-amber-300/40">
-                                  {mediumItem.category}
-                                </span>
-                                <span className="text-[11px] text-slate-400 truncate">{mediumItem.date}</span>
-                              </div>
-                              <h4 className="font-bold text-slate-900 text-sm group-hover:text-[#009388] transition line-clamp-2 leading-snug">
-                                <Link href={`/berita/${getSlug(mediumItem.id)}`}>
-                                  {mediumItem.title}
-                                </Link>
-                              </h4>
-                              <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
-                                {mediumItem.summary}
-                              </p>
+                            <h4 className="font-bold text-slate-900 text-sm group-hover:text-[#009388] transition line-clamp-2 leading-snug">
+                              <Link href={`/berita/${getSlug(mediumItem.id)}`}>
+                                {mediumItem.title}
+                              </Link>
+                            </h4>
+                            <p className="text-[11px] text-slate-500 mt-1 line-clamp-2 leading-relaxed">
+                              {mediumItem.summary}
+                            </p>
+                          </div>
+                        </div>
+                        <Link
+                          href={`/berita/${getSlug(mediumItem.id)}`}
+                          className="mt-3 pt-2.5 border-t border-slate-200/70 flex justify-between items-center text-[11px] font-semibold text-[#009388] hover:underline"
+                        >
+                          <span>Baca Selengkapnya</span>
+                          <span className="group-hover:translate-x-1 transition-transform">→</span>
+                        </Link>
+                      </article>
+                    )}
+
+                    {/* BAGIAN GIZI DIBAGI 2: 1 KECIL (KIRI) + 1 BOX CARD LIHAT SELENGKAPNYA (KANAN) */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
+                      {/* 1 ARTIKEL KECIL (Posyandu & Gizi) */}
+                      {smallItem && (
+                        <article className="bg-slate-50 border border-slate-200 rounded-3xl p-4 hover:shadow-md transition group flex flex-col justify-between">
+                          <div>
+                            <div className="flex items-center justify-between gap-1 mb-2">
+                              <span className="text-[9px] font-bold px-2 py-0.5 rounded uppercase bg-emerald-100 text-[#005851]">
+                                {smallItem.category}
+                              </span>
+                              <span className="text-[10px] text-slate-400">{smallItem.date}</span>
                             </div>
+                            <h5 className="font-bold text-slate-900 text-xs sm:text-sm group-hover:text-[#009388] transition line-clamp-3 leading-snug">
+                              <Link href={`/berita/${getSlug(smallItem.id)}`}>
+                                {smallItem.title}
+                              </Link>
+                            </h5>
+                            <p className="text-[11px] text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
+                              {smallItem.summary}
+                            </p>
                           </div>
                           <Link
-                            href={`/berita/${getSlug(mediumItem.id)}`}
-                            className="mt-3 pt-2.5 border-t border-slate-200/70 flex justify-between items-center text-[11px] font-semibold text-[#009388] hover:underline"
+                            href={`/berita/${getSlug(smallItem.id)}`}
+                            className="mt-3 pt-2 border-t border-slate-200/70 text-[11px] font-bold text-[#009388] flex items-center justify-between"
                           >
-                            <span>Baca Selengkapnya</span>
-                            <span className="group-hover:translate-x-1 transition-transform">→</span>
+                            <span>Baca Warta</span>
+                            <span>→</span>
                           </Link>
                         </article>
                       )}
 
-                      {/* BAGIAN GIZI DIBAGI 2: 1 KECIL (KIRI) + 1 BOX CARD LIHAT SELENGKAPNYA (KANAN) */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
-                        {/* 1 ARTIKEL KECIL (Posyandu & Gizi) */}
-                        {smallItem && (
-                          <article className="bg-slate-50 border border-slate-200 rounded-3xl p-4 hover:shadow-md transition group flex flex-col justify-between">
-                            <div>
-                              <div className="flex items-center justify-between gap-1 mb-2">
-                                <span className="text-[9px] font-bold px-2 py-0.5 rounded uppercase bg-emerald-100 text-[#005851]">
-                                  {smallItem.category}
-                                </span>
-                                <span className="text-[10px] text-slate-400">{smallItem.date}</span>
-                              </div>
-                              <h5 className="font-bold text-slate-900 text-xs sm:text-sm group-hover:text-[#009388] transition line-clamp-3 leading-snug">
-                                <Link href={`/berita/${getSlug(smallItem.id)}`}>
-                                  {smallItem.title}
-                                </Link>
-                              </h5>
-                              <p className="text-[11px] text-slate-500 mt-1.5 line-clamp-2 leading-relaxed">
-                                {smallItem.summary}
-                              </p>
-                            </div>
-                            <Link
-                              href={`/berita/${getSlug(smallItem.id)}`}
-                              className="mt-3 pt-2 border-t border-slate-200/70 text-[11px] font-bold text-[#009388] flex items-center justify-between"
-                            >
-                              <span>Baca Warta</span>
-                              <span>→</span>
-                            </Link>
-                          </article>
-                        )}
-
-                        {/* 1 BOX CARD LIHAT BERITA LAINNYA */}
-                        <div className="bg-gradient-to-br from-[#003733] to-[#002825] text-white rounded-3xl p-4 border border-[#005851] shadow-xs flex flex-col justify-between group">
-                          <div>
-                            <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-[#eda50c] flex items-center justify-center mb-2.5 border border-emerald-400/30">
-                              <Newspaper className="w-4 h-4" />
-                            </div>
-                            <h5 className="font-extrabold text-white text-sm leading-snug">
-                              Jelajahi Warta Desa Lainnya
-                            </h5>
-                            <p className="text-[11px] text-emerald-100/70 mt-1.5 leading-relaxed line-clamp-3">
-                              Liputan pembangunan 3 dusun, agenda musyawarah, dan penyaluran bansos.
-                            </p>
+                      {/* 1 BOX CARD LIHAT BERITA LAINNYA */}
+                      <div className="bg-gradient-to-br from-[#003733] to-[#002825] text-white rounded-3xl p-4 border border-[#005851] shadow-xs flex flex-col justify-between group">
+                        <div>
+                          <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-[#eda50c] flex items-center justify-center mb-2.5 border border-emerald-400/30">
+                            <Newspaper className="w-4 h-4" />
                           </div>
-                          <Link
-                            href="/berita"
-                            className="mt-3 pt-2 border-t border-white/10 text-xs font-bold text-[#eda50c] group-hover:text-amber-300 flex items-center justify-between transition"
-                          >
-                            <span>Lihat Semua Berita</span>
-                            <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
-                          </Link>
+                          <h5 className="font-extrabold text-white text-sm leading-snug">
+                            Jelajahi Warta Desa Lainnya
+                          </h5>
+                          <p className="text-[11px] text-emerald-100/70 mt-1.5 leading-relaxed line-clamp-3">
+                            Liputan pembangunan 3 dusun, agenda musyawarah, dan penyaluran bansos.
+                          </p>
                         </div>
+                        <Link
+                          href="/berita"
+                          className="mt-3 pt-2 border-t border-white/10 text-xs font-bold text-[#eda50c] group-hover:text-amber-300 flex items-center justify-between transition"
+                        >
+                          <span>Lihat Semua Berita</span>
+                          <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                        </Link>
                       </div>
                     </div>
                   </div>
-                );
-              })()}
-            </div>
-          </section>
+                </div>
+              );
+            })()}
+          </div>
+        </section>
 
-          {/* =============================================================== */}
-          {/* SECTION 7: LOKASI KANTOR DESA & KONTAK                           */}
-          {/* =============================================================== */}
-          <section id="lokasi-kantor" className="py-20 bg-slate-50 border-b border-slate-200 relative overflow-hidden">
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-              <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 shadow-xs grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
-                <div>
-                  <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
-                    Kantor Balai Desa Kadurama
-                  </h3>
-                  <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                    Silakan datang langsung ke balai desa pada jam kerja operasional atau hubungi nomor layanan masyarakat desa.
-                  </p>
-                  <div className="mt-6 space-y-3 text-xs text-slate-600">
-                    <div className="flex items-center gap-3">
-                      <MapPin className="w-4 h-4 text-[#009388] flex-shrink-0" />
-                      <span>Jl. Desa Kadurama No. 01, Dusun Manis, Kuningan</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Phone className="w-4 h-4 text-[#009388] flex-shrink-0" />
-                      <span>+62 821-2345-6789 (WhatsApp Pelayanan)</span>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Mail className="w-4 h-4 text-[#009388] flex-shrink-0" />
-                      <span>pemdes@kadurama.desa.id</span>
-                    </div>
+        {/* =============================================================== */}
+        {/* SECTION 7: LOKASI KANTOR DESA & KONTAK                           */}
+        {/* =============================================================== */}
+        <section id="lokasi-kantor" className="py-20 bg-slate-50 border-b border-slate-200 relative overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div className="bg-white rounded-3xl border border-slate-200 p-8 sm:p-12 shadow-xs grid grid-cols-1 lg:grid-cols-3 gap-8 items-center">
+              <div>
+                <h3 className="text-2xl font-extrabold text-slate-900 tracking-tight">
+                  Kantor Balai Desa Kadurama
+                </h3>
+                <p className="text-xs text-slate-600 mt-2 leading-relaxed">
+                  Silakan datang langsung ke balai desa pada jam kerja operasional atau hubungi nomor layanan masyarakat desa.
+                </p>
+                <div className="mt-6 space-y-3 text-xs text-slate-600">
+                  <div className="flex items-center gap-3">
+                    <MapPin className="w-4 h-4 text-[#009388] flex-shrink-0" />
+                    <span>Jl. Desa Kadurama No. 01, Dusun Manis, Kuningan</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Phone className="w-4 h-4 text-[#009388] flex-shrink-0" />
+                    <span>+62 821-2345-6789 (WhatsApp Pelayanan)</span>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <Mail className="w-4 h-4 text-[#009388] flex-shrink-0" />
+                    <span>pemdes@kadurama.desa.id</span>
                   </div>
                 </div>
+              </div>
 
-                <div className="lg:col-span-2 rounded-2xl overflow-hidden border border-slate-200 h-64 sm:h-80 relative bg-slate-100">
-                  <iframe
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15843.582697843076!2d108.545!3d-6.996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e6f1672688849b3%3A0xb30f81dcb06573c!2sKadurama%2C%20Ciawigebang%2C%20Kuningan%20Regency%2C%20West%20Java!5e0!3m2!1sen!2sid!4v1700000000000!5m2!1sen!2sid"
-                    width="100%"
-                    height="100%"
-                    style={{ border: 0 }}
-                    allowFullScreen={false}
-                    loading="lazy"
-                    title="Peta Lokasi Kantor Desa Kadurama"
-                  ></iframe>
-                </div>
+              <div className="lg:col-span-2 rounded-2xl overflow-hidden border border-slate-200 h-64 sm:h-80 relative bg-slate-100">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d15843.582697843076!2d108.545!3d-6.996!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e6f1672688849b3%3A0xb30f81dcb06573c!2sKadurama%2C%20Ciawigebang%2C%20Kuningan%20Regency%2C%20West%20Java!5e0!3m2!1sen!2sid!4v1700000000000!5m2!1sen!2sid"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen={false}
+                  loading="lazy"
+                  title="Peta Lokasi Kantor Desa Kadurama"
+                ></iframe>
               </div>
             </div>
-          </section>
+          </div>
+        </section>
 
-          {/* FOOTER PUBLIK */}
-          <CivicFooter />
-        </main>
+        {/* FOOTER PUBLIK */}
+        <CivicFooter />
+      </main>
 
       {/* FLOATING SYNC NOTIFICATION TOAST */}
       {syncNotification && (

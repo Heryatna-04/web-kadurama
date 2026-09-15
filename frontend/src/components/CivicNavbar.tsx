@@ -166,82 +166,91 @@ export default function CivicNavbar({ onOpenAdminLogin }: CivicNavbarProps) {
 
             {/* 2. PROFIL DESA DROPDOWN */}
             <div
-              className="relative"
-              onMouseEnter={() => handleDropdownEnter("profil")}
-              onMouseLeave={handleDropdownLeave}
-            >
-              <button
-                onClick={() => setActiveDropdown(activeDropdown === "profil" ? null : "profil")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                  isProfilActive || activeDropdown === "profil"
-                    ? "text-white bg-[#005851]"
-                    : "text-emerald-100 hover:text-white hover:bg-[#005851]"
-                }`}
-              >
-                <span>Profil Desa</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                    activeDropdown === "profil" ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {activeDropdown === "profil" && (
-                <div
-                  className="absolute top-full left-0 pt-2 w-72 z-50 select-none before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3 before:bg-transparent"
+                  className="relative"
                   onMouseEnter={() => handleDropdownEnter("profil")}
                   onMouseLeave={handleDropdownLeave}
                 >
-                  <div className="relative bg-white text-slate-800 rounded-2xl p-2.5 shadow-2xl border border-slate-200 animate-in fade-in-50 zoom-in-95 duration-150">
-                    <div className="absolute -top-1.5 left-5 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none" />
-                    
-                    <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Pemerintahan & Wilayah
-                    </div>
-                    <Link
-                      href="/profil/pemerintahan"
-                      onClick={() => setActiveDropdown(null)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#e6f7f5] hover:text-[#009388] transition"
-                    >
-                      <Building2 className="w-4 h-4 text-[#009388]" />
-                      <div>
-                        <div className="font-bold">Pemerintahan & Pamong</div>
-                        <div className="text-[11px] text-slate-500 font-normal">Struktur Kuwu, BPD, dan Pamong</div>
-                      </div>
-                    </Link>
+                  <button
+                    onClick={() => setActiveDropdown("profil")}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
+                      activeDropdown === "profil"
+                        ? "text-white bg-[#005851]"
+                        : "text-emerald-100 hover:text-white hover:bg-[#005851]"
+                    }`}
+                  >
+                    <span>Profil Desa</span>
+                    <ChevronDown
+                      className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                        activeDropdown === "profil" ? "rotate-180" : ""
+                      }`}
+                    />
+                  </button>
 
-                    <div className="my-1.5 border-t border-slate-100" />
-                    <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Halaman Khusus Dusun
+                  {activeDropdown === "profil" && (
+                    <div
+                      className="absolute top-full left-0 pt-2 w-72 z-50 select-none before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3 before:bg-transparent"
+                      onMouseEnter={() => handleDropdownEnter("profil")}
+                      onMouseLeave={handleDropdownLeave}
+                    >
+                      <div className="relative bg-white text-slate-800 rounded-2xl p-2.5 shadow-2xl border border-slate-200 animate-in fade-in-50 zoom-in-95 duration-150">
+                        <div className="absolute -top-1.5 left-5 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none" />
+                        <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Pemerintahan & Wilayah
+                        </div>
+                        <a
+                          href="/profil/pemerintahan"
+                          onClick={() => setActiveDropdown(null)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#e6f7f5] hover:text-[#009388] transition"
+                        >
+                          <Building2 className="w-4 h-4 text-[#009388]" />
+                          <div>
+                            <div className="font-bold">Pemerintahan & Pamong</div>
+                            <div className="text-[11px] text-slate-500 font-normal">Struktur Kuwu, BPD, dan Pamong</div>
+                          </div>
+                        </a>
+                        <a
+                          href="/profil/demografi"
+                          onClick={() => setActiveDropdown(null)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#e6f7f5] hover:text-[#009388] transition"
+                        >
+                          <Users className="w-4 h-4 text-[#eda50c]" />
+                          <div>
+                            <div className="font-bold">Demografi & Statistik</div>
+                            <div className="text-[11px] text-slate-500 font-normal">Populasi, pekerjaan, dan desil</div>
+                          </div>
+                        </a>
+                        <div className="my-1.5 border-t border-slate-100" />
+                        <div className="px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-slate-400">
+                          Halaman Khusus Dusun
+                        </div>
+                        <a
+                          href="/dusun/manis"
+                          onClick={() => setActiveDropdown(null)}
+                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
+                        >
+                          <span>Dusun I • Manis</span>
+                          <span className="text-[10px] text-slate-400 font-mono">Pusat Desa &rarr;</span>
+                        </a>
+                        <a
+                          href="/dusun/pahing"
+                          onClick={() => setActiveDropdown(null)}
+                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
+                        >
+                          <span>Dusun II • Pahing</span>
+                          <span className="text-[10px] text-slate-400 font-mono">Lumbung Padi &rarr;</span>
+                        </a>
+                        <a
+                          href="/dusun/wage"
+                          onClick={() => setActiveDropdown(null)}
+                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
+                        >
+                          <span>Dusun III • Wage</span>
+                          <span className="text-[10px] text-slate-400 font-mono">Mata Air & Lereng &rarr;</span>
+                        </a>
+                      </div>
                     </div>
-                    <Link
-                      href="/dusun/manis"
-                      onClick={() => setActiveDropdown(null)}
-                      className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
-                    >
-                      <span>Dusun I • Manis</span>
-                      <span className="text-[10px] text-slate-400 font-mono">Pusat Desa &rarr;</span>
-                    </Link>
-                    <Link
-                      href="/dusun/pahing"
-                      onClick={() => setActiveDropdown(null)}
-                      className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
-                    >
-                      <span>Dusun II • Pahing</span>
-                      <span className="text-[10px] text-slate-400 font-mono">Lumbung Padi &rarr;</span>
-                    </Link>
-                    <Link
-                      href="/dusun/wage"
-                      onClick={() => setActiveDropdown(null)}
-                      className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
-                    >
-                      <span>Dusun III • Wage</span>
-                      <span className="text-[10px] text-slate-400 font-mono">Mata Air & Lereng &rarr;</span>
-                    </Link>
-                  </div>
+                  )}
                 </div>
-              )}
-            </div>
 
             {/* 3. LAYANAN WARGA (INFORMASI PERSYARATAN & SOP LOKET) */}
             <Link
@@ -255,55 +264,17 @@ export default function CivicNavbar({ onOpenAdminLogin }: CivicNavbarProps) {
               <span>Layanan Warga</span>
             </Link>
 
-            {/* 4. TRANSPARANSI APBDES */}
-            <div
-              className="relative"
-              onMouseEnter={() => handleDropdownEnter("transparansi")}
-              onMouseLeave={handleDropdownLeave}
+            {/* 4. TRANSPARANSI APBDES (Direct Link - Tanpa Dropdown) */}
+            <Link
+              href="/transparansi/apbdes"
+              className={`px-3 py-1.5 rounded-lg transition whitespace-nowrap ${
+                isTransparansiActive
+                  ? "text-white bg-[#005851]"
+                  : "text-emerald-100 hover:text-white hover:bg-[#005851]"
+              }`}
             >
-              <button
-                onClick={() => setActiveDropdown(activeDropdown === "transparansi" ? null : "transparansi")}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg transition ${
-                  isTransparansiActive || activeDropdown === "transparansi"
-                    ? "text-white bg-[#005851]"
-                    : "text-emerald-100 hover:text-white hover:bg-[#005851]"
-                }`}
-              >
-                <span>Transparansi</span>
-                <ChevronDown
-                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
-                    activeDropdown === "transparansi" ? "rotate-180" : ""
-                  }`}
-                />
-              </button>
-
-              {activeDropdown === "transparansi" && (
-                <div
-                  className="absolute top-full left-0 pt-2 w-72 z-50 select-none before:content-[''] before:absolute before:-top-3 before:left-0 before:w-full before:h-3 before:bg-transparent"
-                  onMouseEnter={() => handleDropdownEnter("transparansi")}
-                  onMouseLeave={handleDropdownLeave}
-                >
-                  <div className="relative bg-white text-slate-800 rounded-2xl p-2.5 shadow-2xl border border-slate-200 animate-in fade-in-50 zoom-in-95 duration-150">
-                    <div className="absolute -top-1.5 left-5 w-3 h-3 bg-white border-t border-l border-slate-200 rotate-45 pointer-events-none" />
-                    
-                    <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
-                      Akuntabilitas Anggaran
-                    </div>
-                    <Link
-                      href="/transparansi/apbdes"
-                      onClick={() => setActiveDropdown(null)}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#e6f7f5] hover:text-[#009388] transition"
-                    >
-                      <PieChart className="w-4 h-4 text-[#009388]" />
-                      <div>
-                        <div className="font-bold">APBDes 2026 & Realisasi</div>
-                        <div className="text-[11px] text-slate-500 font-normal">Pagu, pendapatan DD, & belanja bidang</div>
-                      </div>
-                    </Link>
-                  </div>
-                </div>
-              )}
-            </div>
+              <span>Transparansi APBDes</span>
+            </Link>
 
             {/* 5. PETA GIS WILAYAH (Direct Link Halaman Khusus - Tanpa Icon) */}
             <Link
@@ -314,7 +285,7 @@ export default function CivicNavbar({ onOpenAdminLogin }: CivicNavbarProps) {
                   : "text-emerald-100 hover:text-white hover:bg-[#005851]"
               }`}
             >
-              <span>Peta GIS</span>
+              <span>Peta Wilayah</span>
             </Link>
 
             {/* 6. KABAR & INFORMASI DROPDOWN */}
