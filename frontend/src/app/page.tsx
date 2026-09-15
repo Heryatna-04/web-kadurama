@@ -48,6 +48,10 @@ import {
   Bed,
   Activity,
   Info,
+  Wheat,
+  Mountain,
+  Award,
+  Sparkles,
 } from "lucide-react";
 
 // =========================================================================
@@ -1352,6 +1356,9 @@ export default function Home() {
     setActiveDropdown((prev) => (prev === id ? null : id));
   };
 
+  // Public Dusun Showcase State
+  const [activeDusunTab, setActiveDusunTab] = useState<"all" | "Manis" | "Pahing" | "Puhun">("all");
+
   // Public Map & Facility State
   const [activeFacilityId, setActiveFacilityId] = useState<number>(1);
   const [facilityCategoryFilter, setFacilityCategoryFilter] = useState<
@@ -2289,161 +2296,197 @@ export default function Home() {
       {/* =================================================================== */}
       {view === "public" ? (
         <main className="flex-1">
-          {/* HERO SECTION DENGAN ORNAMEN GERBANG KUNINGAN (FULL 100VH BACKGROUND) & CIVIC COCKPIT */}
+          {/* =============================================================== */}
+          {/* HERO SECTION DENGAN ORNAMEN GERBANG KUNINGAN & CIVIC COCKPIT     */}
+          {/* =============================================================== */}
           <section
             id="beranda"
-            className="min-h-[calc(100vh-110px)] flex items-center relative overflow-hidden bg-gradient-to-b from-[#021815] via-[#003833] to-[#001715] text-white py-16 lg:py-24"
+            className="min-h-[calc(100vh-110px)] flex flex-col justify-between relative overflow-hidden bg-gradient-to-b from-[#021815] via-[#002f2b] to-[#011412] text-white pt-16 pb-0"
           >
-            {/* 1. Golden Backlight & Ambient Radial Glow behind Landmark */}
-            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[1100px] h-[520px] bg-gradient-to-t from-[#eda50c]/25 via-[#009388]/20 to-transparent rounded-full blur-3xl pointer-events-none" />
-            <div className="absolute top-1/4 left-1/3 -translate-x-1/2 w-[600px] h-[400px] bg-[#009388]/15 rounded-full blur-3xl pointer-events-none" />
+            {/* 1. Golden Backlight & Ambient Atmospheric Glow behind Landmark */}
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[1100px] h-[520px] bg-gradient-to-t from-[#eda50c]/20 via-[#009388]/15 to-transparent rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-1/4 left-1/4 -translate-x-1/2 w-[600px] h-[400px] bg-[#009388]/15 rounded-full blur-3xl pointer-events-none" />
 
-            {/* 2. Landmark Gerbang Kuningan 100vh Background (CSS Multiply: Zero White Noise, Preserves True Teal & Gold) */}
-            <div className="absolute inset-x-0 bottom-0 flex items-end justify-center mix-blend-multiply opacity-80 pointer-events-none select-none z-0">
+            {/* 2. Landmark Gerbang Kuningan Background (Integrated with Multiply & Mask) */}
+            <div className="absolute inset-x-0 bottom-0 flex items-end justify-center mix-blend-multiply opacity-75 pointer-events-none select-none z-0">
               <img
                 src="/kuningan-gate.png"
                 alt="Landmark Gerbang Kuningan Asri"
-                className="w-full max-w-5xl h-auto object-contain object-bottom filter brightness-105 contrast-120 select-none"
+                className="w-full max-w-5xl h-auto object-contain object-bottom filter brightness-105 contrast-125 select-none [mask-image:linear-gradient(to_top,black_70%,transparent)]"
               />
             </div>
 
-            {/* 3. Gradient Overlay for Smooth Bottom Transition & Text Contrast */}
-            <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-[#001715] to-transparent pointer-events-none z-0" />
-            <div className="absolute inset-0 bg-gradient-to-b from-[#021815]/80 via-transparent to-[#001715]/70 pointer-events-none z-0" />
+            {/* 3. Gradient Vignette & Architectural Grid Overlay */}
+            <div className="absolute inset-0 bg-gradient-to-b from-[#021815]/80 via-transparent to-[#011412]/90 pointer-events-none z-0" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:48px_48px] pointer-events-none z-0" />
 
-            {/* 4. Subtle Civic Dot Matrix Grid */}
-            <div className="absolute inset-0 bg-[radial-gradient(#eda50c_1px,transparent_1px)] [background-size:24px_24px] opacity-10 pointer-events-none z-0" />
-
-            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10">
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-12 items-center">
-                {/* Kolom Kiri: Narasi Kepemimpinan & Keterbukaan (Col 7) */}
-                <div className="lg:col-span-7">
-                  {/* Badge Identitas */}
+            {/* Main Hero Container */}
+            <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full relative z-10 my-auto py-8">
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 lg:gap-14 items-center">
+                {/* Kolom Kiri: Narrative & Clear Civic Focus (Col 7) */}
+                <div className="lg:col-span-7 space-y-6">
+                  {/* Eyebrow Badge (Restrained, Dignified) */}
                   <div
                     id="hero-badge"
-                    className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#009388]/30 border border-[#009388]/40 text-[#eda50c] text-xs font-bold mb-6"
+                    className="inline-flex items-center gap-2.5 px-3.5 py-1.5 rounded-full bg-white/[0.08] border border-white/15 text-xs text-emerald-200 font-medium tracking-wide backdrop-blur-sm shadow-sm"
                   >
-                    <Building2 className="w-3.5 h-3.5 text-[#eda50c]" />
-                    <span>Portal Resmi Desa Kadurama • Kecamatan Ciawigebang</span>
+                    <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+                    <span>Portal Resmi Desa Kadurama • Kec. Ciawigebang, Kab. Kuningan</span>
                   </div>
 
-                  {/* Headline Utama */}
+                  {/* Headline Utama (Max 2 Baris Desktop - Taste Directives) */}
                   <h1
                     id="hero-title"
-                    className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight text-white leading-tight"
+                    className="text-3xl sm:text-5xl lg:text-[54px] font-extrabold tracking-tight text-white leading-[1.14]"
                   >
-                    Akurasi Data Dusun, <br className="hidden sm:inline" />
-                    <span className="text-[#eda50c]">Layanan Berintegritas</span> & Transparan
+                    Keterbukaan Data Wilayah,{" "}
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#eda50c] via-amber-200 to-[#eda50c]">
+                      Kesejahteraan Nyata
+                    </span>{" "}
+                    Warga
                   </h1>
 
-                  {/* Subtext Ringkas */}
+                  {/* Subtext Ringkas (Maksimal 20 Kata - Anti-Slop Directive) */}
                   <p
                     id="hero-desc"
-                    className="mt-5 text-base sm:text-lg text-slate-300 max-w-2xl leading-relaxed"
+                    className="text-base sm:text-lg text-slate-200/90 max-w-xl leading-relaxed font-normal"
                   >
-                    Pusat keterbukaan informasi publik, profil potensi 3 dusun tradisional, visualisasi peta geografis wilayah, transparansi anggaran APBDes, dan kesiapan basis data kesejahteraan warga desa.
+                    Integrasi profil 3 dusun, transparansi anggaran APBDes 2026, dan pendataan sensus keluarga terpadu di lereng Gunung Ciremai.
                   </p>
 
-                  {/* Tombol Aksi Hero */}
-                  <div id="hero-actions" className="mt-8 flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+                  {/* Tombol Aksi Hero (1 Primary + 1 Secondary, No Wrap) */}
+                  <div id="hero-actions" className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5">
                     <a
                       href="#profil-dusun"
-                      className="px-6 py-3.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-sm transition shadow-lg shadow-[#009388]/20 flex items-center justify-center gap-2 group"
+                      className="px-6 py-3.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-semibold text-sm transition shadow-lg shadow-[#009388]/25 flex items-center justify-center gap-2.5 group cursor-pointer"
                     >
                       <span>Jelajahi Profil 3 Dusun</span>
                       <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                     </a>
                     <a
                       href="#geografis"
-                      className="px-6 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-bold text-sm transition flex items-center justify-center gap-2"
+                      className="px-5 py-3.5 rounded-xl bg-white/10 hover:bg-white/15 border border-white/20 text-white font-semibold text-sm transition backdrop-blur-sm flex items-center justify-center gap-2 cursor-pointer"
                     >
                       <Compass className="w-4 h-4 text-[#eda50c]" />
-                      <span>Peta Wilayah & Fasilitas</span>
+                      <span>Peta & Geografis Desa</span>
                     </a>
-                  </div>
-
-                  {/* Notice Box Keterpaduan Data Sensus Desa */}
-                  <div className="mt-8 p-4 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3.5 max-w-xl">
-                    <ShieldCheck className="w-5 h-5 text-[#eda50c] flex-shrink-0 mt-0.5" />
-                    <div className="text-xs text-slate-300 leading-relaxed">
-                      <strong className="text-white">Basis Data Terpadu Desa:</strong> Seluruh data keluarga, kondisi kelayakan rumah, dan desil ekonomi diperbarui berkala oleh masing-masing Kepala Dusun untuk ketepatan sasaran program pemerintah.
-                    </div>
                   </div>
                 </div>
 
-                {/* Kolom Kanan: Civic Cockpit Panel */}
+                {/* Kolom Kanan: Civic Cockpit & Performance Card (Col 5) */}
                 <div className="lg:col-span-5 relative" id="hero-gate-card">
-                  <div className="absolute -inset-4 bg-gradient-to-r from-[#009388]/30 via-[#eda50c]/20 to-transparent rounded-3xl blur-2xl pointer-events-none"></div>
+                  <div className="absolute -inset-4 bg-gradient-to-tr from-[#009388]/20 via-[#eda50c]/15 to-transparent rounded-3xl blur-2xl pointer-events-none" />
 
-                  <div className="relative bg-gradient-to-b from-white/15 via-white/10 to-white/5 backdrop-blur-md rounded-3xl p-6 sm:p-7 border border-white/20 shadow-2xl overflow-hidden group">
-                    {/* Top Status Header */}
+                  <div className="relative bg-[#02211d]/85 backdrop-blur-md rounded-3xl p-6 sm:p-7 border border-white/15 shadow-2xl space-y-6">
+                    {/* Header Cockpit: Status IDM */}
                     <div className="flex items-center justify-between pb-4 border-b border-white/10">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-[#eda50c] animate-pulse"></span>
-                        <span className="text-xs font-bold uppercase tracking-wider text-[#eda50c]">
-                          Status IDM: Desa Mandiri
-                        </span>
+                      <div className="flex items-center gap-2.5">
+                        <div className="w-8 h-8 rounded-xl bg-[#eda50c]/20 border border-[#eda50c]/30 flex items-center justify-center text-[#eda50c]">
+                          <Award className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <div className="text-[10px] uppercase font-bold tracking-wider text-[#eda50c]">
+                            Status IDM 2026
+                          </div>
+                          <div className="text-xs font-extrabold text-white">Desa Mandiri (Skor 0.8942)</div>
+                        </div>
                       </div>
-                      <span className="text-[11px] font-mono text-emerald-200 bg-white/10 px-2.5 py-0.5 rounded-full border border-white/15">
-                        Skor 0.8942
+                      <span className="text-[10px] font-mono text-emerald-300 bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-400/30">
+                        Kode: 32.08.09.2005
                       </span>
                     </div>
 
-                    {/* Informasi Operasional Pelayanan Balai Desa */}
-                    <div className="my-5 space-y-4 text-xs">
-                      <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
-                        <Clock className="w-4 h-4 text-[#eda50c] flex-shrink-0 mt-0.5" />
-                        <div>
-                          <div className="font-bold text-white uppercase tracking-wider text-[11px]">
-                            Jam Pelayanan Kantor Balai Desa
-                          </div>
-                          <div className="text-slate-300 mt-0.5">
-                            Senin - Jumat: 08.00 - 15.00 WIB
-                          </div>
-                          <div className="text-[10px] text-emerald-300 mt-0.5">
-                            Sabtu, Minggu & Hari Libur Nasional Tutup
-                          </div>
-                        </div>
+                    {/* 3 Core Demographic Pillars */}
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-center">
+                        <div className="text-xl sm:text-2xl font-black text-white font-mono">3</div>
+                        <div className="text-[10px] text-slate-300 font-medium mt-0.5">Dusun</div>
+                        <div className="text-[9px] text-emerald-300/80 mt-0.5">Manis • Pahing • Puhun</div>
                       </div>
-
-                      <div className="p-3.5 rounded-2xl bg-white/5 border border-white/10 flex items-start gap-3">
-                        <MapPin className="w-4 h-4 text-[#eda50c] flex-shrink-0 mt-0.5" />
-                        <div>
-                          <div className="font-bold text-white uppercase tracking-wider text-[11px]">
-                            Lokasi Pusat Pemerintahan
-                          </div>
-                          <div className="text-slate-300 mt-0.5 leading-snug">
-                            Jl. Desa Kadurama No. 01, Dusun Manis
-                          </div>
-                          <div className="text-[10px] text-slate-400 mt-0.5">
-                            Kec. Ciawigebang, Kab. Kuningan, Jawa Barat 45591
-                          </div>
-                        </div>
+                      <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-center">
+                        <div className="text-xl sm:text-2xl font-black text-[#eda50c] font-mono">492</div>
+                        <div className="text-[10px] text-slate-300 font-medium mt-0.5">Keluarga (KK)</div>
+                        <div className="text-[9px] text-amber-200/80 mt-0.5">Sensus 100% Terdata</div>
+                      </div>
+                      <div className="p-3 rounded-2xl bg-white/[0.04] border border-white/10 text-center">
+                        <div className="text-xl sm:text-2xl font-black text-emerald-300 font-mono">1.660</div>
+                        <div className="text-[10px] text-slate-300 font-medium mt-0.5">Jiwa Warga</div>
+                        <div className="text-[9px] text-slate-300/70 mt-0.5">21 RT / 6 RW</div>
                       </div>
                     </div>
 
-                    {/* Rangkuman 3 Dusun & Wilayah */}
-                    <div className="grid grid-cols-3 gap-2.5 pt-4 border-t border-white/10 text-center">
-                      <div className="bg-white/5 rounded-xl p-2.5">
-                        <div className="text-base font-extrabold text-white font-mono">3</div>
-                        <div className="text-[10px] text-slate-300 font-medium">Dusun</div>
+                    {/* Operational Service Status Strip */}
+                    <div className="p-3.5 rounded-2xl bg-white/[0.04] border border-white/10 flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2.5">
+                        <Clock className="w-4 h-4 text-[#eda50c] flex-shrink-0" />
+                        <div>
+                          <div className="font-semibold text-white text-[11px]">Layanan Kantor Balai Desa</div>
+                          <div className="text-slate-300 text-[10px]">Senin - Jumat: 08.00 - 15.00 WIB</div>
+                        </div>
                       </div>
-                      <div className="bg-white/5 rounded-xl p-2.5">
-                        <div className="text-base font-extrabold text-[#eda50c] font-mono">21</div>
-                        <div className="text-[10px] text-slate-300 font-medium">RT / 6 RW</div>
-                      </div>
-                      <div className="bg-white/5 rounded-xl p-2.5">
-                        <div className="text-base font-extrabold text-emerald-300 font-mono">492</div>
-                        <div className="text-[10px] text-slate-300 font-medium">Kepala Keluarga</div>
-                      </div>
+                      <span className="flex-shrink-0 inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-semibold border border-emerald-400/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                        Buka
+                      </span>
                     </div>
 
-                    {/* Semboyan Kuningan Asri */}
-                    <div className="mt-5 pt-3.5 border-t border-white/10 flex items-center justify-between text-[11px] text-slate-400">
-                      <span>Motto Kabupaten:</span>
-                      <strong className="text-[#eda50c] italic font-semibold">
-                        "Kuningan Asri - Aman, Sehat, Rindang, Indah"
-                      </strong>
+                    {/* Quick Link Footer */}
+                    <div className="pt-2 flex items-center justify-between text-[11px] text-slate-400">
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3.5 h-3.5 text-[#eda50c]" />
+                        Jl. Desa Kadurama No. 01
+                      </span>
+                      <a
+                        href="#geografis"
+                        className="text-[#eda50c] hover:underline font-semibold flex items-center gap-1"
+                      >
+                        <span>Lihat Lokasi Balai</span>
+                        <ChevronRight className="w-3 h-3" />
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Bottom Horizon Metric Strip: Connecting Hero to Next Section */}
+            <div className="w-full bg-[#001715]/90 border-t border-white/10 backdrop-blur-md relative z-10">
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 divide-y md:divide-y-0 md:divide-x divide-white/10">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#eda50c]">
+                      <Compass className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">142.8 Hektar</div>
+                      <div className="text-[10px] text-slate-400">Luas Wilayah Administratif</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 pt-3 md:pt-0 md:pl-4">
+                    <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-emerald-400">
+                      <Mountain className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">285 - 340 mdpl</div>
+                      <div className="text-[10px] text-slate-400">Elevasi Lereng G. Ciremai</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 pt-3 md:pt-0 md:pl-4">
+                    <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-[#eda50c]">
+                      <DollarSign className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">Rp 1.48 Miliar</div>
+                      <div className="text-[10px] text-slate-400">APBDes 2026 Transparan</div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-3 pt-3 md:pt-0 md:pl-4">
+                    <div className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center text-emerald-400">
+                      <Users className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="text-xs font-bold text-white">3 Dusun Harmonis</div>
+                      <div className="text-[10px] text-slate-400">Manis • Pahing • Puhun</div>
                     </div>
                   </div>
                 </div>
@@ -2452,221 +2495,398 @@ export default function Home() {
           </section>
 
           {/* =============================================================== */}
-          {/* SECTION 1: PROFIL & POTENSI 3 DUSUN KADURAMA                    */}
+          {/* SECTION 1: PROFIL & POTENSI 3 DUSUN KADURAMA (ASYMMETRIC BENTO)  */}
           {/* =============================================================== */}
           <section id="profil-dusun" className="py-20 bg-white border-b border-slate-200 relative overflow-hidden">
-            <div className="absolute inset-0 bg-[radial-gradient(#009388_1px,transparent_1px)] [background-size:24px_24px] opacity-[0.06] pointer-events-none" />
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:48px_48px] pointer-events-none" />
+            <div className="absolute inset-0 bg-[radial-gradient(#009388_1px,transparent_1px)] [background-size:28px_28px] opacity-[0.05] pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#f1f5f9_1px,transparent_1px),linear-gradient(to_bottom,#f1f5f9_1px,transparent_1px)] bg-[size:48px_48px] opacity-60 pointer-events-none" />
 
             <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-              <div className="flex flex-col md:flex-row md:items-end justify-between mb-12 gap-4">
+              {/* Header Section dengan Subtitle & Filter Tabs */}
+              <div className="flex flex-col lg:flex-row lg:items-end justify-between mb-10 gap-6">
                 <div>
-                  <span className="text-xs font-bold uppercase tracking-wider text-[#009388] bg-[#e6f7f5] px-3 py-1 rounded-full border border-[#009388]/20">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[#009388] bg-[#e6f7f5] px-3.5 py-1 rounded-full border border-[#009388]/20">
                     Wilayah Administratif
                   </span>
-                  <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 mt-3">
-                    Profil Karakteristik & Potensi 3 Dusun
+                  <h2 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-slate-900 mt-3 tracking-tight">
+                    Karakteristik & Potensi 3 Dusun
                   </h2>
-                  <p className="text-sm text-slate-600 mt-2 max-w-xl">
-                    Desa Kadurama terbagi menjadi 3 dusun utama dengan keunggulan komplementer di sektor pemerintahan, lumbung pangan organik, dan perkebunan ubi.
+                  <p className="text-sm text-slate-600 mt-2 max-w-2xl leading-relaxed">
+                    Setiap dusun memiliki keunggulan komplementer yang saling menopang: pusat pemerintahan dan UMKM di Dusun Manis, lumbung pangan di Dusun Pahing, serta agrowisata dan mata air di Dusun Puhun.
                   </p>
                 </div>
-                <div className="text-xs text-slate-500 bg-slate-100 px-3.5 py-1.5 rounded-lg border border-slate-200 font-medium">
-                  Basis Survei Sensus Kesejahteraan Keluarga
+
+                {/* Filter Tabs Interaktif */}
+                <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200 self-start lg:self-auto overflow-x-auto max-w-full">
+                  <button
+                    onClick={() => setActiveDusunTab("all")}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                      activeDusunTab === "all"
+                        ? "bg-white text-slate-900 shadow-sm border border-slate-200"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Semua Dusun (3)
+                  </button>
+                  <button
+                    onClick={() => setActiveDusunTab("Manis")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                      activeDusunTab === "Manis"
+                        ? "bg-[#009388] text-white shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Dusun I: Manis
+                  </button>
+                  <button
+                    onClick={() => setActiveDusunTab("Pahing")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                      activeDusunTab === "Pahing"
+                        ? "bg-[#eda50c] text-slate-950 shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Dusun II: Pahing
+                  </button>
+                  <button
+                    onClick={() => setActiveDusunTab("Puhun")}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition whitespace-nowrap ${
+                      activeDusunTab === "Puhun"
+                        ? "bg-[#003733] text-white shadow-sm"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    Dusun III: Puhun
+                  </button>
                 </div>
               </div>
 
-              {/* Grid 3 Dusun */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                {/* Dusun 1: Manis */}
-                <div className="bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:border-[#009388] hover:shadow-lg transition flex flex-col justify-between group">
-                  <div>
-                    <div className="h-48 bg-slate-800 relative overflow-hidden">
-                      <img
-                        src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80"
-                        alt="Dusun Manis"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-                      <div className="absolute top-3.5 left-3.5 bg-[#009388] text-white text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
-                        Dusun I • Manis
+              {/* Asymmetric Bento Showcase Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-7">
+                {/* 1. DUSUN MANIS - THE CIVIC & ECONOMIC HEART (Col-Span-7 Dominant Bento Cell) */}
+                {(activeDusunTab === "all" || activeDusunTab === "Manis") && (
+                  <div
+                    className={`${
+                      activeDusunTab === "Manis" ? "lg:col-span-12" : "lg:col-span-7"
+                    } bg-gradient-to-br from-slate-50 via-white to-[#e6f7f5]/30 border border-slate-200 rounded-3xl overflow-hidden hover:border-[#009388] hover:shadow-xl transition-all duration-300 flex flex-col justify-between group`}
+                  >
+                    <div>
+                      {/* Panoramic Header with High Quality Village Photo */}
+                      <div className="relative h-64 sm:h-72 w-full overflow-hidden bg-slate-900">
+                        <img
+                          src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80"
+                          alt="Dusun Manis Kadurama"
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-[#021815] via-[#021815]/40 to-transparent" />
+                        
+                        {/* Badges Overlay */}
+                        <div className="absolute top-4 left-4 flex items-center gap-2">
+                          <span className="px-3 py-1 rounded-full bg-[#009388] text-white text-[11px] font-bold uppercase tracking-wider shadow-md">
+                            Dusun I • Manis
+                          </span>
+                          <span className="px-2.5 py-1 rounded-full bg-black/40 backdrop-blur-sm text-emerald-200 text-[10px] font-medium border border-white/10">
+                            Sentra Pemerintahan & Layanan
+                          </span>
+                        </div>
+
+                        {/* Bottom Photo Title & Demographics */}
+                        <div className="absolute bottom-4 left-5 right-5 text-white">
+                          <h3 className="text-xl sm:text-2xl font-extrabold tracking-tight">
+                            Dusun Manis
+                          </h3>
+                          <p className="text-xs text-emerald-200/90 mt-0.5">
+                            Pusat Pemerintahan Desa, Layanan Kesehatan Siaga, & Sentra UMKM Olahan Pangan
+                          </p>
+                        </div>
                       </div>
-                      <div className="absolute bottom-3.5 left-3.5 right-3.5 text-white">
-                        <h3 className="text-lg font-extrabold">Dusun Manis</h3>
-                        <p className="text-xs text-emerald-200">Sentra Pemerintahan & UMKM Olahan Pangan</p>
+
+                      {/* Content Body */}
+                      <div className="p-6 sm:p-7 space-y-6">
+                        <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                          Wilayah gerbang masuk desa Kadurama sekaligus pusat denyut pelayanan warga. Menampung kantor Balai Desa, Puskesmas Pembantu, SDN 1 Kadurama, serta sentra UMKM rengginang dan keripik olahan ubi khas Kadurama yang telah menembus pasar kabupaten.
+                        </p>
+
+                        {/* Demographic Pulse Numbers */}
+                        <div className="grid grid-cols-3 gap-3 p-3.5 rounded-2xl bg-white border border-slate-200/90 shadow-xs font-mono text-center">
+                          <div>
+                            <div className="text-lg sm:text-xl font-black text-[#009388]">184</div>
+                            <div className="text-[10px] text-slate-500 font-sans mt-0.5">Keluarga (KK)</div>
+                          </div>
+                          <div className="border-x border-slate-200">
+                            <div className="text-lg sm:text-xl font-black text-slate-900">620</div>
+                            <div className="text-[10px] text-slate-500 font-sans mt-0.5">Jiwa Warga</div>
+                          </div>
+                          <div>
+                            <div className="text-lg sm:text-xl font-black text-[#eda50c]">8 / 2</div>
+                            <div className="text-[10px] text-slate-500 font-sans mt-0.5">RT / RW</div>
+                          </div>
+                        </div>
+
+                        {/* Fasilitas Utama Grid */}
+                        <div className="space-y-2.5">
+                          <div className="text-[11px] font-bold uppercase tracking-wider text-slate-800">
+                            Fasilitas Publik Terpadu:
+                          </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-slate-700">
+                            <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center gap-2.5">
+                              <Building2 className="w-4 h-4 text-[#009388] flex-shrink-0" />
+                              <span>Kantor Balai Desa & Pendopo</span>
+                            </div>
+                            <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center gap-2.5">
+                              <Activity className="w-4 h-4 text-[#009388] flex-shrink-0" />
+                              <span>Puskesmas Pembantu (Pustu) Siaga</span>
+                            </div>
+                            <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center gap-2.5">
+                              <Landmark className="w-4 h-4 text-[#009388] flex-shrink-0" />
+                              <span>Gedung SDN 1 Kadurama</span>
+                            </div>
+                            <div className="p-2.5 rounded-xl bg-white border border-slate-200/80 flex items-center gap-2.5">
+                              <Sparkles className="w-4 h-4 text-[#eda50c] flex-shrink-0" />
+                              <span>Gerai BUMDes Bina Mandiri</span>
+                            </div>
+                          </div>
+                        </div>
                       </div>
                     </div>
 
-                    <div className="p-6 space-y-4 text-xs">
-                      <p className="text-slate-600 leading-relaxed">
-                        Wilayah gerbang masuk desa sekaligus pusat administrasi Balai Desa Kadurama, Puskesmas Pembantu, SDN 1 Kadurama, dan sentra produksi rengginang serta keripik ubi khas warga.
-                      </p>
-
-                      <div className="grid grid-cols-3 gap-2 py-3 border-y border-slate-200 text-center font-mono">
-                        <div className="bg-white p-2 rounded-xl border border-slate-200/80">
-                          <div className="font-extrabold text-[#009388] text-sm">184</div>
-                          <div className="text-[10px] text-slate-500 font-sans">Keluarga (KK)</div>
+                    {/* Kadus Footer Card */}
+                    <div className="p-6 sm:p-7 pt-0">
+                      <div className="p-4 rounded-2xl bg-white border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shadow-xs">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-[#e6f7f5] text-[#009388] font-bold flex items-center justify-center text-sm border border-[#009388]/20 flex-shrink-0">
+                            KD-1
+                          </div>
+                          <div>
+                            <div className="text-[10px] text-slate-400 font-semibold uppercase tracking-wider">
+                              Kepala Dusun I (Manis)
+                            </div>
+                            <div className="text-sm font-extrabold text-slate-900">Bpk. Ahmad Dahlan</div>
+                          </div>
                         </div>
-                        <div className="bg-white p-2 rounded-xl border border-slate-200/80">
-                          <div className="font-extrabold text-slate-900 text-sm">620</div>
-                          <div className="text-[10px] text-slate-500 font-sans">Jiwa</div>
-                        </div>
-                        <div className="bg-white p-2 rounded-xl border border-slate-200/80">
-                          <div className="font-extrabold text-[#eda50c] text-sm">8 / 2</div>
-                          <div className="text-[10px] text-slate-500 font-sans">RT / RW</div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <span className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">Fasilitas Utama:</span>
-                        <div className="text-slate-600 space-y-1">
-                          <div>• Kantor Balai Desa & Gedung Pendopo</div>
-                          <div>• Puskesmas Pembantu (Pustu) Siaga</div>
-                          <div>• Gedung SDN 1 Kadurama</div>
-                          <div>• Gerai BUMDes Bina Mandiri</div>
+                        <div className="flex items-center gap-2">
+                          <a
+                            href="#geografis"
+                            onClick={() => setActiveFacilityId(1)}
+                            className="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-[#e6f7f5] text-slate-700 hover:text-[#009388] text-xs font-bold transition flex items-center gap-1.5"
+                          >
+                            <MapPin className="w-3.5 h-3.5 text-[#009388]" />
+                            <span>Lihat di Peta</span>
+                          </a>
                         </div>
                       </div>
                     </div>
                   </div>
+                )}
 
-                  <div className="p-6 pt-0">
-                    <div className="p-3 bg-white rounded-2xl border border-slate-200 flex items-center justify-between text-xs">
+                {/* RIGHT COLUMN: DUSUN PAHING & DUSUN PUHUN (Col-Span-5 Stacked Bento Cells) */}
+                <div
+                  className={`${
+                    activeDusunTab === "all"
+                      ? "lg:col-span-5 space-y-7"
+                      : activeDusunTab === "Manis"
+                      ? "hidden"
+                      : "lg:col-span-12 grid grid-cols-1 md:grid-cols-2 gap-7"
+                  }`}
+                >
+                  {/* 2. DUSUN PAHING - AGRICULTURAL BREADBASKET */}
+                  {(activeDusunTab === "all" || activeDusunTab === "Pahing") && (
+                    <div className="bg-gradient-to-br from-amber-50/40 via-white to-emerald-50/30 border border-slate-200 rounded-3xl overflow-hidden hover:border-[#eda50c] hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
                       <div>
-                        <div className="text-[10px] text-slate-400 font-semibold uppercase">Kepala Dusun</div>
-                        <div className="font-bold text-slate-900">Bpk. Ahmad Dahlan</div>
+                        {/* Compact Visual Header */}
+                        <div className="relative h-44 sm:h-48 w-full overflow-hidden bg-slate-900">
+                          <img
+                            src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80"
+                            alt="Dusun Pahing Kadurama"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#021815] via-[#021815]/30 to-transparent" />
+                          <div className="absolute top-3.5 left-3.5">
+                            <span className="px-2.5 py-0.5 rounded-full bg-[#eda50c] text-slate-950 text-[10px] font-bold uppercase tracking-wider shadow-sm">
+                              Dusun II • Pahing
+                            </span>
+                          </div>
+                          <div className="absolute bottom-3 left-4 right-4 text-white">
+                            <h3 className="text-lg font-extrabold tracking-tight">Dusun Pahing</h3>
+                            <p className="text-[11px] text-amber-200">Sentra Lumbung Padi Organik & Irigasi Teknis</p>
+                          </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-5 sm:p-6 space-y-4">
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            Kawasan lumbung ketahanan pangan desa dengan hamparan sawah produktif seluas 64 hektar beririgasi teknis teratur, didukung kelompok tani Sri Rejeki dan pusat penggilingan padi modern.
+                          </p>
+
+                          {/* Quick Stats Strip */}
+                          <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-white border border-slate-200 text-center font-mono">
+                            <div>
+                              <div className="text-base font-extrabold text-[#009388]">162</div>
+                              <div className="text-[9px] text-slate-500 font-sans">Keluarga</div>
+                            </div>
+                            <div className="border-x border-slate-200">
+                              <div className="text-base font-extrabold text-slate-900">548</div>
+                              <div className="text-[9px] text-slate-500 font-sans">Jiwa</div>
+                            </div>
+                            <div>
+                              <div className="text-base font-extrabold text-[#eda50c]">64 Ha</div>
+                              <div className="text-[9px] text-slate-500 font-sans">Sawah</div>
+                            </div>
+                          </div>
+
+                          {/* Key Facilities */}
+                          <div className="space-y-1.5 text-xs text-slate-700">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                              Fasilitas Unggulan:
+                            </div>
+                            <div className="grid grid-cols-1 gap-1.5">
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <Wheat className="w-3.5 h-3.5 text-[#eda50c] flex-shrink-0" />
+                                <span>Lumbung Pangan & Rice Milling Desa</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <ShieldCheck className="w-3.5 h-3.5 text-[#009388] flex-shrink-0" />
+                                <span>Posyandu Melati I Dusun Pahing</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <Award className="w-3.5 h-3.5 text-emerald-600 flex-shrink-0" />
+                                <span>Lapangan Sepak Bola Gelora Kadurama</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
                       </div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#e6f7f5] text-[#009388]">
-                        Kadus I
-                      </span>
+
+                      {/* Kadus Footer */}
+                      <div className="p-5 sm:p-6 pt-0">
+                        <div className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                          <div>
+                            <div className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">
+                              Kepala Dusun II
+                            </div>
+                            <div className="font-bold text-slate-900">Bpk. Rohmat Hidayat</div>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-[#b45309] border border-amber-200">
+                            Kadus II
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 3. DUSUN PUHUN - HIGHLAND SPRINGS & AGROTOURISM */}
+                  {(activeDusunTab === "all" || activeDusunTab === "Puhun") && (
+                    <div className="bg-gradient-to-br from-[#e6f7f5]/40 via-white to-sky-50/30 border border-slate-200 rounded-3xl overflow-hidden hover:border-[#003733] hover:shadow-xl transition-all duration-300 flex flex-col justify-between group">
+                      <div>
+                        {/* Compact Visual Header */}
+                        <div className="relative h-44 sm:h-48 w-full overflow-hidden bg-slate-900">
+                          <img
+                            src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80"
+                            alt="Dusun Puhun Kadurama"
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700 filter brightness-95"
+                          />
+                          <div className="absolute inset-0 bg-gradient-to-t from-[#021815] via-[#021815]/30 to-transparent" />
+                          <div className="absolute top-3.5 left-3.5">
+                            <span className="px-2.5 py-0.5 rounded-full bg-[#003733] text-emerald-200 text-[10px] font-bold uppercase tracking-wider border border-emerald-400/30 shadow-sm">
+                              Dusun III • Puhun
+                            </span>
+                          </div>
+                          <div className="absolute bottom-3 left-4 right-4 text-white">
+                            <h3 className="text-lg font-extrabold tracking-tight">Dusun Puhun</h3>
+                            <p className="text-[11px] text-emerald-300">Perkebunan Lereng Ciremai & Mata Air Alami</p>
+                          </div>
+                        </div>
+
+                        {/* Content */}
+                        <div className="p-5 sm:p-6 space-y-4">
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            Kawasan perbukitan hijau subur di ketinggian 340 mdpl lereng Gunung Ciremai. Memiliki sumber mata air purba Cikaduran dengan debit melimpah 45 L/detik, perkebunan ubi manis, dan sentra sapi perah.
+                          </p>
+
+                          {/* Quick Stats Strip */}
+                          <div className="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-white border border-slate-200 text-center font-mono">
+                            <div>
+                              <div className="text-base font-extrabold text-[#009388]">146</div>
+                              <div className="text-[9px] text-slate-500 font-sans">Keluarga</div>
+                            </div>
+                            <div className="border-x border-slate-200">
+                              <div className="text-base font-extrabold text-slate-900">492</div>
+                              <div className="text-[9px] text-slate-500 font-sans">Jiwa</div>
+                            </div>
+                            <div>
+                              <div className="text-base font-extrabold text-[#003733]">340 m</div>
+                              <div className="text-[9px] text-slate-500 font-sans">Elevasi</div>
+                            </div>
+                          </div>
+
+                          {/* Key Facilities */}
+                          <div className="space-y-1.5 text-xs text-slate-700">
+                            <div className="text-[10px] font-bold uppercase tracking-wider text-slate-500">
+                              Fasilitas Unggulan:
+                            </div>
+                            <div className="grid grid-cols-1 gap-1.5">
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <Droplets className="w-3.5 h-3.5 text-cyan-600 flex-shrink-0" />
+                                <span>Mata Air Alami Purba Cikaduran (45 L/dtk)</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <Mountain className="w-3.5 h-3.5 text-[#009388] flex-shrink-0" />
+                                <span>Jalur Agrowisata & Kebun Ubi Manis</span>
+                              </div>
+                              <div className="flex items-center gap-2 text-[11px]">
+                                <ShieldCheck className="w-3.5 h-3.5 text-[#003733] flex-shrink-0" />
+                                <span>Posyandu Melati II Dusun Puhun</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Kadus Footer */}
+                      <div className="p-5 sm:p-6 pt-0">
+                        <div className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs">
+                          <div>
+                            <div className="text-[9px] text-slate-400 font-semibold uppercase tracking-wider">
+                              Kepala Dusun III
+                            </div>
+                            <div className="font-bold text-slate-900">Bpk. Agus Setiawan</div>
+                          </div>
+                          <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#e6f7f5] text-[#009388] border border-[#009388]/20">
+                            Kadus III
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Dusun Demographic Distribution Bar */}
+              <div className="mt-10 p-5 bg-slate-50 rounded-2xl border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#009388]/10 text-[#009388] flex items-center justify-center flex-shrink-0">
+                    <PieChart className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-xs font-extrabold text-slate-900">Distribusi Keseimbangan Wilayah 3 Dusun</div>
+                    <div className="text-[11px] text-slate-500">
+                      Total 492 Kepala Keluarga dan 1.660 Jiwa terdata lengkap dalam basis sensus mikro desa.
                     </div>
                   </div>
                 </div>
 
-                {/* Dusun 2: Pahing */}
-                <div className="bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:border-[#009388] hover:shadow-lg transition flex flex-col justify-between group">
-                  <div>
-                    <div className="h-48 bg-slate-800 relative overflow-hidden">
-                      <img
-                        src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=600&q=80"
-                        alt="Dusun Pahing"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-                      <div className="absolute top-3.5 left-3.5 bg-[#eda50c] text-slate-950 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider">
-                        Dusun II • Pahing
-                      </div>
-                      <div className="absolute bottom-3.5 left-3.5 right-3.5 text-white">
-                        <h3 className="text-lg font-extrabold">Dusun Pahing</h3>
-                        <p className="text-xs text-amber-200">Sentra Lumbung Padi Organik & Irigasi</p>
-                      </div>
-                    </div>
-
-                    <div className="p-6 space-y-4 text-xs">
-                      <p className="text-slate-600 leading-relaxed">
-                        Lumbung ketahanan pangan utama Desa Kadurama dengan hamparan sawah produktif 64 hektar beririgasi teknis, kelompok tani Sri Rejeki, dan sarana Lapangan Olahraga Gelora Kadurama.
-                      </p>
-
-                      <div className="grid grid-cols-3 gap-2 py-3 border-y border-slate-200 text-center font-mono">
-                        <div className="bg-white p-2 rounded-xl border border-slate-200/80">
-                          <div className="font-extrabold text-[#009388] text-sm">162</div>
-                          <div className="text-[10px] text-slate-500 font-sans">Keluarga (KK)</div>
-                        </div>
-                        <div className="bg-white p-2 rounded-xl border border-slate-200/80">
-                          <div className="font-extrabold text-slate-900 text-sm">548</div>
-                          <div className="text-[10px] text-slate-500 font-sans">Jiwa</div>
-                        </div>
-                        <div className="bg-white p-2 rounded-xl border border-slate-200/80">
-                          <div className="font-extrabold text-[#eda50c] text-sm">7 / 2</div>
-                          <div className="text-[10px] text-slate-500 font-sans">RT / RW</div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <span className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">Fasilitas Utama:</span>
-                        <div className="text-slate-600 space-y-1">
-                          <div>• Lumbung Pangan Desa & Rice Milling</div>
-                          <div>• Posyandu Melati I Dusun Pahing</div>
-                          <div>• Lapangan Sepak Bola Gelora Kadurama</div>
-                          <div>• Jaringan Saluran Irigasi Teknis</div>
-                        </div>
-                      </div>
-                    </div>
+                <div className="flex items-center gap-4 text-xs font-mono">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#009388]" />
+                    <span className="text-slate-700 font-sans text-[11px]">Manis (37.4%)</span>
                   </div>
-
-                  <div className="p-6 pt-0">
-                    <div className="p-3 bg-white rounded-2xl border border-slate-200 flex items-center justify-between text-xs">
-                      <div>
-                        <div className="text-[10px] text-slate-400 font-semibold uppercase">Kepala Dusun</div>
-                        <div className="font-bold text-slate-900">Bpk. Rohmat Hidayat</div>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#fef3c7] text-[#b45309]">
-                        Kadus II
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#eda50c]" />
+                    <span className="text-slate-700 font-sans text-[11px]">Pahing (33.0%)</span>
                   </div>
-                </div>
-
-                {/* Dusun 3: Puhun */}
-                <div className="bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:border-[#009388] hover:shadow-lg transition flex flex-col justify-between group">
-                  <div>
-                    <div className="h-48 bg-slate-800 relative overflow-hidden">
-                      <img
-                        src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=600&q=80"
-                        alt="Dusun Puhun"
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
-                      <div className="absolute top-3.5 left-3.5 bg-[#003733] text-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-md uppercase tracking-wider border border-emerald-400/30">
-                        Dusun III • Puhun
-                      </div>
-                      <div className="absolute bottom-3.5 left-3.5 right-3.5 text-white">
-                        <h3 className="text-lg font-extrabold">Dusun Puhun</h3>
-                        <p className="text-xs text-emerald-300">Perkebunan Ubi & Mata Air Alami Cikaduran</p>
-                      </div>
-                    </div>
-
-                    <div className="p-6 space-y-4 text-xs">
-                      <p className="text-slate-600 leading-relaxed">
-                        Kawasan perbukitan hijau subur di ketinggian 340 mdpl. Menjadi sumber mata air alami Cikaduran, perkebunan ubi jalar manis, serta sentra peternakan sapi perah rakyat terpadu.
-                      </p>
-
-                      <div className="grid grid-cols-3 gap-2 py-3 border-y border-slate-200 text-center font-mono">
-                        <div className="bg-white p-2 rounded-xl border border-slate-200/80">
-                          <div className="font-extrabold text-[#009388] text-sm">146</div>
-                          <div className="text-[10px] text-slate-500 font-sans">Keluarga (KK)</div>
-                        </div>
-                        <div className="bg-white p-2 rounded-xl border border-slate-200/80">
-                          <div className="font-extrabold text-slate-900 text-sm">492</div>
-                          <div className="text-[10px] text-slate-500 font-sans">Jiwa</div>
-                        </div>
-                        <div className="bg-white p-2 rounded-xl border border-slate-200/80">
-                          <div className="font-extrabold text-[#eda50c] text-sm">6 / 2</div>
-                          <div className="text-[10px] text-slate-500 font-sans">RT / RW</div>
-                        </div>
-                      </div>
-
-                      <div className="space-y-1.5">
-                        <span className="font-bold text-slate-800 text-[11px] uppercase tracking-wider">Fasilitas Utama:</span>
-                        <div className="text-slate-600 space-y-1">
-                          <div>• Mata Air Alami Purba Cikaduran</div>
-                          <div>• Posyandu Melati II Dusun Puhun</div>
-                          <div>• Kompleks Peternakan Sapi Perah Rakyat</div>
-                          <div>• Jalur Wisata Agrobisnis Ubi</div>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-6 pt-0">
-                    <div className="p-3 bg-white rounded-2xl border border-slate-200 flex items-center justify-between text-xs">
-                      <div>
-                        <div className="text-[10px] text-slate-400 font-semibold uppercase">Kepala Dusun</div>
-                        <div className="font-bold text-slate-900">Bpk. Agus Setiawan</div>
-                      </div>
-                      <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-[#e6f7f5] text-[#009388]">
-                        Kadus III
-                      </span>
-                    </div>
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-[#003733]" />
+                    <span className="text-slate-700 font-sans text-[11px]">Puhun (29.6%)</span>
                   </div>
                 </div>
               </div>

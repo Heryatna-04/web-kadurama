@@ -112,6 +112,21 @@
      - Section Peta Geografis, Topografi & Sebaran Fasilitas Wilayah: Peta interaktif SVG lereng Gunung Ciremai (koordinat 6°59'48"S 108°33'12"E, elevasi 285-340 mdpl, luas 142.8 Ha) dengan pin fasilitas berkategori (Pemerintahan, Ibadah, Kesehatan, Pendidikan, Pertanian) dan kartu detail fasilitas interaktif.
      - Section Panduan Administrasi Warga: Prosedur pengurusan dokumen kependudukan, jam loket fisik kantor desa, dan kontak WhatsApp layanan warga (tanpa tombol pembuatan surat online).
 
+11. Redesign Hero Section & 3 Dusun Cards (Anti-Slop Taste Skill & Asymmetric Bento Architecture):
+   - Desain Hero Section Berintegritas & Anti-Slop:
+     - Mengatasi masalah kepadatan teks berlebih (clutter notice box) dan tampilan card yang menutupi landmark gerbang.
+     - Headline diperpendek menjadi maksimal 2 baris desktop (*Keterbukaan Data Wilayah, Kesejahteraan Nyata Warga*).
+     - Subtext dibatasi ketat menjadi 17 kata sesuai direktif anti-slop (maksimal 20 kata).
+     - Restrukturisasi panel kanan menjadi *Civic Cockpit & Performance Card*: menampilkan status resmi IDM 2026 Desa Mandiri (Skor 0.8942), kode wilayah Kemendagri (32.08.09.2005), pilar demografi mikro 3 dusun, jam layanan aktif balai desa, dan tautan langsung ke peta geografis.
+     - Integrasi *Bottom Horizon Metric Strip* yang elegan menghubungkan hero dengan section konten: 142.8 Ha luas wilayah, 285-340 mdpl elevasi lereng Ciremai, Rp 1.48 Miliar APBDes 2026, dan keharmonisan 3 dusun.
+     - Ornamen Gerbang Kuningan diperkuat dengan efek *multiply*, *ambient golden backlight*, dan *gradient mask* halus agar menyatu dengan latar belakang bernuansa deep dark teal.
+   - Transformasi 3 Dusun Menjadi Asymmetric Bento Grid:
+     - Mengeliminasi anti-pola 3 kartu kembar identik (*3 equal feature cards slop*).
+     - Dusun I (Manis) diangkat sebagai *Dominant Bento Hero Cell* (Col-Span-7) sebagai pusat administrasi, balai desa, Pustu siaga, gedung sekolah, dan sentra UMKM pangan.
+     - Dusun II (Pahing) dan Dusun III (Puhun) dirancang sebagai *Stacked Bento Cells* (Col-Span-5) dengan karakter tematik spesifik: Dusun Pahing bertema lumbung padi organik & irigasi teknis 64 Ha (aksen emerald-emas), sedangkan Dusun Puhun bertema mata air alami purba Cikaduran 45 L/dtk & agrowisata perbukitan 340 mdpl (aksen teal-cyan lereng Ciremai).
+     - Penambahan *Interactive Dusun Filter Tabs* di bagian atas (Semua Dusun, Dusun I Manis, Dusun II Pahing, Dusun III Puhun) untuk eksplorasi fokus per wilayah.
+     - Penambahan *Demographic Balance Summary Bar* di bagian bawah menampilkan proporsi sebaran warga (Manis 37.4%, Pahing 33.0%, Puhun 29.6%).
+
 ---
 
 ## 🎯 Status & Pekerjaan Selanjutnya (Next Action)
@@ -120,6 +135,7 @@
 - [x] Pembuatan Modul Sensus Kesejahteraan Keluarga (Per KK) dengan kalkulator auto-desil dan kriteria RTLH.
 - [x] Pembuatan fitur ekspor CSV dan lembar cetak PDF A4 berdesain terpersonalisasi.
 - [x] Pembuatan section Profil 3 Dusun dan Peta Geografis Sebaran Fasilitas di portal publik.
+- [x] Redesign Hero Section & Profil 3 Dusun dengan standard taste frontend anti-slop (Asymmetric Bento).
 - [x] Verifikasi build Next.js 16 (Turbopack) sukses 100% tanpa error TypeScript/JSX.
 - [ ] Persiapan skema migrasi tabel Supabase (`sensus_kk`, `fasilitas_desa`) jika data akan dipersistensikan ke backend PostgreSQL.
 - [ ] Uji coba lapangan simulasi pendataan sensus oleh Kepala Dusun.
