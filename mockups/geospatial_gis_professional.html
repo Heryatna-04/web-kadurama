@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Geoportal Spasial & Batas Wilayah Desa Kadurama</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <!-- Leaflet CSS & JS -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+  <style>
+    * {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      user-select: none;
+    }
+    body {
+      margin: 0;
+      overflow: hidden;
+      background-color: #031412;
+    }
+    #gis-map {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 1;
+    }
+    .glass-gis {
+      background: rgba(4, 20, 18, 0.88);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(0, 147, 136, 0.28);
+    }
+    .custom-poi-marker {
+      background: none;
+      border: none;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 4px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(0, 147, 136, 0.5);
+      border-radius: 9999px;
+    }
+    /* Pulsing pin effect */
+    @keyframes pulse-ring {
+      0% { transform: scale(0.9); opacity: 0.8; }
+      50% { transform: scale(1.35); opacity: 0.2; }
+      100% { transform: scale(0.9); opacity: 0.8; }
+    }
+    .pulse-ring {
+      animation: pulse-ring 2.5s infinite ease-in-out;
+    }
+  </style>
+</head>
+<body class="text-slate-100">
+
+  <!-- Fullscreen GIS Map -->
+  <div id="gis-map"></div>
+
+  <!-- TOP HEADER: OFFICIAL GEOPORTAL BRAND -->
+  <header class="absolute top-4 inset-x-4 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-3 pointer-events-none z-20">
+    <!-- Village & Geoportal Title -->
+    <div class="glass-gis px-5 py-3 rounded-2xl shadow-2xl pointer-events-auto flex items-center gap-3.5 border border-emerald-500/30">
+      <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-[#009388] to-[#004f48] flex items-center justify-center font-extrabold text-white text-lg shadow-md border border-white/25">
+        KD
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <span class="text-[10px] uppercase font-bold tracking-wider text-emerald-400">Sistem Informasi Geospasial (WebGIS)</span>
+          <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span class="text-[10px] font-semibold text-slate-300 bg-white/10 px-2 py-0.5 rounded-md">Kode Kemendagri: 32.08.10.2002</span>
+        </div>
+        <h1 class="text-base font-extrabold text-white tracking-tight">Geoportal Batas Wilayah & Tata Ruang Desa Kadurama</h1>
+        <p class="text-[11px] text-slate-300">Kecamatan Ciawigebang, Kabupaten Kuningan, Jawa Barat</p>
+      </div>
+    </div>
+
+    <!-- Live Spatial Metrics -->
+    <div class="glass-gis px-4 py-2.5 rounded-2xl shadow-xl pointer-events-auto flex items-center gap-4 text-xs">
+      <div class="flex items-center gap-2">
+        <div class="w-2.5 h-2.5 rounded-full bg-[#eda50c]"></div>
+        <div>
+          <div class="font-extrabold text-white">142.8 Ha</div>
+          <div class="text-[10px] text-slate-400">Luas Administratif</div>
+        </div>
+      </div>
+      <div class="h-6 w-px bg-white/15"></div>
+      <div class="flex items-center gap-2">
+        <div class="w-2.5 h-2.5 rounded-full bg-[#009388]"></div>
+        <div>
+          <div class="font-extrabold text-white">3 Dusun</div>
+          <div class="text-[10px] text-slate-400">Manis, Pahing, Puhun</div>
+        </div>
+      </div>
+      <div class="h-6 w-px bg-white/15"></div>
+      <div class="flex items-center gap-2">
+        <div class="w-2.5 h-2.5 rounded-full bg-emerald-400"></div>
+        <div>
+          <div class="font-extrabold text-white">492 KK</div>
+          <div class="text-[10px] text-slate-400">Total Keluarga</div>
+        </div>
+      </div>
+      <div class="h-6 w-px bg-white/15"></div>
+      <div class="flex items-center gap-2">
+        <div class="w-2.5 h-2.5 rounded-full bg-sky-400"></div>
+        <div>
+          <div class="font-extrabold text-white">45 L/dtk</div>
+          <div class="text-[10px] text-slate-400">Mata Air Cikaduran</div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- FLOATING LEFT PANEL: LAYER & BASEMAP CONTROLLER -->
+  <aside class="absolute top-24 left-4 bottom-12 w-80 glass-gis rounded-2xl shadow-2xl p-4 flex flex-col gap-4 pointer-events-auto z-20 overflow-y-auto">
+    
+    <!-- 1. BASEMAP SWITCHER -->
+    <div>
+      <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+        <span>Citra Peta Dasar (Basemap)</span>
+      </div>
+      <div class="grid grid-cols-3 gap-1.5 text-xs">
+        <button onclick="switchBasemap('satellite')" id="btn-base-sat" class="base-btn px-2.5 py-2 rounded-xl font-bold bg-[#009388] text-white border border-emerald-400/40 transition flex flex-col items-center gap-1 shadow-sm">
+          <span>🛰️</span>
+          <span class="text-[10px]">Satelit Asli</span>
+        </button>
+        <button onclick="switchBasemap('topo')" id="btn-base-topo" class="base-btn px-2.5 py-2 rounded-xl font-bold bg-white/5 text-slate-300 border border-white/10 transition hover:bg-white/10 flex flex-col items-center gap-1">
+          <span>🗺️</span>
+          <span class="text-[10px]">Peta Sivik</span>
+        </button>
+        <button onclick="switchBasemap('relief')" id="btn-base-relief" class="base-btn px-2.5 py-2 rounded-xl font-bold bg-white/5 text-slate-300 border border-white/10 transition hover:bg-white/10 flex flex-col items-center gap-1">
+          <span>⛰️</span>
+          <span class="text-[10px]">Topografi</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="h-px bg-white/10"></div>
+
+    <!-- 2. QUICK DUSUN NAVIGATOR -->
+    <div>
+      <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Pilih & Fokus Dusun</div>
+      <div class="flex flex-col gap-1.5">
+        <button onclick="focusDusun('all')" id="nav-all" class="dusun-nav-btn px-3 py-2 rounded-xl text-xs font-bold text-left bg-emerald-800/60 text-white border border-emerald-400/40 flex items-center justify-between transition">
+          <span>Semua Wilayah Desa</span>
+          <span class="text-[10px] px-1.5 py-0.5 rounded bg-white/10">142.8 Ha</span>
+        </button>
+        <button onclick="focusDusun('manis')" id="nav-manis" class="dusun-nav-btn px-3 py-2 rounded-xl text-xs font-bold text-left bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 flex items-center justify-between transition">
+          <span class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-[#009388]"></span>
+            Dusun Manis
+          </span>
+          <span class="text-[10px] text-slate-400">38.5 Ha (194 KK)</span>
+        </button>
+        <button onclick="focusDusun('pahing')" id="nav-pahing" class="dusun-nav-btn px-3 py-2 rounded-xl text-xs font-bold text-left bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 flex items-center justify-between transition">
+          <span class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-[#10b981]"></span>
+            Dusun Pahing
+          </span>
+          <span class="text-[10px] text-slate-400">64.0 Ha (172 KK)</span>
+        </button>
+        <button onclick="focusDusun('puhun')" id="nav-puhun" class="dusun-nav-btn px-3 py-2 rounded-xl text-xs font-bold text-left bg-white/5 text-slate-300 border border-white/10 hover:bg-white/10 flex items-center justify-between transition">
+          <span class="flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-[#0284c7]"></span>
+            Dusun Puhun
+          </span>
+          <span class="text-[10px] text-slate-400">40.3 Ha (126 KK)</span>
+        </button>
+      </div>
+    </div>
+
+    <div class="h-px bg-white/10"></div>
+
+    <!-- 3. SPATIAL LAYERS CHECKBOXES -->
+    <div>
+      <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Layer Spasial Tematik</div>
+      <div class="space-y-2 text-xs">
+        <label class="flex items-center justify-between p-2 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer border border-white/10 transition">
+          <span class="flex items-center gap-2.5">
+            <span class="w-3.5 h-3.5 rounded border border-[#eda50c] bg-[#eda50c]/20 flex items-center justify-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-[#eda50c]"></span>
+            </span>
+            <span>Batas Luar Desa Kadurama</span>
+          </span>
+          <input type="checkbox" id="layer-outer" checked onchange="toggleLayer('outer')" class="w-4 h-4 accent-[#009388] rounded">
+        </label>
+
+        <label class="flex items-center justify-between p-2 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer border border-white/10 transition">
+          <span class="flex items-center gap-2.5">
+            <span class="w-3.5 h-3.5 rounded border border-emerald-400 bg-emerald-500/20 flex items-center justify-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            </span>
+            <span>Batas & Zonasi 3 Dusun</span>
+          </span>
+          <input type="checkbox" id="layer-dusuns" checked onchange="toggleLayer('dusuns')" class="w-4 h-4 accent-[#009388] rounded">
+        </label>
+
+        <label class="flex items-center justify-between p-2 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer border border-white/10 transition">
+          <span class="flex items-center gap-2.5">
+            <span class="w-3.5 h-3.5 rounded border border-amber-400 bg-amber-500/20 flex items-center justify-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+            </span>
+            <span>Tata Guna Lahan (RTRW)</span>
+          </span>
+          <input type="checkbox" id="layer-landuse" checked onchange="toggleLayer('landuse')" class="w-4 h-4 accent-[#009388] rounded">
+        </label>
+
+        <label class="flex items-center justify-between p-2 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer border border-white/10 transition">
+          <span class="flex items-center gap-2.5">
+            <span class="w-3.5 h-3.5 rounded border border-cyan-400 bg-cyan-500/20 flex items-center justify-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
+            </span>
+            <span>Jaringan Sungai & Irigasi</span>
+          </span>
+          <input type="checkbox" id="layer-water" checked onchange="toggleLayer('water')" class="w-4 h-4 accent-[#009388] rounded">
+        </label>
+
+        <label class="flex items-center justify-between p-2 rounded-xl bg-white/5 hover:bg-white/10 cursor-pointer border border-white/10 transition">
+          <span class="flex items-center gap-2.5">
+            <span class="w-3.5 h-3.5 rounded border border-slate-300 bg-white/20 flex items-center justify-center">
+              <span class="w-1.5 h-1.5 rounded-full bg-white"></span>
+            </span>
+            <span>Titik Fasilitas & Infrastruktur</span>
+          </span>
+          <input type="checkbox" id="layer-poi" checked onchange="toggleLayer('poi')" class="w-4 h-4 accent-[#009388] rounded">
+        </label>
+      </div>
+    </div>
+
+    <!-- 4. LEGENDA SIMBOLOGI -->
+    <div class="mt-auto pt-3 border-t border-white/10 text-[11px]">
+      <div class="font-bold text-slate-400 uppercase tracking-wider mb-2">Legenda Simbologi</div>
+      <div class="grid grid-cols-2 gap-2 text-slate-300">
+        <div class="flex items-center gap-1.5">
+          <span class="w-3 h-2 rounded-xs bg-[#009388]/80 border border-[#009388]"></span>
+          <span>Dusun Manis</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-3 h-2 rounded-xs bg-[#10b981]/80 border border-[#10b981]"></span>
+          <span>Dusun Pahing</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-3 h-2 rounded-xs bg-[#0284c7]/80 border border-[#0284c7]"></span>
+          <span>Dusun Puhun</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span class="w-3 h-2 rounded-xs bg-[#eda50c] border border-white/40"></span>
+          <span>Batas Luar Desa</span>
+        </div>
+      </div>
+    </div>
+  </aside>
+
+  <!-- FLOATING RIGHT DRAWER: SPATIAL FEATURE INSPECTOR -->
+  <section id="inspector-drawer" class="absolute top-24 right-4 bottom-12 w-88 glass-gis rounded-2xl shadow-2xl p-5 flex flex-col gap-4 pointer-events-auto z-20 overflow-y-auto border border-emerald-500/30">
+    <!-- Header Drawer -->
+    <div class="flex items-start justify-between">
+      <div>
+        <div id="insp-badge" class="inline-block text-[10px] font-bold px-2 py-0.5 rounded-md bg-[#009388]/30 text-emerald-300 border border-[#009388]/50 uppercase tracking-wider mb-1">
+          Wilayah Administratif
+        </div>
+        <h2 id="insp-title" class="text-base font-extrabold text-white tracking-tight">Desa Kadurama</h2>
+        <p id="insp-subtitle" class="text-xs text-slate-400">Ringkasan Monografi & Geospasial Wilayah</p>
+      </div>
+      <button onclick="resetInspector()" class="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 transition" title="Tutup / Reset">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+
+    <!-- Overview Card -->
+    <div id="insp-banner" class="p-3.5 rounded-xl bg-emerald-950/60 border border-emerald-500/30 flex items-center justify-between">
+      <div>
+        <div class="text-[10px] uppercase font-bold text-emerald-400">Status Mandiri</div>
+        <div class="text-sm font-extrabold text-white">Indeks Desa Membangun (IDM)</div>
+        <div class="text-[11px] text-slate-300">Nilai 0.8942 - Desa Mandiri Utama</div>
+      </div>
+      <div class="w-9 h-9 rounded-xl bg-emerald-500/20 border border-emerald-400/40 flex items-center justify-center text-lg">
+        🏆
+      </div>
+    </div>
+
+    <!-- Dynamic Metrics Grid -->
+    <div class="grid grid-cols-2 gap-2 text-xs">
+      <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+        <div class="text-[10px] font-semibold text-slate-400">Luas Wilayah</div>
+        <div id="insp-metric-area" class="text-base font-extrabold text-white mt-0.5">142.8 Ha</div>
+        <div class="text-[10px] text-emerald-400">100% Terpetakan GIS</div>
+      </div>
+      <div class="p-3 rounded-xl bg-white/5 border border-white/10">
+        <div class="text-[10px] font-semibold text-slate-400">Kepala Keluarga</div>
+        <div id="insp-metric-kk" class="text-base font-extrabold text-white mt-0.5">492 KK</div>
+        <div class="text-[10px] text-emerald-400">1.720 Jiwa Penduduk</div>
+      </div>
+    </div>
+
+    <!-- Description / Monograph -->
+    <div>
+      <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Profil Wilayah</div>
+      <p id="insp-desc" class="text-xs text-slate-300 leading-relaxed bg-white/5 p-3 rounded-xl border border-white/10">
+        Desa Kadurama membentang seluas 142.8 Hektar di kaki timur Gunung Ciremai. Terdiri dari 3 dusun bersejarah (Manis, Pahing, Puhun) dengan potensi unggulan lumbung padi organik 64 Ha dan debit mata air purba Cikaduran 45 liter/detik.
+      </p>
+    </div>
+
+    <!-- Key Facilities in this Area -->
+    <div>
+      <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-2">Fasilitas Publik Utama</div>
+      <div id="insp-facilities" class="space-y-1.5 text-xs">
+        <!-- Will be populated dynamically -->
+      </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="mt-auto space-y-2 pt-3 border-t border-white/10">
+      <button id="btn-focus-area" onclick="focusCurrentFeature()" class="w-full py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] font-bold text-xs text-white transition flex items-center justify-center gap-2 shadow-lg">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+        <span>Fokus Kamera ke Wilayah Ini</span>
+      </button>
+      <a id="btn-gmaps" href="https://maps.google.com/?q=-6.9782,108.5982" target="_blank" class="w-full py-2.5 rounded-xl bg-white/10 hover:bg-white/15 font-bold text-xs text-slate-200 transition flex items-center justify-center gap-2 border border-white/15">
+        <svg class="w-4 h-4 text-[#eda50c]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <span>Buka Navigasi Google Maps</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- BOTTOM STATUS BAR: REAL-TIME COORDINATES & CONTROLS -->
+  <footer class="absolute bottom-3 inset-x-4 h-9 glass-gis rounded-xl shadow-lg px-4 flex items-center justify-between pointer-events-auto z-20 text-[11px] text-slate-300">
+    <!-- Cursor Coordinates & Elevation -->
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-1.5">
+        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+        <span class="text-slate-400">Koordinat Kursor:</span>
+        <span id="coord-display" class="font-mono text-white font-semibold">-6.97820, 108.59820</span>
+      </div>
+      <div class="h-4 w-px bg-white/15"></div>
+      <div class="flex items-center gap-1.5">
+        <span class="text-slate-400">Elevasi:</span>
+        <span id="elev-display" class="font-mono text-emerald-300 font-semibold">312 mdpl</span>
+        <span class="text-[10px] text-slate-400">(Kaki Gn. Ciremai)</span>
+      </div>
+    </div>
+
+    <!-- Map Controls: Zoom Lock Toggle & Reset -->
+    <div class="flex items-center gap-3">
+      <button onclick="toggleZoomLock()" id="btn-zoom-lock" class="px-2.5 py-1 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1.5 transition">
+        <svg class="w-3 h-3 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+        <span id="zoom-lock-text">Zoom Dikunci (Skala 1:6.000)</span>
+      </button>
+      <button onclick="resetMapView()" class="px-2.5 py-1 rounded-lg bg-white/10 hover:bg-white/20 text-slate-200 text-[10px] font-semibold transition">
+        Reset Tampilan Peta
+      </button>
+    </div>
+  </footer>
+
+  <!-- JAVASCRIPT GEOPORTAL LOGIC -->
+  <script>
+    // -------------------------------------------------------------------------
+    // 1. DATA MONOGRAFI WILAYAH 3 DUSUN & FASILITAS DESA KADURAMA
+    // -------------------------------------------------------------------------
+    const DUSUN_DATA = {
+      manis: {
+        id: 'manis',
+        name: 'Dusun Manis',
+        badge: 'Sentra Pemerintahan & Pemukiman',
+        kadus: 'Bpk. Nana Supriatna',
+        area: '38.5 Ha',
+        kk: '194 KK',
+        pop: '680 Jiwa',
+        color: '#009388',
+        center: [-6.9755, 108.5980],
+        bounds: [[-6.9712, 108.5942], [-6.9790, 108.6025]],
+        desc: 'Dusun Manis merupakan pusat denyut pelayanan publik Desa Kadurama. Di dusun ini berlokasi Kantor Balai Desa, fasilitas pendidikan dasar, pos kesehatan, serta pemukiman terpadu warga.',
+        facilities: [
+          { name: 'Kantor Balai Desa Kadurama & Aula Warga', type: 'Pemerintahan' },
+          { name: 'SDN Kadurama & PAUD Melati', type: 'Pendidikan' },
+          { name: 'Puskesos & Pos Kesehatan Pembantu (Pustu)', type: 'Kesehatan' },
+          { name: 'Masjid Jami Al-Huda', type: 'Peribadatan' }
+        ]
+      },
+      pahing: {
+        id: 'pahing',
+        name: 'Dusun Pahing',
+        badge: 'Lumbung Pangan Organik Mandiri',
+        kadus: 'Bpk. Asep Saepudin',
+        area: '64.0 Ha',
+        kk: '172 KK',
+        pop: '598 Jiwa',
+        color: '#10b981',
+        center: [-6.9785, 108.6020],
+        bounds: [[-6.9715, 108.5980], [-6.9855, 108.6058]],
+        desc: 'Dusun Pahing adalah sentra ketahanan pangan mandiri dengan hamparan 64 hektar sawah padi organik. Didukung saluran irigasi tersier mandiri dan sarana gelanggang olahraga desa.',
+        facilities: [
+          { name: 'Lumbung Padi Organik 64 Ha (Gapoktan Sri Mandiri)', type: 'Pertanian' },
+          { name: 'Gelora Kadurama (Stadion Mini & Lapangan Bola)', type: 'Olahraga' },
+          { name: 'Jaringan Saluran Irigasi Teknis Pahing', type: 'Infrastruktur' },
+          { name: 'Kios Pupuk Organik Mandiri Desa', type: 'Ekonomi' }
+        ]
+      },
+      puhun: {
+        id: 'puhun',
+        name: 'Dusun Puhun',
+        badge: 'Konservasi Kaki Ciremai & Mata Air',
+        kadus: 'Bpk. Maman Sudirman',
+        area: '40.3 Ha',
+        kk: '126 KK',
+        pop: '442 Jiwa',
+        color: '#0284c7',
+        center: [-6.9825, 108.5955],
+        bounds: [[-6.9785, 108.5932], [-6.9862, 108.5985]],
+        desc: 'Dusun Puhun berada di elevasi tertinggi lereng bukit kaki Gunung Ciremai. Memiliki sumber air alami purba Cikaduran dengan debit abadi 45 liter/detik serta peternakan sapi perah warga.',
+        facilities: [
+          { name: 'Mata Air Purba Cikaduran (Debit 45 Liter / Detik)', type: 'Sumber Daya Air' },
+          { name: 'Sentra Peternakan Sapi Perah & Reaktor Biogas', type: 'Peternakan' },
+          { name: 'Kawasan Hutan Lindung & Resapan Air', type: 'Konservasi' },
+          { name: 'Gardu Pandang Panorama Ciremai', type: 'Pariwisata' }
+        ]
+      }
+    };
+
+    // -------------------------------------------------------------------------
+    // 2. GEOMETRI POLIGON RESMI (GEOJSON)
+    // -------------------------------------------------------------------------
+    // Batas Luar Administratif Desa Kadurama (~142.8 Ha)
+    const OUTER_KADURAMA_POLYGON = [
+      [-6.9710, 108.5940],
+      [-6.9715, 108.6048],
+      [-6.9848, 108.6058],
+      [-6.9862, 108.5932],
+      [-6.9785, 108.5940],
+      [-6.9710, 108.5940]
+    ];
+
+    // Poligon Batas 3 Dusun
+    const DUSUN_POLYGONS = {
+      manis: [
+        [-6.9712, 108.5942],
+        [-6.9715, 108.6020],
+        [-6.9775, 108.6025],
+        [-6.9790, 108.5980],
+        [-6.9785, 108.5942],
+        [-6.9712, 108.5942]
+      ],
+      pahing: [
+        [-6.9715, 108.6020],
+        [-6.9718, 108.6048],
+        [-6.9848, 108.6058],
+        [-6.9855, 108.5985],
+        [-6.9790, 108.5980],
+        [-6.9775, 108.6025],
+        [-6.9715, 108.6020]
+      ],
+      puhun: [
+        [-6.9785, 108.5942],
+        [-6.9790, 108.5980],
+        [-6.9855, 108.5985],
+        [-6.9862, 108.5932],
+        [-6.9785, 108.5942]
+      ]
+    };
+
+    // Poligon Zonasi Tata Guna Lahan (RTRW)
+    const LANDUSE_POLYGONS = [
+      // Zona Pemukiman (Manis)
+      { name: 'Kawasan Pemukiman & Balai Desa', type: 'residential', color: '#eab308', coords: [
+        [-6.9730, 108.5955], [-6.9735, 108.6000], [-6.9780, 108.5995], [-6.9775, 108.5950]
+      ]},
+      // Zona Pertanian Pangan LP2B (Pahing)
+      { name: 'Lahan Pertanian Pangan Berkelanjutan (LP2B) 64 Ha', type: 'agricultural', color: '#22c55e', coords: [
+        [-6.9735, 108.6015], [-6.9738, 108.6045], [-6.9840, 108.6050], [-6.9845, 108.6000], [-6.9785, 108.5995]
+      ]},
+      // Zona Lindung & Sumber Mata Air (Puhun)
+      { name: 'Kawasan Lindung Mata Air Cikaduran', type: 'conservation', color: '#06b6d4', coords: [
+        [-6.9800, 108.5938], [-6.9805, 108.5975], [-6.9850, 108.5975], [-6.9855, 108.5938]
+      ]}
+    ];
+
+    // Jaringan Sungai & Saluran Air
+    const WATER_CHANNELS = [
+      [[-6.9715, 108.5960], [-6.9750, 108.5975], [-6.9810, 108.5985], [-6.9860, 108.5990]],
+      [[-6.9815, 108.5945], [-6.9810, 108.5985], [-6.9820, 108.6040]]
+    ];
+
+    // Titik Fasilitas Kunci (POI)
+    const POI_FACILITIES = [
+      { name: 'Balai Desa Kadurama', dusun: 'Manis', cat: 'gov', lat: -6.9765, lng: 108.5975, icon: '🏛️', elev: '312 mdpl' },
+      { name: 'SDN Kadurama & Poskesdes', dusun: 'Manis', cat: 'edu', lat: -6.9740, lng: 108.5968, icon: '🏫', elev: '314 mdpl' },
+      { name: 'Masjid Jami Al-Huda', dusun: 'Manis', cat: 'rel', lat: -6.9772, lng: 108.5985, icon: '🕌', elev: '310 mdpl' },
+      { name: 'Lumbung Padi Organik 64 Ha', dusun: 'Pahing', cat: 'agr', lat: -6.9790, lng: 108.6025, icon: '🌾', elev: '295 mdpl' },
+      { name: 'Gelora Kadurama (Stadion Mini)', dusun: 'Pahing', cat: 'sport', lat: -6.9825, lng: 108.6030, icon: '⚽', elev: '298 mdpl' },
+      { name: 'Mata Air Purba Cikaduran 45 L/s', dusun: 'Puhun', cat: 'water', lat: -6.9818, lng: 108.5950, icon: '💧', elev: '338 mdpl' },
+      { name: 'Sentra Sapi Perah & Biogas', dusun: 'Puhun', cat: 'farm', lat: -6.9845, lng: 108.5960, icon: '🐄', elev: '340 mdpl' }
+    ];
+
+    // -------------------------------------------------------------------------
+    // 3. INISIALISASI LEAFLET GIS MAP ENGINE
+    // -------------------------------------------------------------------------
+    let map;
+    let baseLayers = {};
+    let overlayLayers = {
+      outer: null,
+      dusuns: L.layerGroup(),
+      landuse: L.layerGroup(),
+      water: L.layerGroup(),
+      poi: L.layerGroup()
+    };
+    let currentDusunFocus = 'all';
+    let isZoomLocked = true;
+
+    function initMap() {
+      // Create Leaflet Map instance
+      map = L.map('gis-map', {
+        center: [-6.9782, 108.5982],
+        zoom: 15,
+        minZoom: 15, // Locked zoom by default
+        maxZoom: 15,
+        zoomControl: false,
+        scrollWheelZoom: false,
+        doubleClickZoom: false,
+        touchZoom: false,
+        boxZoom: false,
+        keyboard: false,
+        attributionControl: false
+      });
+
+      // Basemap Providers
+      baseLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        maxZoom: 19
+      });
+      baseLayers.topo = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        maxZoom: 19,
+        subdomains: 'abcd'
+      });
+      baseLayers.relief = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        maxZoom: 17
+      });
+
+      // Add default basemap: Real Satellite
+      baseLayers.satellite.addTo(map);
+
+      // Render all layers
+      renderOuterBoundary();
+      renderDusunBoundaries();
+      renderLandUseZoning();
+      renderWaterNetwork();
+      renderPOIMarkers();
+
+      // Mousemove event for real-time coordinates
+      map.on('mousemove', (e) => {
+        const lat = e.latlng.lat.toFixed(5);
+        const lng = e.latlng.lng.toFixed(5);
+        document.getElementById('coord-display').innerText = `${lat}, ${lng}`;
+        // Approximate elevation based on distance to foothills
+        const elev = Math.round(290 + (lng - 108.593) * -120 + (-6.970 - lat) * 180);
+        document.getElementById('elev-display').innerText = `${Math.max(285, Math.min(345, elev))} mdpl`;
+      });
+
+      // Initialize Inspector with Village Overview
+      resetInspector();
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. RENDERING VECTOR LAYERS
+    // -------------------------------------------------------------------------
+    function renderOuterBoundary() {
+      overlayLayers.outer = L.polygon(OUTER_KADURAMA_POLYGON, {
+        color: '#eda50c', // Kuningan Gold
+        weight: 3.5,
+        dashArray: '8, 6',
+        fillOpacity: 0.05,
+        fillColor: '#eda50c'
+      }).addTo(map);
+
+      overlayLayers.outer.bindTooltip('Batas Administrasi Desa Kadurama (142.8 Ha)', {
+        permanent: false,
+        direction: 'center',
+        className: 'bg-emerald-950 text-white border border-emerald-400 font-bold px-3 py-1.5 rounded-lg shadow-xl'
+      });
+    }
+
+    function renderDusunBoundaries() {
+      overlayLayers.dusuns.clearLayers();
+
+      Object.values(DUSUN_DATA).forEach(d => {
+        const polyCoords = DUSUN_POLYGONS[d.id];
+        const poly = L.polygon(polyCoords, {
+          color: d.color,
+          weight: 2.5,
+          fillColor: d.color,
+          fillOpacity: 0.22,
+          dashArray: '4, 4'
+        });
+
+        // Hover effect
+        poly.on('mouseover', function() {
+          this.setStyle({ fillOpacity: 0.45, weight: 3.5 });
+        });
+        poly.on('mouseout', function() {
+          this.setStyle({ fillOpacity: 0.22, weight: 2.5 });
+        });
+
+        // Click on Dusun
+        poly.on('click', () => {
+          selectDusun(d.id);
+        });
+
+        // Label on Dusun
+        poly.bindTooltip(`<b>${d.name}</b><br><span class="text-[10px]">${d.area} • ${d.kk}</span>`, {
+          sticky: true,
+          className: 'bg-slate-900/90 text-white border border-emerald-500/40 rounded-lg px-2.5 py-1 text-xs'
+        });
+
+        overlayLayers.dusuns.addLayer(poly);
+      });
+
+      overlayLayers.dusuns.addTo(map);
+    }
+
+    function renderLandUseZoning() {
+      overlayLayers.landuse.clearLayers();
+      LANDUSE_POLYGONS.forEach(lu => {
+        const poly = L.polygon(lu.coords, {
+          color: lu.color,
+          weight: 1.5,
+          fillColor: lu.color,
+          fillOpacity: 0.25,
+          dashArray: '2, 3'
+        });
+        poly.bindTooltip(`<b>Zonasi RTRW:</b> ${lu.name}`, { sticky: true });
+        overlayLayers.landuse.addLayer(poly);
+      });
+      overlayLayers.landuse.addTo(map);
+    }
+
+    function renderWaterNetwork() {
+      overlayLayers.water.clearLayers();
+      WATER_CHANNELS.forEach(line => {
+        const polyline = L.polyline(line, {
+          color: '#06b6d4',
+          weight: 3.0,
+          opacity: 0.85
+        });
+        polyline.bindTooltip('Saluran Air / Irigasi Teknis', { sticky: true });
+        overlayLayers.water.addLayer(polyline);
+      });
+      overlayLayers.water.addTo(map);
+    }
+
+    function renderPOIMarkers() {
+      overlayLayers.poi.clearLayers();
+
+      POI_FACILITIES.forEach(poi => {
+        const iconHtml = `
+          <div class="relative flex items-center justify-center cursor-pointer group">
+            <div class="absolute w-8 h-8 rounded-full bg-emerald-400/40 pulse-ring"></div>
+            <div class="w-7 h-7 rounded-xl bg-slate-900 border-2 border-[#009388] shadow-2xl flex items-center justify-center text-sm transform transition-transform group-hover:scale-125">
+              ${poi.icon}
+            </div>
+          </div>
+        `;
+        const customIcon = L.divIcon({
+          html: iconHtml,
+          className: 'custom-poi-marker',
+          iconSize: [28, 28],
+          iconAnchor: [14, 14]
+        });
+
+        const marker = L.marker([poi.lat, poi.lng], { icon: customIcon });
+
+        marker.on('click', () => {
+          showPOIDetail(poi);
+        });
+
+        marker.bindTooltip(`<b>${poi.name}</b><br><span class="text-[10px] text-emerald-300">${poi.elev}</span>`, {
+          direction: 'top',
+          offset: [0, -10],
+          className: 'bg-slate-900 text-white border border-emerald-500 rounded-lg px-2 py-1 text-xs'
+        });
+
+        overlayLayers.poi.addLayer(marker);
+      });
+
+      overlayLayers.poi.addTo(map);
+    }
+
+    // -------------------------------------------------------------------------
+    // 5. INTERACTION & INSPECTOR LOGIC
+    // -------------------------------------------------------------------------
+    function selectDusun(id) {
+      currentDusunFocus = id;
+      const d = DUSUN_DATA[id];
+      if (!d) return;
+
+      // Update Nav Buttons
+      document.querySelectorAll('.dusun-nav-btn').forEach(b => {
+        b.classList.remove('bg-emerald-800/60', 'text-white', 'border-emerald-400/40');
+        b.classList.add('bg-white/5', 'text-slate-300', 'border-white/10');
+      });
+      const activeNav = document.getElementById('nav-' + id);
+      if (activeNav) {
+        activeNav.classList.remove('bg-white/5', 'text-slate-300', 'border-white/10');
+        activeNav.classList.add('bg-emerald-800/60', 'text-white', 'border-emerald-400/40');
+      }
+
+      // Update Inspector Drawer
+      document.getElementById('insp-badge').innerText = `Wilayah ${d.name}`;
+      document.getElementById('insp-badge').style.borderColor = d.color;
+      document.getElementById('insp-title').innerText = d.name;
+      document.getElementById('insp-subtitle').innerText = `Kepala Dusun: ${d.kadus}`;
+      document.getElementById('insp-metric-area').innerText = d.area;
+      document.getElementById('insp-metric-kk').innerText = d.kk;
+      document.getElementById('insp-desc').innerText = d.desc;
+
+      // Facilities List
+      const facContainer = document.getElementById('insp-facilities');
+      facContainer.innerHTML = '';
+      d.facilities.forEach(f => {
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10';
+        item.innerHTML = `
+          <span class="font-medium text-slate-200">${f.name}</span>
+          <span class="text-[10px] text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/30">${f.type}</span>
+        `;
+        facContainer.appendChild(item);
+      });
+
+      // Update Google Maps Link
+      document.getElementById('btn-gmaps').href = `https://maps.google.com/?q=${d.center[0]},${d.center[1]}`;
+
+      // Smooth pan to Dusun center
+      map.panTo(d.center, { animate: true, duration: 0.8 });
+    }
+
+    function showPOIDetail(poi) {
+      document.getElementById('insp-badge').innerText = 'Fasilitas & Infrastruktur';
+      document.getElementById('insp-title').innerText = poi.name;
+      document.getElementById('insp-subtitle').innerText = `Wilayah Dusun ${poi.dusun} • Elevasi ${poi.elev}`;
+      document.getElementById('insp-metric-area').innerText = poi.elev;
+      document.getElementById('insp-metric-kk').innerText = `Dusun ${poi.dusun}`;
+      document.getElementById('insp-desc').innerText = `Fasilitas strategis ${poi.name} berfungsi melayani masyarakat Desa Kadurama khususnya di kawasan Dusun ${poi.dusun}. Terhubung langsung ke infrastruktur jalan poros desa.`;
+
+      const facContainer = document.getElementById('insp-facilities');
+      facContainer.innerHTML = `
+        <div class="p-3 rounded-xl bg-emerald-950/70 border border-emerald-500/40 text-xs">
+          <div class="font-bold text-emerald-300">Koordinat Presisi:</div>
+          <div class="font-mono text-white mt-0.5">${poi.lat}, ${poi.lng}</div>
+          <div class="text-[11px] text-slate-400 mt-1">Status: Beroperasi Penuh & Terdaftar di Master Aset Desa 2026.</div>
+        </div>
+      `;
+
+      document.getElementById('btn-gmaps').href = `https://maps.google.com/?q=${poi.lat},${poi.lng}`;
+      map.panTo([poi.lat, poi.lng], { animate: true, duration: 0.8 });
+    }
+
+    function resetInspector() {
+      currentDusunFocus = 'all';
+      document.querySelectorAll('.dusun-nav-btn').forEach(b => {
+        b.classList.remove('bg-emerald-800/60', 'text-white', 'border-emerald-400/40');
+        b.classList.add('bg-white/5', 'text-slate-300', 'border-white/10');
+      });
+      document.getElementById('nav-all').classList.remove('bg-white/5', 'text-slate-300', 'border-white/10');
+      document.getElementById('nav-all').classList.add('bg-emerald-800/60', 'text-white', 'border-emerald-400/40');
+
+      document.getElementById('insp-badge').innerText = 'Wilayah Administratif';
+      document.getElementById('insp-title').innerText = 'Desa Kadurama';
+      document.getElementById('insp-subtitle').innerText = 'Ringkasan Monografi & Geospasial Wilayah';
+      document.getElementById('insp-metric-area').innerText = '142.8 Ha';
+      document.getElementById('insp-metric-kk').innerText = '492 KK';
+      document.getElementById('insp-desc').innerText = 'Desa Kadurama membentang seluas 142.8 Hektar di kaki timur Gunung Ciremai. Terdiri dari 3 dusun bersejarah (Manis, Pahing, Puhun) dengan potensi unggulan lumbung padi organik 64 Ha dan debit mata air purba Cikaduran 45 liter/detik.';
+
+      const facContainer = document.getElementById('insp-facilities');
+      facContainer.innerHTML = '';
+      POI_FACILITIES.slice(0, 4).forEach(poi => {
+        const item = document.createElement('div');
+        item.className = 'flex items-center justify-between p-2 rounded-lg bg-white/5 border border-white/10';
+        item.innerHTML = `
+          <span class="font-medium text-slate-200">${poi.icon} ${poi.name}</span>
+          <span class="text-[10px] text-emerald-400 font-bold px-1.5 py-0.5 rounded bg-emerald-950/80 border border-emerald-500/30">${poi.dusun}</span>
+        `;
+        facContainer.appendChild(item);
+      });
+
+      document.getElementById('btn-gmaps').href = 'https://maps.google.com/?q=-6.9782,108.5982';
+      map.panTo([-6.9782, 108.5982], { animate: true, duration: 0.8 });
+    }
+
+    function focusDusun(id) {
+      if (id === 'all') {
+        resetInspector();
+      } else {
+        selectDusun(id);
+      }
+    }
+
+    function focusCurrentFeature() {
+      if (currentDusunFocus === 'all') {
+        map.panTo([-6.9782, 108.5982], { animate: true });
+      } else {
+        const d = DUSUN_DATA[currentDusunFocus];
+        if (d) map.panTo(d.center, { animate: true });
+      }
+    }
+
+    function resetMapView() {
+      resetInspector();
+    }
+
+    // -------------------------------------------------------------------------
+    // 6. LAYER & BASEMAP CONTROLS
+    // -------------------------------------------------------------------------
+    function switchBasemap(type) {
+      document.querySelectorAll('.base-btn').forEach(b => {
+        b.classList.remove('bg-[#009388]', 'text-white', 'border-emerald-400/40');
+        b.classList.add('bg-white/5', 'text-slate-300', 'border-white/10');
+      });
+
+      const activeBtn = document.getElementById('btn-base-' + (type === 'satellite' ? 'sat' : type));
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-white/5', 'text-slate-300', 'border-white/10');
+        activeBtn.classList.add('bg-[#009388]', 'text-white', 'border-emerald-400/40');
+      }
+
+      Object.values(baseLayers).forEach(l => map.removeLayer(l));
+      if (baseLayers[type]) {
+        baseLayers[type].addTo(map);
+        // Bring vector overlays to front
+        Object.values(overlayLayers).forEach(layer => {
+          if (layer && map.hasLayer(layer)) {
+            if (layer.bringToFront) layer.bringToFront();
+          }
+        });
+      }
+    }
+
+    function toggleLayer(name) {
+      const chk = document.getElementById('layer-' + name);
+      const layer = overlayLayers[name];
+      if (!layer) return;
+
+      if (chk.checked) {
+        map.addLayer(layer);
+      } else {
+        map.removeLayer(layer);
+      }
+    }
+
+    function toggleZoomLock() {
+      isZoomLocked = !isZoomLocked;
+      const btn = document.getElementById('btn-zoom-lock');
+      const label = document.getElementById('zoom-lock-text');
+
+      if (isZoomLocked) {
+        map.setMinZoom(15);
+        map.setMaxZoom(15);
+        map.scrollWheelZoom.disable();
+        map.doubleClickZoom.disable();
+        label.innerText = 'Zoom Dikunci (Skala 1:6.000)';
+        btn.className = 'px-2.5 py-1 rounded-lg bg-emerald-900/60 hover:bg-emerald-800 text-emerald-300 border border-emerald-500/40 text-[10px] font-bold flex items-center gap-1.5 transition';
+      } else {
+        map.setMinZoom(13);
+        map.setMaxZoom(19);
+        map.scrollWheelZoom.enable();
+        map.doubleClickZoom.enable();
+        label.innerText = 'Zoom Bebas (13 - 19)';
+        btn.className = 'px-2.5 py-1 rounded-lg bg-amber-900/60 hover:bg-amber-800 text-amber-300 border border-amber-500/40 text-[10px] font-bold flex items-center gap-1.5 transition';
+      }
+    }
+
+    // Initialize on window load
+    window.onload = initMap;
+  </script>
+</body>
+</html>
