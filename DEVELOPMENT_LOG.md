@@ -127,6 +127,18 @@
      - Penambahan *Interactive Dusun Filter Tabs* di bagian atas (Semua Dusun, Dusun I Manis, Dusun II Pahing, Dusun III Puhun) untuk eksplorasi fokus per wilayah.
      - Penambahan *Demographic Balance Summary Bar* di bagian bawah menampilkan proporsi sebaran warga (Manis 37.4%, Pahing 33.0%, Puhun 29.6%).
 
+12. Transformasi Profil 3 Dusun Menjadi Focal Carousel Interaktif (Geser & Fokus Per Dusun):
+   - Carousel Stage & Track Geser Halus:
+     - Mengubah penyajian profil 3 dusun menjadi panggung carousel fokus (`currentDusunIndex: 0, 1, 2`) dengan transisi geser horizontal (`transform -translateX-[...%] duration-500 ease-out`).
+     - Tiap slide menyajikan format kartu panggung penuh (Split 7:5):
+       - Sisi Kiri (Col-Span-7): Foto lanskap resolusi tinggi dengan efek pan/zoom, label elevasi (mdpl), lencana nomor dusun bergradien, serta judul dan tagline karakter dusun.
+       - Sisi Kanan (Col-Span-5): Narasi mendalam potensi mikro, bento 3 metrik kependudukan (KK, Jiwa, dan Porsi Populasi Desa), chip fasilitas publik utama lengkap dengan ikon tematik, profil Kepala Dusun (Kadus) setempat, dan tombol aksi "Lihat Titik di Peta" yang langsung memfokuskan pin peta geografis di section berikutnya.
+   - Multi-Layer Kontrol & Navigasi:
+     - Dusun Selector Pills di bagian atas untuk lompat fokus langsung ke dusun yang dipilih (`Dusun I: Manis`, `Dusun II: Pahing`, `Dusun III: Puhun`).
+     - Panah Navigasi Kiri & Kanan (`ChevronLeft`, `ChevronRight`) dengan slide counter dinamis (`01 / 03 • Dusun Manis`).
+     - 3 Kartu Mini-Preview (Thumbnail Switcher) di bagian bawah carousel yang memperlihatkan rangkuman seluruh dusun secara simultan, dengan indikator ring aktif dan badge "Fokus Aktif" pada dusun yang sedang ditampilkan di panggung utama.
+   - Tetap mempertahankan *Demographic Balance Summary Bar* di bagian bawah sebagai rangkuman proporsi sebaran warga (Manis 37.4%, Pahing 33.0%, Puhun 29.6%).
+
 ---
 
 ## 🎯 Status & Pekerjaan Selanjutnya (Next Action)
@@ -135,8 +147,10 @@
 - [x] Pembuatan Modul Sensus Kesejahteraan Keluarga (Per KK) dengan kalkulator auto-desil dan kriteria RTLH.
 - [x] Pembuatan fitur ekspor CSV dan lembar cetak PDF A4 berdesain terpersonalisasi.
 - [x] Pembuatan section Profil 3 Dusun dan Peta Geografis Sebaran Fasilitas di portal publik.
-- [x] Redesign Hero Section & Profil 3 Dusun dengan standard taste frontend anti-slop (Asymmetric Bento).
+- [x] Redesign Hero Section & Profil 3 Dusun dengan standard taste frontend anti-slop.
+- [x] Implementasi Focal Carousel Profil 3 Dusun dengan navigasi slide, tombol geser, tab cepat, dan thumbnail preview switcher.
 - [x] Verifikasi build Next.js 16 (Turbopack) sukses 100% tanpa error TypeScript/JSX.
 - [ ] Persiapan skema migrasi tabel Supabase (`sensus_kk`, `fasilitas_desa`) jika data akan dipersistensikan ke backend PostgreSQL.
 - [ ] Uji coba lapangan simulasi pendataan sensus oleh Kepala Dusun.
+
 
