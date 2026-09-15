@@ -174,6 +174,22 @@
      - Menambahkan batasan `dusunTrackIndex >= 4` dan `<= 0` pada handler klik manual agar klik cepat beruntun tidak melompat melebihi batas buffer track.
      - Menambahkan *safety fallback timeout* 650ms untuk menjamin reposisi instan tetap berjalan meskipun event `transitionEnd` terlambat dari browser.
 
+ 16. Restorasi Palet Warna Hero Section, Highlight Card Aksen Emas Kuningan (`index.html`), dan Indikator Vital Wilayah:
+   - Restorasi Gradien Warna Latar Hero Section:
+     - Mengubah gradien gelap pekat (`from-[#021815] via-[#002f2b] to-[#011412]`) kembali ke warna resmi Pemkab Kuningan yang hidup dan bermartabat sesuai referensi [index.html](file:///home/jrilym/Projects/Next/desa/index.html): `bg-gradient-to-br from-[#003733] via-[#005851] to-[#009388]`.
+     - Menghilangkan lapisan vignette hitam pekat dan menggantinya dengan tekstur dot matrix sivik halus (`radial-gradient`) serta ambient atmospheric glow emas `#eda50c` dan teal `#009388`.
+     - Siluet landmark Gerbang Kuningan dipadukan secara harmonis menggunakan `mix-blend-screen` dan opacity lembut agar tetap estetik tanpa menurunkan keterbacaan teks.
+   - Restorasi Box Kanan Hero Card dengan Aksen Kuning Emas Khas Kuningan:
+     - Mengadopsi struktur visual card dari `index.html` dengan latar belakang *frosted glass* transparan `bg-white/10 backdrop-blur-md border border-white/20 hover:border-[#eda50c]/50`.
+     - Menampilkan emblem kotak emas khas `KD` bergradien Kuningan (`bg-[#eda50c] text-slate-950 font-extrabold`) dipadukan dengan badge status Desa Mandiri IDM 2026.
+     - Menyematkan rincian layanan, jam operasional balai desa (Senin - Jumat 07.30 - 15.00 WIB) dengan badge aktif *Buka Sekarang*, ringkasan sensus 3 dusun terpadu, serta semboyan resmi Kuningan: *"Melesat Ngudag Jaman, Ngakar Kuat Purwadaksi"*.
+   - Transformasi Strip Metrik Bawah Hero (*Bottom Horizon Metric Strip*):
+     - Mengganti data teknis elevasi/topografi dengan 4 indikator vital desa yang relevan langsung bagi warga dan pemdes:
+       1. **Jumlah Kepala Keluarga:** `492 Kepala Keluarga` (1.660 Jiwa • 100% Sensus Terdata).
+       2. **Potensi Pertanian Organik:** `64 Ha Padi Organik` (Lumbung Pangan Dusun Pahing).
+       3. **Potensi Mata Air Alami:** `45 Liter / Detik` (Debit Mata Air Purba Cikaduran Dusun Puhun).
+       4. **Sentra Ekonomi & Potensi Unggulan:** `3 Klaster Potensi` (Tani Organik, Peternakan Sapi & UMKM Olahan Ubi).
+
 ---
 
 ## 🎯 Status & Pekerjaan Selanjutnya (Next Action)
@@ -186,9 +202,13 @@
 - [x] Implementasi Full-Photo Cinematic Carousel Profil 3 Dusun (Opsi 1: anti card-bertumpuk).
 - [x] Implementasi Infinite Seamless Loop (1, 2, 3, 1, 2, 3) & Auto-Slide 5s dengan navigasi panah di dalam gambar.
 - [x] Perbaikan Timer Auto-Slide (100% pause saat hover, dan instan reset timer saat klik panah/indikator).
+- [x] Restorasi palet warna Hero section kembali ke nuansa Kuningan Teal [index.html](file:///home/jrilym/Projects/Next/desa/index.html) (tidak pekat hitam).
+- [x] Restorasi Home Cockpit Card dengan aksen kotak kuning emas KD, jam buka, dan motto resmi Kuningan.
+- [x] Pembaruan strip data bawah Hero dengan 4 indikator vital (492 KK, 64 Ha Padi, 45 L/s Air, 3 Klaster Potensi).
 - [x] Verifikasi build Next.js 16 (Turbopack) sukses 100% tanpa error TypeScript/JSX.
 - [ ] Persiapan skema migrasi tabel Supabase (`sensus_kk`, `fasilitas_desa`) jika data akan dipersistensikan ke backend PostgreSQL.
 - [ ] Uji coba lapangan simulasi pendataan sensus oleh Kepala Dusun.
+
 
 
 
