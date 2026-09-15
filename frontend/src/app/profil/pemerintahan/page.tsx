@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import Link from "next/link";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
@@ -8,25 +8,20 @@ import { PAMONG_LIST } from "@/data/pamongData";
 import {
   Building2,
   Users,
-  Award,
   ChevronRight,
   ShieldCheck,
-  Mail,
+  Award,
+  Layers,
   MapPin,
-  CheckCircle2,
-  BookOpen,
+  FileText,
 } from "lucide-react";
 
 export default function PemerintahanPage() {
-  const [activeTab, setActiveTab] = useState<string>("Semua");
-
-  const categories = ["Semua", "Pimpinan", "Sekretariat", "Kewilayahan", "Pelaksana Teknis", "BPD"];
-
-  const filteredPamong = PAMONG_LIST.filter(
-    (p) => activeTab === "Semua" || p.category === activeTab
-  );
-
-  const kuwu = PAMONG_LIST.find((p) => p.role.includes("Kuwu"));
+  const kuwu = PAMONG_LIST.find((p) => p.role.includes("Kuwu")) || PAMONG_LIST[0];
+  const bpdList = PAMONG_LIST.filter((p) => p.category === "BPD");
+  const sekretariatList = PAMONG_LIST.filter((p) => p.category === "Sekretariat" && !p.role.includes("Kuwu"));
+  const teknisList = PAMONG_LIST.filter((p) => p.category === "Pelaksana Teknis");
+  const kewilayahanList = PAMONG_LIST.filter((p) => p.category === "Kewilayahan");
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
@@ -50,37 +45,32 @@ export default function PemerintahanPage() {
                 Struktur Organisasi & Tata Kerja (SOTK)
               </span>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                Pamong & Perangkat Desa
+                Struktur Pemerintahan Desa Kadurama
               </h1>
               <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal">
-                Jajaran aparatur Pemerintah Desa Kadurama yang berintegritas dan siap melayani 1.768 jiwa warga di Dusun Manis, Dusun Pahing, dan Dusun Wage.
+                Bagan struktural dan hierarki penyelenggaraan pemerintahan Desa Kadurama periode 2021–2027 berdasarkan Peraturan Daerah Kabupaten Kuningan dan Undang-Undang Desa.
               </p>
-            </div>
-
-            {/* Filter Tabs */}
-            <div className="mt-8 flex flex-wrap gap-2">
-              {categories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => setActiveTab(cat)}
-                  className={`px-4 py-2 rounded-xl text-xs font-bold transition ${
-                    activeTab === cat
-                      ? "bg-[#eda50c] text-slate-950 shadow-md"
-                      : "bg-white/10 text-emerald-100 hover:bg-white/20"
-                  }`}
-                >
-                  {cat}
-                </button>
-              ))}
             </div>
           </div>
         </section>
 
-        {/* Content Section */}
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
-          {/* Spotlight Kepala Desa */}
-          {kuwu && activeTab === "Semua" && (
-            <div className="mb-12 bg-gradient-to-r from-[#003733] via-[#005851] to-[#009388] text-white rounded-3xl p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
+        {/* Content Section: Hierarki Struktural Lengkap */}
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-12 space-y-16">
+          {/* TINGKAT 1: KEPALA DESA (KUWU) */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-[#eda50c] text-slate-950 font-bold flex items-center justify-center text-xs">
+                I
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wide">
+                  Pimpinan Pemerintah Desa (Kuwu)
+                </h2>
+                <p className="text-xs text-slate-500">Penanggung jawab utama penyelenggaraan pemerintahan, pembangunan, dan kemasyarakatan</p>
+              </div>
+            </div>
+
+            <div className="bg-gradient-to-r from-[#003733] via-[#005851] to-[#009388] text-white rounded-3xl p-6 sm:p-10 grid grid-cols-1 lg:grid-cols-12 gap-8 items-center shadow-xl">
               <div className="lg:col-span-4 flex justify-center">
                 <div className="relative w-64 h-80 sm:w-72 sm:h-96 rounded-2xl overflow-hidden border-2 border-[#eda50c]/60 shadow-2xl group bg-slate-800">
                   <img
@@ -100,11 +90,11 @@ export default function PemerintahanPage() {
               <div className="lg:col-span-8 space-y-4">
                 <div>
                   <div className="text-[#eda50c] text-xs font-bold uppercase tracking-wider">
-                    Pimpinan Pemerintah Desa Kadurama
+                    Kepala Pemerintahan Desa Kadurama
                   </div>
-                  <h2 className="text-2xl sm:text-4xl font-extrabold text-white mt-1 uppercase">
+                  <h3 className="text-2xl sm:text-4xl font-extrabold text-white mt-1 uppercase">
                     {kuwu.name}
-                  </h2>
+                  </h3>
                   {kuwu.nip && (
                     <p className="text-xs font-mono text-emerald-200 mt-0.5">NIP. {kuwu.nip}</p>
                   )}
@@ -116,8 +106,8 @@ export default function PemerintahanPage() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4 border-t border-white/15 text-xs text-emerald-100">
                   <div>
-                    <span className="text-emerald-300 block text-[11px]">Tupoksi Pokok</span>
-                    <span className="font-semibold text-white">Penyelenggaraan Pemdes</span>
+                    <span className="text-emerald-300 block text-[11px]">Kedudukan</span>
+                    <span className="font-semibold text-white">Pemegang Kuasa Pengelolaan APBDes</span>
                   </div>
                   <div>
                     <span className="text-emerald-300 block text-[11px]">Ruang Kerja</span>
@@ -130,66 +120,203 @@ export default function PemerintahanPage() {
                 </div>
               </div>
             </div>
-          )}
+          </div>
 
-          {/* Grid Pamong Lainnya */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-            {filteredPamong
-              .filter((p) => activeTab !== "Semua" || p.id !== "PAMONG-001")
-              .map((pamong) => (
+          {/* TINGKAT 2: BADAN PERMUSYAWARATAN DESA (BPD) */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-[#009388] text-white font-bold flex items-center justify-center text-xs">
+                II
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wide">
+                  Badan Permusyawaratan Desa (BPD)
+                </h2>
+                <p className="text-xs text-slate-500">Lembaga legislasi desa, penampung aspirasi masyarakat, dan pengawas kinerja Kuwu</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {bpdList.map((item) => (
                 <div
-                  key={pamong.id}
-                  className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:shadow-md hover:border-[#009388] transition flex flex-col justify-between group"
+                  key={item.id}
+                  className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs hover:border-[#009388] transition flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700 uppercase">
+                        {item.role}
+                      </span>
+                      <ShieldCheck className="w-4 h-4 text-[#009388]" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-base">{item.name}</h4>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">{item.bio}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 font-medium">
+                    Fungsi: Pengawasan & Regulasi Perdes
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* TINGKAT 3: SEKRETARIAT DESA */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-[#003733] text-white font-bold flex items-center justify-center text-xs">
+                III
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wide">
+                  Sekretariat Desa (Staf Penyelenggara & Administrasi)
+                </h2>
+                <p className="text-xs text-slate-500">Unsur staf pembantu Kepala Desa yang dipimpin oleh Sekretaris Desa</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {sekretariatList.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:border-[#009388] transition flex flex-col justify-between group"
                 >
                   <div>
-                    <div className="relative h-64 bg-slate-800 overflow-hidden">
+                    <div className="relative h-56 bg-slate-800 overflow-hidden">
                       <img
-                        src={pamong.imageUrl}
-                        alt={pamong.name}
+                        src={item.imageUrl}
+                        alt={item.name}
                         className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                       <div className="absolute bottom-3 left-4">
-                        <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-[#009388] px-2.5 py-0.5 rounded shadow-xs">
-                          {pamong.category}
+                        <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-[#003733] px-2.5 py-0.5 rounded">
+                          Sekretariat
                         </span>
                       </div>
                     </div>
-
                     <div className="p-5 space-y-2">
-                      <h3 className="font-extrabold text-slate-900 text-base uppercase leading-snug">
-                        {pamong.name}
-                      </h3>
-                      <div className="text-xs font-semibold text-[#009388]">
-                        {pamong.role}
-                      </div>
-                      {pamong.workArea && (
-                        <div className="text-[11px] font-mono text-slate-500">
-                          {pamong.workArea}
-                        </div>
-                      )}
-                      <p className="text-xs text-slate-600 mt-2 leading-relaxed">
-                        {pamong.bio}
-                      </p>
+                      <h4 className="font-extrabold text-slate-900 text-sm uppercase leading-snug">{item.name}</h4>
+                      <div className="text-xs font-semibold text-[#009388]">{item.role}</div>
+                      <p className="text-xs text-slate-600 leading-relaxed">{item.bio}</p>
                     </div>
                   </div>
-
                   <div className="p-5 pt-0">
-                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-500">
-                      {pamong.dusun ? (
+                    <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-400">
+                      Kantor Balai Desa Kadurama
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* TINGKAT 4: PELAKSANA TEKNIS & URUSAN */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-cyan-700 text-white font-bold flex items-center justify-center text-xs">
+                IV
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wide">
+                  Pelaksana Teknis (Kepala Seksi)
+                </h2>
+                <p className="text-xs text-slate-500">Unsur pembantu Kepala Desa sebagai pelaksana tugas operasional per bidang</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              {teknisList.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:border-[#009388] transition flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="relative h-56 bg-slate-800 overflow-hidden">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                      <div className="absolute bottom-3 left-4">
+                        <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-cyan-700 px-2.5 py-0.5 rounded">
+                          Seksi Operasional
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-5 space-y-2">
+                      <h4 className="font-extrabold text-slate-900 text-sm uppercase leading-snug">{item.name}</h4>
+                      <div className="text-xs font-semibold text-[#009388]">{item.role}</div>
+                      <p className="text-xs text-slate-600 leading-relaxed">{item.bio}</p>
+                    </div>
+                  </div>
+                  <div className="p-5 pt-0">
+                    <div className="pt-3 border-t border-slate-100 text-[11px] text-slate-400">
+                      Pelayanan Publik Balai Desa
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* TINGKAT 5: PELAKSANA KEWILAYAHAN (KEPALA DUSUN) */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-emerald-600 text-white font-bold flex items-center justify-center text-xs">
+                V
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wide">
+                  Pelaksana Kewilayahan (Kepala Dusun)
+                </h2>
+                <p className="text-xs text-slate-500">Unsur pembantu Kuwu di wilayah kerja 3 dusun: Dusun Manis, Dusun Pahing, dan Dusun Wage</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {kewilayahanList.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xs hover:border-[#009388] transition flex flex-col justify-between group"
+                >
+                  <div>
+                    <div className="relative h-60 bg-slate-800 overflow-hidden">
+                      <img
+                        src={item.imageUrl}
+                        alt={item.name}
+                        className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
+                      <div className="absolute bottom-3 left-4">
+                        <span className="text-[10px] font-bold text-white uppercase tracking-wider bg-emerald-600 px-2.5 py-0.5 rounded shadow-xs">
+                          {item.role}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="p-5 space-y-2">
+                      <h4 className="font-extrabold text-slate-900 text-base uppercase leading-snug">{item.name}</h4>
+                      <div className="text-xs font-semibold text-[#009388]">{item.workArea}</div>
+                      <p className="text-xs text-slate-600 leading-relaxed">{item.bio}</p>
+                    </div>
+                  </div>
+                  <div className="p-5 pt-0">
+                    <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      {item.dusun && (
                         <Link
-                          href={`/dusun/${pamong.dusun.toLowerCase()}`}
+                          href={`/dusun/${item.dusun.toLowerCase()}`}
                           className="font-bold text-[#009388] hover:underline"
                         >
-                          Halaman Dusun &rarr;
+                          Halaman Dusun {item.dusun} &rarr;
                         </Link>
-                      ) : (
-                        <span className="text-[11px]">Balai Desa Kadurama</span>
                       )}
                     </div>
                   </div>
                 </div>
               ))}
+            </div>
           </div>
         </section>
       </main>

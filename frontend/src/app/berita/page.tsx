@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import Link from "next/link";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
-import { NEWS_ARTICLES } from "@/data/newsData";
+import { createClient } from "@/lib/supabase/client";
+import { NEWS_ARTICLES as DEFAULT_ARTICLES, NewsArticle } from "@/data/newsData";
 import {
   Search,
   Calendar,
@@ -15,27 +16,71 @@ import {
   Newspaper,
   ChevronRight,
   Sparkles,
+  ShieldCheck,
 } from "lucide-react";
 
 export default function BeritaPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Semua");
+  const [articles, setArticles] = useState<NewsArticle[]>(DEFAULT_ARTICLES);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadNews() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("news_articles")
+          .select("*")
+          .eq("is_deleted", false)
+          .eq("status", "Terbit")
+          .order("created_at", { ascending: false });
+
+        if (data && data.length > 0) {
+          const mapped: NewsArticle[] = data.map((item: any) => ({
+            id: item.id,
+            slug: item.slug,
+            title: item.title,
+            category: item.category as any,
+            date: item.date,
+            author: item.author,
+            authorRole: item.author_role || "Pemerintah Desa",
+            readTime: item.read_time || "3 menit baca",
+            summary: item.summary,
+            content: Array.isArray(item.content) ? item.content : [item.summary],
+            status: item.status,
+            imageUrl:
+              item.image_url ||
+              "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
+            tags: Array.isArray(item.tags) ? item.tags : ["Kadurama"],
+          }));
+          setArticles(mapped);
+        }
+      } catch (err) {
+        console.warn("Gagal mengambil berita dari Supabase, pakai data bawaan:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadNews();
+  }, []);
 
   const categories = ["Semua", "Pemerintahan", "Bansos", "Kesehatan", "Pembangunan", "Kegiatan", "Ekonomi"];
 
   const filteredArticles = useMemo(() => {
-    return NEWS_ARTICLES.filter((article) => {
+    return articles.filter((article) => {
       const matchesSearch =
         article.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         article.summary.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        article.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase()));
+        (article.tags && article.tags.some((tag) => tag.toLowerCase().includes(searchQuery.toLowerCase())));
 
       const matchesCategory =
         selectedCategory === "Semua" || article.category === selectedCategory;
 
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [articles, searchQuery, selectedCategory]);
 
   const featuredArticle = filteredArticles[0];
   const remainingArticles = filteredArticles.slice(1);
@@ -48,7 +93,7 @@ export default function BeritaPage() {
         {/* Header Banner */}
         <section className="bg-gradient-to-b from-[#003733] to-[#002825] text-white pt-12 pb-16 border-b border-[#005851] relative overflow-hidden">
           <div className="absolute inset-0 bg-[radial-gradient(#009388_1px,transparent_1px)] [background-size:16px_16px] opacity-15" />
-          
+
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
             {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-xs text-emerald-200/80 mb-4 font-mono">
@@ -58,10 +103,16 @@ export default function BeritaPage() {
             </div>
 
             <div className="max-w-3xl space-y-3">
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-bold uppercase tracking-wider">
-                <Newspaper className="w-3.5 h-3.5" />
-                Pusat Informasi Publik Desa Kadurama
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-bold uppercase tracking-wider">
+                  <Newspaper className="w-3.5 h-3.5" />
+                  Pusat Informasi Publik Desa Kadurama
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 text-xs font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Sinkronisasi Realtime Supabase
+                </span>
+              </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
                 Kabar & Warta Kegiatan Desa
               </h1>

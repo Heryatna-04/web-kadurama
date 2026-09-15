@@ -1331,6 +1331,7 @@ export const CIVIC_SERVICES_DATA: CivicServiceItem[] = [
 // =========================================================================
 interface NewsItem {
   id: string;
+  slug?: string;
   title: string;
   category: "Pemerintahan" | "Bansos" | "Pembangunan" | "Kesehatan" | "Kegiatan";
   date: string;
@@ -1865,7 +1866,75 @@ export default function Home() {
     };
   }, []);
 
-  
+  // Fetch dynamic News & APBDes from Supabase
+  useEffect(() => {
+    const fetchLandingData = async () => {
+      try {
+        const supabase = createClient();
+        const [{ data: newsData }, { data: summaryData }, { data: sectorsData }] =
+          await Promise.all([
+            supabase
+              .from("news_articles")
+              .select("*")
+              .eq("is_deleted", false)
+              .order("created_at", { ascending: false }),
+            supabase
+              .from("apbdes_summary")
+              .select("*")
+              .eq("tahun", 2026)
+              .maybeSingle(),
+            supabase
+              .from("apbdes_sectors")
+              .select("*")
+              .eq("is_deleted", false)
+              .order("id", { ascending: true }),
+          ]);
+
+        if (newsData && newsData.length > 0) {
+          setNewsList(
+            newsData.map((item: any) => ({
+              id: item.id,
+              slug: item.slug,
+              title: item.title,
+              category: item.category as any,
+              date: item.date,
+              author: item.author,
+              summary: item.summary,
+              status: item.status,
+              imageUrl:
+                item.image_url ||
+                "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
+            }))
+          );
+        }
+
+        if (summaryData) {
+          setApbdesTotals({
+            pendapatan: Number(summaryData.total_pendapatan) || 1488500000,
+            belanja: Number(summaryData.total_belanja) || 1445000000,
+            serapan: Number(summaryData.persen_realisasi_belanja) || 79.5,
+          });
+        }
+
+        if (sectorsData && sectorsData.length > 0) {
+          setApbdesBidangList(
+            sectorsData.map((s: any) => ({
+              id: s.id,
+              nama: s.nama,
+              persen: Number(s.persen) || 0,
+              pagu: Number(s.pagu) || 0,
+              realisasi: Number(s.realisasi) || 0,
+              keterangan: s.keterangan || "",
+            }))
+          );
+        }
+      } catch (err) {
+        console.warn("Gagal memuat landing page data dari Supabase:", err);
+      }
+    };
+
+    fetchLandingData();
+  }, []);
 
   // Handlers Residents
   const filteredResidents = residentsList.filter((res) => {
@@ -3858,12 +3927,16 @@ export default function Home() {
               if (!featured) return null;
 
               const getSlug = (id: string) => {
+                const found = newsList.find((n) => n.id === id);
+                if (found?.slug) return found.slug;
                 if (id === "NEWS-001") return "musyawarah-rkpdes-2027";
                 if (id === "NEWS-002") return "penyaluran-blt-dana-desa-triwulan-iii-2026";
                 if (id === "NEWS-003") return "posyandu-balita-dan-skrining-stunting-pahing";
                 if (id === "NEWS-004") return "rehabilitasi-drainase-pemukiman-dusun-wage";
                 if (id === "NEWS-005") return "pelatihan-digital-marketing-umkm-ubi-kuningan";
-                return "panen-raya-padi-organik-dusun-pahing";
+                return found?.title
+                  ? found.title.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "")
+                  : "musyawarah-rkpdes-2027";
               };
 
               return (

@@ -1,10 +1,10 @@
 "use client";
 
-import React, { use } from "react";
+import React, { use, useState, useEffect } from "react";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
+import { createClient } from "@/lib/supabase/client";
 import { NEWS_ARTICLES, NewsArticle } from "@/data/newsData";
 import {
   Calendar,
@@ -18,6 +18,7 @@ import {
   Tag,
   ArrowRight,
   CheckCircle2,
+  ShieldCheck,
 } from "lucide-react";
 
 interface PageProps {
@@ -28,9 +29,58 @@ export default function BeritaDetailPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const { slug } = resolvedParams;
 
-  const article = NEWS_ARTICLES.find((item) => item.slug === slug);
+  const [loading, setLoading] = useState(true);
+  const [article, setArticle] = useState<NewsArticle | null>(() => {
+    return NEWS_ARTICLES.find((item) => item.slug === slug) || null;
+  });
+  const [allArticles, setAllArticles] = useState<NewsArticle[]>(NEWS_ARTICLES);
 
-  if (!article) {
+  useEffect(() => {
+    async function fetchArticle() {
+      try {
+        const supabase = createClient();
+        const { data: dbData } = await supabase
+          .from("news_articles")
+          .select("*")
+          .eq("is_deleted", false)
+          .order("created_at", { ascending: false });
+
+        if (dbData && dbData.length > 0) {
+          const mapped: NewsArticle[] = dbData.map((item: any) => ({
+            id: item.id,
+            slug: item.slug,
+            title: item.title,
+            category: item.category as any,
+            date: item.date,
+            author: item.author,
+            authorRole: item.author_role || "Pemerintah Desa",
+            readTime: item.read_time || "3 menit baca",
+            summary: item.summary,
+            content: Array.isArray(item.content) ? item.content : [item.summary],
+            status: item.status,
+            imageUrl:
+              item.image_url ||
+              "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
+            tags: Array.isArray(item.tags) ? item.tags : ["Kadurama"],
+          }));
+          setAllArticles(mapped);
+
+          const found = mapped.find((item) => item.slug === slug);
+          if (found) {
+            setArticle(found);
+          }
+        }
+      } catch (err) {
+        console.warn("Gagal memuat artikel dari Supabase:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchArticle();
+  }, [slug]);
+
+  if (!article && !loading) {
     return (
       <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
         <CivicNavbar />
@@ -55,8 +105,20 @@ export default function BeritaDetailPage({ params }: PageProps) {
     );
   }
 
+  if (!article) {
+    return (
+      <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
+        <CivicNavbar />
+        <main className="flex-1 flex items-center justify-center p-6">
+          <div className="text-slate-400 text-sm">Memuat artikel warta desa...</div>
+        </main>
+        <CivicFooter />
+      </div>
+    );
+  }
+
   // Related articles (same category or recent, excluding current)
-  const relatedArticles = NEWS_ARTICLES.filter((a) => a.id !== article.id).slice(0, 3);
+  const relatedArticles = allArticles.filter((a) => a.id !== article.id).slice(0, 3);
 
   const handleShare = () => {
     if (typeof navigator !== "undefined" && navigator.clipboard) {

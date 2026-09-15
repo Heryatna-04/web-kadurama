@@ -1,13 +1,15 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
+import { createClient } from "@/lib/supabase/client";
 import {
-  APBDES_TOTAL_SUMMARY,
+  APBDES_TOTAL_SUMMARY as DEFAULT_SUMMARY,
   APBDES_REVENUES,
-  APBDES_SECTORS,
+  APBDES_SECTORS as DEFAULT_SECTORS,
+  APBDesSector,
 } from "@/data/apbdesData";
 import {
   PieChart,
@@ -19,10 +21,71 @@ import {
   DollarSign,
   Layers,
   FileSpreadsheet,
+  RefreshCw,
 } from "lucide-react";
 
 export default function TransparansiApbdesPage() {
   const [activeSectorId, setActiveSectorId] = useState<number>(1);
+  const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState(DEFAULT_SUMMARY);
+  const [sectors, setSectors] = useState<APBDesSector[]>(DEFAULT_SECTORS);
+
+  useEffect(() => {
+    async function loadApbdesData() {
+      try {
+        const supabase = createClient();
+        const [{ data: summaryData }, { data: sectorsData }] = await Promise.all([
+          supabase
+            .from("apbdes_summary")
+            .select("*")
+            .eq("tahun", 2026)
+            .maybeSingle(),
+          supabase
+            .from("apbdes_sectors")
+            .select("*")
+            .eq("is_deleted", false)
+            .order("id", { ascending: true }),
+        ]);
+
+        if (summaryData) {
+          setSummary({
+            tahun: summaryData.tahun || 2026,
+            totalPendapatan: Number(summaryData.total_pendapatan) || DEFAULT_SUMMARY.totalPendapatan,
+            totalBelanja: Number(summaryData.total_belanja) || DEFAULT_SUMMARY.totalBelanja,
+            totalRealisasiBelanja: Number(summaryData.total_realisasi_belanja) || DEFAULT_SUMMARY.totalRealisasiBelanja,
+            persenRealisasiBelanja: Number(summaryData.persen_realisasi_belanja) || DEFAULT_SUMMARY.persenRealisasiBelanja,
+            surplusDefisit: Number(summaryData.surplus_defisit) || DEFAULT_SUMMARY.surplusDefisit,
+            silpaTahunLalu: Number(summaryData.silpa_tahun_lalu) || DEFAULT_SUMMARY.silpaTahunLalu,
+          });
+        }
+
+        if (sectorsData && sectorsData.length > 0) {
+          const mappedSectors: APBDesSector[] = sectorsData.map((s: any) => {
+            const defaultMatch = DEFAULT_SECTORS.find((ds) => ds.id === s.id);
+            return {
+              id: s.id,
+              nama: s.nama,
+              persen: Number(s.persen) || 0,
+              pagu: Number(s.pagu) || 0,
+              realisasi: Number(s.realisasi) || 0,
+              keterangan: s.keterangan || "",
+              subKegiatan:
+                Array.isArray(s.sub_kegiatan) && s.sub_kegiatan.length > 0
+                  ? s.sub_kegiatan
+                  : defaultMatch?.subKegiatan || [],
+            };
+          });
+          setSectors(mappedSectors);
+        }
+      } catch (err) {
+        console.warn("Gagal memuat APBDes dari Supabase, gunakan data default:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadApbdesData();
+  }, []);
 
   const formatRupiah = (val: number) => {
     return new Intl.NumberFormat("id-ID", {
@@ -32,7 +95,7 @@ export default function TransparansiApbdesPage() {
     }).format(val);
   };
 
-  const selectedSector = APBDES_SECTORS.find((s) => s.id === activeSectorId) || APBDES_SECTORS[0];
+  const selectedSector = sectors.find((s) => s.id === activeSectorId) || sectors[0] || DEFAULT_SECTORS[0];
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
@@ -51,15 +114,21 @@ export default function TransparansiApbdesPage() {
             </div>
 
             <div className="max-w-3xl space-y-3">
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-bold uppercase tracking-wider">
-                <PieChart className="w-3.5 h-3.5" />
-                Akuntabilitas Publik Siskeudes
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-bold uppercase tracking-wider">
+                  <PieChart className="w-3.5 h-3.5" />
+                  Akuntabilitas Publik Siskeudes
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 text-xs font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Sinkronisasi Realtime Supabase
+                </span>
+              </div>
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                APBDes Kadurama 2026
+                APBDes Kadurama {summary.tahun}
               </h1>
               <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal">
-                Keterbukaan informasi keuangan Anggaran Pendapatan dan Belanja Desa (APBDes) Tahun Anggaran 2026. Transparan, akuntabel, dan berorientasi pada kemakmuran warga 3 dusun.
+                Keterbukaan informasi keuangan Anggaran Pendapatan dan Belanja Desa (APBDes) Tahun Anggaran {summary.tahun}. Transparan, akuntabel, dan berorientasi pada kemakmuran warga 3 dusun.
               </p>
             </div>
 
@@ -67,32 +136,32 @@ export default function TransparansiApbdesPage() {
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
               <div className="bg-white/10 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/15">
                 <div className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider">Total Pendapatan</div>
-                <div className="text-xl sm:text-2xl font-black text-white mt-1">
-                  {formatRupiah(APBDES_TOTAL_SUMMARY.totalPendapatan)}
+                <div className="text-xl sm:text-2xl font-black text-white mt-1 font-mono">
+                  {formatRupiah(summary.totalPendapatan)}
                 </div>
                 <div className="text-[11px] text-slate-300 mt-0.5">APBN, ADD & PADes</div>
               </div>
 
               <div className="bg-white/10 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/15">
                 <div className="text-[11px] font-bold text-[#eda50c] uppercase tracking-wider">Pagu Belanja</div>
-                <div className="text-xl sm:text-2xl font-black text-[#eda50c] mt-1">
-                  {formatRupiah(APBDES_TOTAL_SUMMARY.totalBelanja)}
+                <div className="text-xl sm:text-2xl font-black text-[#eda50c] mt-1 font-mono">
+                  {formatRupiah(summary.totalBelanja)}
                 </div>
                 <div className="text-[11px] text-slate-300 mt-0.5">5 Bidang Penyelenggaraan</div>
               </div>
 
               <div className="bg-white/10 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/15">
                 <div className="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">Realisasi Berjalan</div>
-                <div className="text-xl sm:text-2xl font-black text-cyan-300 mt-1">
-                  {formatRupiah(APBDES_TOTAL_SUMMARY.totalRealisasiBelanja)}
+                <div className="text-xl sm:text-2xl font-black text-cyan-300 mt-1 font-mono">
+                  {formatRupiah(summary.totalRealisasiBelanja)}
                 </div>
-                <div className="text-[11px] text-slate-300 mt-0.5">Progres {APBDES_TOTAL_SUMMARY.persenRealisasiBelanja}% (Triwulan III)</div>
+                <div className="text-[11px] text-slate-300 mt-0.5">Progres {summary.persenRealisasiBelanja}% (Triwulan III)</div>
               </div>
 
               <div className="bg-white/10 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/15">
                 <div className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider">Surplus / SiLPA</div>
-                <div className="text-xl sm:text-2xl font-black text-white mt-1">
-                  {formatRupiah(APBDES_TOTAL_SUMMARY.surplusDefisit)}
+                <div className="text-xl sm:text-2xl font-black text-white mt-1 font-mono">
+                  {formatRupiah(summary.surplusDefisit)}
                 </div>
                 <div className="text-[11px] text-slate-300 mt-0.5">Kondisi Kas Sehat</div>
               </div>
@@ -169,7 +238,7 @@ export default function TransparansiApbdesPage() {
 
                 {/* Tabs Bidang */}
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
-                  {APBDES_SECTORS.map((sector) => (
+                  {sectors.map((sector) => (
                     <button
                       key={sector.id}
                       onClick={() => setActiveSectorId(sector.id)}
@@ -219,23 +288,27 @@ export default function TransparansiApbdesPage() {
                     <div className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
                       Rincian Sub-Kegiatan:
                     </div>
-                    {selectedSector.subKegiatan.map((sub, idx) => (
-                      <div
-                        key={idx}
-                        className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                      >
-                        <div>
-                          <div className="font-bold text-slate-900">{sub.nama}</div>
-                          <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                            {sub.status}
-                          </span>
+                    {selectedSector.subKegiatan && selectedSector.subKegiatan.length > 0 ? (
+                      selectedSector.subKegiatan.map((sub, idx) => (
+                        <div
+                          key={idx}
+                          className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
+                        >
+                          <div>
+                            <div className="font-bold text-slate-900">{sub.nama}</div>
+                            <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                              {sub.status}
+                            </span>
+                          </div>
+                          <div className="text-right sm:flex-shrink-0 font-mono">
+                            <div className="font-bold text-slate-900">{formatRupiah(sub.realisasi)}</div>
+                            <div className="text-[10px] text-slate-400">Pagu: {formatRupiah(sub.anggaran)}</div>
+                          </div>
                         </div>
-                        <div className="text-right sm:flex-shrink-0 font-mono">
-                          <div className="font-bold text-slate-900">{formatRupiah(sub.realisasi)}</div>
-                          <div className="text-[10px] text-slate-400">Pagu: {formatRupiah(sub.anggaran)}</div>
-                        </div>
-                      </div>
-                    ))}
+                      ))
+                    ) : (
+                      <p className="text-xs text-slate-400 italic">Belum ada rincian sub-kegiatan tercatat.</p>
+                    )}
                   </div>
                 </div>
               </div>

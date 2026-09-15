@@ -94,7 +94,58 @@ export default function MasterPanelPage() {
   const [sensusList, setSensusList] = useState<SensusKK[]>([]);
   const [residentsList, setResidentsList] = useState<Resident[]>([]);
   const [newsList, setNewsList] = useState<any[]>([]);
+  const [newsSearch, setNewsSearch] = useState("");
+  const [newsCategoryFilter, setNewsCategoryFilter] = useState("all");
+  const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
+  const [editingNews, setEditingNews] = useState<any | null>(null);
+  const [newsForm, setNewsForm] = useState({
+    id: "",
+    title: "",
+    category: "Pemerintahan",
+    author: "",
+    author_role: "",
+    read_time: "3 menit baca",
+    summary: "",
+    content: "",
+    status: "Terbit",
+    image_url: "",
+    tags: "",
+  });
+  const [isSubmittingNews, setIsSubmittingNews] = useState(false);
+
+  // APBDes states
   const [apbdesList, setApbdesList] = useState<any[]>([]);
+  const [apbdesSummary, setApbdesSummary] = useState<any>({
+    tahun: 2026,
+    total_pendapatan: 1488500000,
+    total_belanja: 1445000000,
+    total_realisasi_belanja: 1148782000,
+    persen_realisasi_belanja: 79.5,
+    surplus_defisit: 43500000,
+    silpa_tahun_lalu: 28400000,
+  });
+  const [isEditSummaryModalOpen, setIsEditSummaryModalOpen] = useState(false);
+  const [summaryForm, setSummaryForm] = useState<any>({
+    tahun: 2026,
+    total_pendapatan: 1488500000,
+    total_belanja: 1445000000,
+    total_realisasi_belanja: 1148782000,
+    persen_realisasi_belanja: 79.5,
+    surplus_defisit: 43500000,
+    silpa_tahun_lalu: 28400000,
+  });
+  const [isEditSectorModalOpen, setIsEditSectorModalOpen] = useState(false);
+  const [editingSector, setEditingSector] = useState<any | null>(null);
+  const [sectorForm, setSectorForm] = useState({
+    id: 1,
+    nama: "",
+    pagu: 0,
+    realisasi: 0,
+    persen: 0,
+    keterangan: "",
+  });
+  const [isSubmittingApbdes, setIsSubmittingApbdes] = useState(false);
+
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [isLoadingData, setIsLoadingData] = useState(false);
 
@@ -244,15 +295,34 @@ export default function MasterPanelPage() {
         );
       }
 
-      // 3. APBDes Sectors
-      const { data: apbdesData } = await supabase
-        .from("apbdes_sectors")
-        .select("*")
-        .eq("is_deleted", false)
-        .order("id", { ascending: true });
+      // 3. APBDes Summary & Sectors
+      const [{ data: summaryData }, { data: apbdesData }] = await Promise.all([
+        supabase
+          .from("apbdes_summary")
+          .select("*")
+          .eq("tahun", 2026)
+          .maybeSingle(),
+        supabase
+          .from("apbdes_sectors")
+          .select("*")
+          .eq("is_deleted", false)
+          .order("id", { ascending: true }),
+      ]);
+      if (summaryData) {
+        setApbdesSummary(summaryData);
+        setSummaryForm(summaryData);
+      }
       if (apbdesData) setApbdesList(apbdesData);
 
-      // 4. Audit Logs (Ordered by created_at DESC)
+      // 4. News Articles
+      const { data: newsData } = await supabase
+        .from("news_articles")
+        .select("*")
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false });
+      if (newsData) setNewsList(newsData);
+
+      // 5. Audit Logs (Ordered by created_at DESC)
       const { data: logData } = await supabase
         .from("audit_logs")
         .select("*")
@@ -1076,8 +1146,301 @@ export default function MasterPanelPage() {
   };
 
   // --------------------------------------------------------------------------
+  // OTORISASI AKSES PER ROLE
+  // --------------------------------------------------------------------------
+  const canManageNews =
+    currentUser?.role === "master" ||
+    currentUser?.role === "sekdes" ||
+    currentUser?.role === "operator";
+
+  const canManageApbdes =
+    currentUser?.role === "master" ||
+    currentUser?.role === "sekdes" ||
+    currentUser?.role === "keuangan";
+
+  // --------------------------------------------------------------------------
+  // HANDLERS KABAR DESA (NEWS CRUD)
+  // --------------------------------------------------------------------------
+  const handleOpenCreateNews = () => {
+    setEditingNews(null);
+    setNewsForm({
+      id: `NEWS-${Date.now().toString().slice(-4)}`,
+      title: "",
+      category: "Pemerintahan",
+      author: currentUser?.nama || "Pemerintah Desa",
+      author_role: currentUser?.jabatan || "Sekretariat Desa",
+      read_time: "3 menit baca",
+      summary: "",
+      content: "",
+      status: "Terbit",
+      image_url: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
+      tags: "Kadurama, Berita",
+    });
+    setIsNewsModalOpen(true);
+  };
+
+  const handleOpenEditNews = (item: any) => {
+    setEditingNews(item);
+    setNewsForm({
+      id: item.id,
+      title: item.title || "",
+      category: item.category || "Pemerintahan",
+      author: item.author || currentUser?.nama || "Pemerintah Desa",
+      author_role: item.author_role || currentUser?.jabatan || "Sekretariat Desa",
+      read_time: item.read_time || "3 menit baca",
+      summary: item.summary || "",
+      content: Array.isArray(item.content) ? item.content.join("\n\n") : (item.content || ""),
+      status: item.status || "Terbit",
+      image_url: item.image_url || "",
+      tags: Array.isArray(item.tags) ? item.tags.join(", ") : (item.tags || ""),
+    });
+    setIsNewsModalOpen(true);
+  };
+
+  const handleSaveNews = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newsForm.title.trim() || !newsForm.summary.trim()) {
+      alert("Mohon isi judul dan ringkasan berita!");
+      return;
+    }
+    setIsSubmittingNews(true);
+    try {
+      const slug = newsForm.title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/(^-|-$)/g, "");
+
+      const contentArray = newsForm.content
+        .split("\n\n")
+        .map((p) => p.trim())
+        .filter(Boolean);
+
+      const tagsArray = newsForm.tags
+        .split(",")
+        .map((t) => t.trim())
+        .filter(Boolean);
+
+      const payload = {
+        id: newsForm.id,
+        slug,
+        title: newsForm.title.trim(),
+        category: newsForm.category,
+        date: new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date()),
+        author: newsForm.author.trim(),
+        author_role: newsForm.author_role.trim(),
+        read_time: newsForm.read_time.trim(),
+        summary: newsForm.summary.trim(),
+        content: contentArray.length > 0 ? contentArray : [newsForm.summary.trim()],
+        status: newsForm.status,
+        image_url: newsForm.image_url.trim(),
+        tags: tagsArray.length > 0 ? tagsArray : ["Kadurama"],
+        is_deleted: false,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (editingNews) {
+        const { error } = await supabase
+          .from("news_articles")
+          .update(payload)
+          .eq("id", editingNews.id);
+
+        if (error) throw error;
+
+        await recordAuditLog({
+          actor_email: currentUser?.email || "unknown",
+          actor_name: currentUser?.nama || "Admin",
+          actor_role: currentUser?.role || "master",
+          action: "UPDATE",
+          entity_type: "news_articles",
+          entity_id: editingNews.id,
+          description: `Memperbarui artikel warta desa: "${payload.title}" (${payload.status})`,
+        });
+      } else {
+        const { error } = await supabase
+          .from("news_articles")
+          .insert([payload]);
+
+        if (error) throw error;
+
+        await recordAuditLog({
+          actor_email: currentUser?.email || "unknown",
+          actor_name: currentUser?.nama || "Admin",
+          actor_role: currentUser?.role || "master",
+          action: "CREATE",
+          entity_type: "news_articles",
+          entity_id: payload.id,
+          description: `Menerbitkan warta desa baru: "${payload.title}" (${payload.status})`,
+        });
+      }
+
+      setIsNewsModalOpen(false);
+      showToast(`Artikel warta berhasil ${editingNews ? "diperbarui" : "diterbitkan"}!`);
+      await fetchAllData();
+    } catch (err: any) {
+      console.error("Gagal menyimpan warta:", err);
+      alert(`Gagal menyimpan artikel: ${err.message || err}`);
+    } finally {
+      setIsSubmittingNews(false);
+    }
+  };
+
+  const handleDeleteNews = async (item: any) => {
+    if (!confirm(`Hapus artikel warta "${item.title}"?`)) return;
+    try {
+      const { error } = await supabase
+        .from("news_articles")
+        .update({
+          is_deleted: true,
+          deleted_at: new Date().toISOString(),
+          deleted_by: currentUser?.email,
+        })
+        .eq("id", item.id);
+
+      if (error) throw error;
+
+      await recordAuditLog({
+        actor_email: currentUser?.email || "unknown",
+        actor_name: currentUser?.nama || "Admin",
+        actor_role: currentUser?.role || "master",
+        action: "DELETE",
+        entity_type: "news_articles",
+        entity_id: item.id,
+        description: `Menghapus artikel warta desa: "${item.title}" (soft delete)`,
+      });
+
+      showToast("Artikel warta berhasil dihapus.");
+      await fetchAllData();
+    } catch (err: any) {
+      alert(`Gagal menghapus: ${err.message || err}`);
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // HANDLERS APBDES 2026
+  // --------------------------------------------------------------------------
+  const handleOpenEditSummary = () => {
+    setSummaryForm({ ...apbdesSummary });
+    setIsEditSummaryModalOpen(true);
+  };
+
+  const handleSaveApbdesSummary = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSubmittingApbdes(true);
+    try {
+      const pendapatan = Number(summaryForm.total_pendapatan) || 0;
+      const belanja = Number(summaryForm.total_belanja) || 0;
+      const realisasi = Number(summaryForm.total_realisasi_belanja) || 0;
+      const persen = belanja > 0 ? Number(((realisasi / belanja) * 100).toFixed(1)) : 0;
+      const surplus = pendapatan - belanja;
+      const silpa = Number(summaryForm.silpa_tahun_lalu) || 0;
+
+      const payload = {
+        tahun: 2026,
+        total_pendapatan: pendapatan,
+        total_belanja: belanja,
+        total_realisasi_belanja: realisasi,
+        persen_realisasi_belanja: persen,
+        surplus_defisit: surplus,
+        silpa_tahun_lalu: silpa,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from("apbdes_summary")
+        .upsert([payload], { onConflict: "tahun" });
+
+      if (error) throw error;
+
+      await recordAuditLog({
+        actor_email: currentUser?.email || "unknown",
+        actor_name: currentUser?.nama || "Admin",
+        actor_role: currentUser?.role || "master",
+        action: "UPDATE",
+        entity_type: "apbdes_sectors",
+        entity_id: "apbdes-summary-2026",
+        description: `Memperbarui ringkasan fiskal APBDes 2026: Pendapatan Rp ${pendapatan.toLocaleString("id-ID")}, Belanja Rp ${belanja.toLocaleString("id-ID")}, Realisasi ${persen}%`,
+      });
+
+      setIsEditSummaryModalOpen(false);
+      showToast("Ringkasan APBDes 2026 berhasil diperbarui!");
+      await fetchAllData();
+    } catch (err: any) {
+      alert(`Gagal memperbarui ringkasan APBDes: ${err.message || err}`);
+    } finally {
+      setIsSubmittingApbdes(false);
+    }
+  };
+
+  const handleOpenEditSector = (sector: any) => {
+    setEditingSector(sector);
+    setSectorForm({
+      id: sector.id,
+      nama: sector.nama,
+      pagu: Number(sector.pagu) || 0,
+      realisasi: Number(sector.realisasi) || 0,
+      persen: Number(sector.persen) || 0,
+      keterangan: sector.keterangan || "",
+    });
+    setIsEditSectorModalOpen(true);
+  };
+
+  const handleSaveApbdesSector = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSector) return;
+    setIsSubmittingApbdes(true);
+    try {
+      const pagu = Number(sectorForm.pagu) || 0;
+      const realisasi = Number(sectorForm.realisasi) || 0;
+      const persen = pagu > 0 ? Number(((realisasi / pagu) * 100).toFixed(1)) : 0;
+
+      const payload = {
+        nama: sectorForm.nama,
+        pagu,
+        realisasi,
+        persen,
+        keterangan: sectorForm.keterangan,
+        updated_at: new Date().toISOString(),
+      };
+
+      const { error } = await supabase
+        .from("apbdes_sectors")
+        .update(payload)
+        .eq("id", editingSector.id);
+
+      if (error) throw error;
+
+      await recordAuditLog({
+        actor_email: currentUser?.email || "unknown",
+        actor_name: currentUser?.nama || "Admin",
+        actor_role: currentUser?.role || "master",
+        action: "UPDATE",
+        entity_type: "apbdes_sectors",
+        entity_id: String(editingSector.id),
+        description: `Memperbarui Bidang APBDes 0${editingSector.id} (${sectorForm.nama}): Realisasi Rp ${realisasi.toLocaleString("id-ID")} (${persen}%)`,
+      });
+
+      setIsEditSectorModalOpen(false);
+      showToast(`Bidang 0${editingSector.id} berhasil diperbarui!`);
+      await fetchAllData();
+    } catch (err: any) {
+      alert(`Gagal memperbarui bidang: ${err.message || err}`);
+    } finally {
+      setIsSubmittingApbdes(false);
+    }
+  };
+
+  // --------------------------------------------------------------------------
   // FILTERING LOGIC
   // --------------------------------------------------------------------------
+  const filteredNews = newsList.filter((item) => {
+    const matchCat = newsCategoryFilter === "all" || item.category === newsCategoryFilter;
+    const matchSearch =
+      !newsSearch.trim() ||
+      item.title?.toLowerCase().includes(newsSearch.toLowerCase()) ||
+      item.summary?.toLowerCase().includes(newsSearch.toLowerCase()) ||
+      item.author?.toLowerCase().includes(newsSearch.toLowerCase());
+    return matchCat && matchSearch;
+  });
   const filteredSensus = sensusList.filter((item) => {
     const matchDusun = sensusDusunFilter === "all" || item.dusun === sensusDusunFilter;
     const matchDesil = sensusDesilFilter === "all" || item.desil.toString() === sensusDesilFilter;
@@ -1942,7 +2305,7 @@ export default function MasterPanelPage() {
           )}
 
           {/* ================================================================ */}
-          {/* TAB 3: MANAJEMEN KABAR DESA                                       */}
+          {/* TAB 3: MANAJEMEN KABAR DESA (FULL CRUD SUPABASE)                 */}
           {/* ================================================================ */}
           {activeTab === "berita" && (
             <div className="space-y-6">
@@ -1953,43 +2316,189 @@ export default function MasterPanelPage() {
                     <span>Manajemen Kabar & Publikasi Desa</span>
                   </h2>
                   <p className="text-xs text-slate-500 mt-1">
-                    Kelola artikel kegiatan desa, himbauan Kuwu, dan publikasi resmi untuk warga.
+                    Kelola warta kegiatan desa, liputan pembangunan, dan pengumuman resmi untuk warga.
                   </p>
                 </div>
-                <Link
-                  href="/berita"
-                  target="_blank"
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 transition"
-                >
-                  <span>Lihat Portal Berita Publik</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
+                <div className="flex items-center gap-2.5">
+                  <Link
+                    href="/berita"
+                    target="_blank"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 transition"
+                  >
+                    <span>Lihat Portal Berita</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+
+                  {canManageNews && (
+                    <button
+                      onClick={handleOpenCreateNews}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Tulis Warta Baru</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-2xs">
-                <h3 className="font-bold text-slate-900 text-sm mb-2">Daftar Publikasi Terbit</h3>
-                <p className="text-xs text-slate-500 mb-4">
-                  Artikel yang berstatus <strong>Terbit</strong> otomatis tampil di halaman utama warga dan halaman <code>/berita</code>.
-                </p>
-                <div className="space-y-3">
-                  <div className="p-4 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
-                    <div>
-                      <div className="font-bold text-slate-800 text-xs">
-                        Musyawarah RKPDes 2027: Prioritas Jalan Tani Dusun Pahing & Perpipaan Dusun Wage
-                      </div>
-                      <div className="text-[10px] text-slate-400 mt-0.5">Penulis: Dadang Kurnia (Sekdes) • Kategori: Pemerintahan</div>
-                    </div>
-                    <span className="px-2.5 py-1 rounded bg-emerald-100 text-emerald-800 font-bold text-[10px]">
-                      Terbit
+              {/* Filter & Search Bar */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div className="relative w-full sm:w-80">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={newsSearch}
+                    onChange={(e) => setNewsSearch(e.target.value)}
+                    placeholder="Cari judul, penulis, atau kata kunci..."
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <span className="text-xs text-slate-500 font-semibold whitespace-nowrap">Kategori:</span>
+                  <select
+                    value={newsCategoryFilter}
+                    onChange={(e) => setNewsCategoryFilter(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  >
+                    <option value="all">Semua Kategori</option>
+                    <option value="Pemerintahan">Pemerintahan</option>
+                    <option value="Bansos">Bansos</option>
+                    <option value="Kesehatan">Kesehatan</option>
+                    <option value="Pembangunan">Pembangunan</option>
+                    <option value="Kegiatan">Kegiatan</option>
+                    <option value="Ekonomi">Ekonomi</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* News Articles List */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-slate-900 text-sm">Daftar Publikasi Warta</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">
+                      {filteredNews.length} artikel
                     </span>
                   </div>
+                  <button
+                    onClick={fetchAllData}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+                    title="Segarkan Data"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
                 </div>
+
+                {filteredNews.length === 0 ? (
+                  <div className="p-12 text-center">
+                    <Newspaper className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-800 font-bold text-sm">Belum Ada Artikel Berita</p>
+                    <p className="text-slate-400 text-xs mt-1">
+                      {newsSearch ? "Tidak ada berita yang cocok dengan kata kunci pencarian." : "Mulai terbitkan warta resmi kegiatan desa sekarang."}
+                    </p>
+                    {canManageNews && !newsSearch && (
+                      <button
+                        onClick={handleOpenCreateNews}
+                        className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#009388] text-white text-xs font-bold hover:bg-[#007b71] transition"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Tulis Warta Pertama</span>
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {filteredNews.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50/70 transition group"
+                      >
+                        <div className="flex items-start gap-4 min-w-0">
+                          {item.image_url ? (
+                            <img
+                              src={item.image_url}
+                              alt={item.title}
+                              className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover flex-shrink-0 bg-slate-100 border border-slate-200"
+                            />
+                          ) : (
+                            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center flex-shrink-0 text-slate-400">
+                              <Newspaper className="w-6 h-6" />
+                            </div>
+                          )}
+
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                                {item.category}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  item.status === "Terbit"
+                                    ? "bg-teal-50 text-teal-700 border border-teal-200"
+                                    : "bg-amber-50 text-amber-700 border border-amber-200"
+                                }`}
+                              >
+                                {item.status}
+                              </span>
+                              <span className="text-[11px] text-slate-400 font-mono">
+                                {item.date}
+                              </span>
+                            </div>
+
+                            <h4 className="font-bold text-slate-900 text-sm leading-snug line-clamp-1 group-hover:text-[#009388] transition">
+                              {item.title}
+                            </h4>
+
+                            <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                              {item.summary}
+                            </p>
+
+                            <div className="text-[11px] text-slate-400 pt-0.5">
+                              Penulis: <strong className="text-slate-600">{item.author}</strong> ({item.author_role || "Pamong"})
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 sm:self-center flex-shrink-0">
+                          <Link
+                            href={`/berita/${item.slug}`}
+                            target="_blank"
+                            className="p-2 rounded-xl text-slate-500 hover:text-[#009388] hover:bg-emerald-50 transition"
+                            title="Buka Halaman Berita"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+
+                          {canManageNews && (
+                            <>
+                              <button
+                                onClick={() => handleOpenEditNews(item)}
+                                className="p-2 rounded-xl text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition"
+                                title="Edit Berita"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteNews(item)}
+                                className="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition"
+                                title="Hapus Berita (Soft Delete)"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
 
           {/* ================================================================ */}
-          {/* TAB 4: KELOLA APBDES 2026                                         */}
+          {/* TAB 4: KELOLA APBDES 2026 (EDITABLE SUPABASE)                      */}
           {/* ================================================================ */}
           {activeTab === "apbdes" && (
             <div className="space-y-6">
@@ -2003,50 +2512,126 @@ export default function MasterPanelPage() {
                     Angka penetapan Perdes APBDes 2026 Desa Kadurama (Pagu vs Realisasi 5 Bidang).
                   </p>
                 </div>
-                <Link
-                  href="/transparansi/apbdes"
-                  target="_blank"
-                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#003733] text-white font-bold text-xs hover:bg-[#002825] transition"
-                >
-                  <span>Buka Transparansi APBDes</span>
-                  <ChevronRight className="w-3.5 h-3.5" />
-                </Link>
+                <div className="flex items-center gap-2.5">
+                  <Link
+                    href="/transparansi/apbdes"
+                    target="_blank"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 transition"
+                  >
+                    <span>Buka Transparansi Publik</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+
+                  {canManageApbdes && (
+                    <button
+                      onClick={handleOpenEditSummary}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm transition"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Edit Ringkasan Fiskal</span>
+                    </button>
+                  )}
+                </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
+              {/* Fiscal Summary Cards */}
+              <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="p-4.5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
                   <div className="text-[11px] font-bold text-slate-500 uppercase">Total Pendapatan 2026</div>
-                  <div className="text-xl font-bold font-mono text-slate-900 mt-1">Rp 1.488.500.000</div>
-                  <div className="text-[10px] text-slate-500 mt-1">Dana Desa, ADD, Bagi Hasil Pajak</div>
+                  <div className="text-xl font-bold font-mono text-slate-900 mt-1">
+                    Rp {Number(apbdesSummary.total_pendapatan || 0).toLocaleString("id-ID")}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">Dana Desa, ADD, PADes</div>
                 </div>
+
                 <div className="p-4.5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                  <div className="text-[11px] font-bold text-slate-500 uppercase">Total Belanja</div>
-                  <div className="text-xl font-bold font-mono text-[#009388] mt-1">Rp 1.445.000.000</div>
-                  <div className="text-[10px] text-slate-500 mt-1">5 Bidang Penyelenggaraan & Pembangunan</div>
+                  <div className="text-[11px] font-bold text-slate-500 uppercase">Pagu Belanja</div>
+                  <div className="text-xl font-bold font-mono text-[#eda50c] mt-1">
+                    Rp {Number(apbdesSummary.total_belanja || 0).toLocaleString("id-ID")}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">5 Bidang Penyelenggaraan</div>
                 </div>
+
                 <div className="p-4.5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
-                  <div className="text-[11px] font-bold text-slate-500 uppercase">Surplus Berjalan</div>
-                  <div className="text-xl font-bold font-mono text-emerald-700 mt-1">Rp 43.500.000</div>
-                  <div className="text-[10px] text-slate-500 mt-1">Alokasi kas cadangan desa</div>
+                  <div className="text-[11px] font-bold text-slate-500 uppercase">Realisasi Berjalan</div>
+                  <div className="text-xl font-bold font-mono text-[#009388] mt-1">
+                    Rp {Number(apbdesSummary.total_realisasi_belanja || 0).toLocaleString("id-ID")}
+                  </div>
+                  <div className="text-[10px] text-emerald-700 font-bold mt-1">
+                    Serapan {apbdesSummary.persen_realisasi_belanja}%
+                  </div>
+                </div>
+
+                <div className="p-4.5 rounded-2xl bg-white border border-slate-200 shadow-2xs">
+                  <div className="text-[11px] font-bold text-slate-500 uppercase">Surplus / SiLPA</div>
+                  <div className="text-xl font-bold font-mono text-slate-800 mt-1">
+                    Rp {Number(apbdesSummary.surplus_defisit || 0).toLocaleString("id-ID")}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-1">Kondisi kas sehat</div>
                 </div>
               </div>
 
+              {/* 5 Sectors Breakdown */}
               <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
-                <h3 className="font-bold text-slate-800 text-sm mb-3">Realisasi 5 Bidang APBDes</h3>
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="font-bold text-slate-800 text-sm">Realisasi 5 Bidang APBDes</h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Pagu anggaran dan progres belanja masing-masing bidang.
+                    </p>
+                  </div>
+                  <button
+                    onClick={fetchAllData}
+                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+                    title="Segarkan"
+                  >
+                    <RefreshCw className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
                 <div className="space-y-3">
                   {apbdesList.map((sec) => (
-                    <div key={sec.id} className="p-3.5 rounded-xl border border-slate-100 bg-slate-50 flex items-center justify-between">
-                      <div>
-                        <div className="font-bold text-slate-800 text-xs">{sec.id}. {sec.nama}</div>
-                        <div className="text-[11px] text-slate-500 mt-0.5">{sec.keterangan}</div>
+                    <div
+                      key={sec.id}
+                      className="p-4 rounded-xl border border-slate-100 bg-slate-50 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold font-mono text-[11px] px-2 py-0.5 rounded bg-slate-200 text-slate-700">
+                            Bidang 0{sec.id}
+                          </span>
+                          <span className="font-bold text-slate-900 text-xs">{sec.nama}</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500 mt-1">{sec.keterangan}</div>
+
+                        {/* Mini progress bar */}
+                        <div className="mt-2 w-full max-w-md bg-slate-200 h-2 rounded-full overflow-hidden">
+                          <div
+                            className="bg-[#009388] h-full rounded-full transition-all duration-300"
+                            style={{ width: `${Math.min(sec.persen || 0, 100)}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <div className="font-bold font-mono text-xs text-slate-900">
-                          Rp {Number(sec.realisasi).toLocaleString("id-ID")}
+
+                      <div className="flex items-center gap-4 sm:justify-end">
+                        <div className="text-right">
+                          <div className="font-bold font-mono text-xs text-[#009388]">
+                            Rp {Number(sec.realisasi).toLocaleString("id-ID")}
+                          </div>
+                          <div className="text-[10px] text-slate-400 font-mono">
+                            Pagu: Rp {Number(sec.pagu).toLocaleString("id-ID")} ({sec.persen}%)
+                          </div>
                         </div>
-                        <div className="text-[10px] text-slate-400 font-mono">
-                          dari Rp {Number(sec.pagu).toLocaleString("id-ID")} ({sec.persen}%)
-                        </div>
+
+                        {canManageApbdes && (
+                          <button
+                            onClick={() => handleOpenEditSector(sec)}
+                            className="p-2 rounded-xl text-slate-500 hover:text-[#009388] hover:bg-emerald-50 transition"
+                            title="Edit Pagu / Realisasi Bidang"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -3001,6 +3586,444 @@ export default function MasterPanelPage() {
                     <>
                       <Check className="w-4 h-4" />
                       <span>Simpan Sandi Baru</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL BERITA / WARTA DESA (CREATE / EDIT)                           */}
+      {/* =================================================================== */}
+      {isNewsModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 max-h-[92vh] flex flex-col">
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200">
+                  <Newspaper className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-950">
+                    {editingNews ? "Edit Warta / Publikasi Desa" : "Tulis Warta Baru Desa"}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Data tersimpan langsung ke Supabase dan otomatis tampil di portal publik warga.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsNewsModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveNews} className="overflow-y-auto py-5 space-y-4 flex-1 pr-1">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Judul Artikel Warta <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={newsForm.title}
+                  onChange={(e) => setNewsForm({ ...newsForm, title: e.target.value })}
+                  placeholder="Contoh: Musyawarah Rencana Kerja Desa Kadurama 2027..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Kategori Berita
+                  </label>
+                  <select
+                    value={newsForm.category}
+                    onChange={(e) => setNewsForm({ ...newsForm, category: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  >
+                    <option value="Pemerintahan">Pemerintahan</option>
+                    <option value="Bansos">Bansos</option>
+                    <option value="Kesehatan">Kesehatan</option>
+                    <option value="Pembangunan">Pembangunan</option>
+                    <option value="Kegiatan">Kegiatan</option>
+                    <option value="Ekonomi">Ekonomi</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Status Publikasi
+                  </label>
+                  <select
+                    value={newsForm.status}
+                    onChange={(e) => setNewsForm({ ...newsForm, status: e.target.value as "Terbit" | "Draf" })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  >
+                    <option value="Terbit">Terbit (Tampil di Website Publik)</option>
+                    <option value="Draf">Draf (Disimpan Internal)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Nama Penulis
+                  </label>
+                  <input
+                    type="text"
+                    value={newsForm.author}
+                    onChange={(e) => setNewsForm({ ...newsForm, author: e.target.value })}
+                    placeholder="Nama penulis..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Jabatan / Role Penulis
+                  </label>
+                  <input
+                    type="text"
+                    value={newsForm.author_role}
+                    onChange={(e) => setNewsForm({ ...newsForm, author_role: e.target.value })}
+                    placeholder="Sekretaris Desa / Kasi Kesejahteraan..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    URL Gambar Unggulan
+                  </label>
+                  <input
+                    type="url"
+                    value={newsForm.image_url}
+                    onChange={(e) => setNewsForm({ ...newsForm, image_url: e.target.value })}
+                    placeholder="https://images.unsplash.com/..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Tagar (Dipisah Koma)
+                  </label>
+                  <input
+                    type="text"
+                    value={newsForm.tags}
+                    onChange={(e) => setNewsForm({ ...newsForm, tags: e.target.value })}
+                    placeholder="Kadurama, Musrenbang, 2027..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Ringkasan Berita (Lead / Excerpt) <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={2}
+                  value={newsForm.summary}
+                  onChange={(e) => setNewsForm({ ...newsForm, summary: e.target.value })}
+                  placeholder="Ringkasan singkat 1-2 kalimat mengenai pokok berita..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Isi Lengkap Artikel (Pisahkan Antar Paragraf dengan Baris Kosong)
+                </label>
+                <textarea
+                  rows={6}
+                  value={newsForm.content}
+                  onChange={(e) => setNewsForm({ ...newsForm, content: e.target.value })}
+                  placeholder="Paragraf 1...&#10;&#10;Paragraf 2...&#10;&#10;Paragraf 3..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388] font-sans"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsNewsModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingNews}
+                  className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] disabled:bg-slate-300 text-white text-xs font-bold shadow-md transition flex items-center gap-2"
+                >
+                  {isSubmittingNews ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan ke Supabase...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>{editingNews ? "Simpan Perubahan" : "Terbitkan Warta"}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL EDIT RINGKASAN FISKAL APBDES 2026                             */}
+      {/* =================================================================== */}
+      {isEditSummaryModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 flex flex-col">
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200">
+                  <PieChart className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-950">
+                    Edit Ringkasan Fiskal APBDes 2026
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Perbarui angka pagu pendapatan, pagu belanja, dan serapan berjalan desa.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsEditSummaryModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveApbdesSummary} className="py-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Total Pendapatan Desa (Rp)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={summaryForm.total_pendapatan || 0}
+                  onChange={(e) => setSummaryForm({ ...summaryForm, total_pendapatan: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Total Pagu Belanja Desa (Rp)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={summaryForm.total_belanja || 0}
+                  onChange={(e) => setSummaryForm({ ...summaryForm, total_belanja: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Total Realisasi Belanja Berjalan (Rp)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={summaryForm.total_realisasi_belanja || 0}
+                  onChange={(e) => setSummaryForm({ ...summaryForm, total_realisasi_belanja: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  SiLPA Tahun Lalu (Rp)
+                </label>
+                <input
+                  type="number"
+                  value={summaryForm.silpa_tahun_lalu || 0}
+                  onChange={(e) => setSummaryForm({ ...summaryForm, silpa_tahun_lalu: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              {/* Kalkulasi Otomatis */}
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1 font-mono">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Surplus / Defisit:</span>
+                  <span className="font-bold text-emerald-700">
+                    Rp {(Number(summaryForm.total_pendapatan || 0) - Number(summaryForm.total_belanja || 0)).toLocaleString("id-ID")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Persentase Serapan Belanja:</span>
+                  <span className="font-bold text-[#009388]">
+                    {Number(summaryForm.total_belanja || 0) > 0
+                      ? ((Number(summaryForm.total_realisasi_belanja || 0) / Number(summaryForm.total_belanja || 1)) * 100).toFixed(1)
+                      : "0"}%
+                  </span>
+                </div>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsEditSummaryModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingApbdes}
+                  className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] disabled:bg-slate-300 text-white text-xs font-bold shadow-md transition flex items-center gap-2"
+                >
+                  {isSubmittingApbdes ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Simpan Perubahan Fiskal</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL EDIT BIDANG APBDES 2026                                       */}
+      {/* =================================================================== */}
+      {isEditSectorModalOpen && editingSector && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 flex flex-col">
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200">
+                  <PieChart className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-950">
+                    Edit Bidang 0{editingSector.id}: {editingSector.nama}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Perbarui pagu dan realisasi anggaran bidang ini.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsEditSectorModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveApbdesSector} className="py-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Nama Bidang
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={sectorForm.nama}
+                  onChange={(e) => setSectorForm({ ...sectorForm, nama: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Pagu Anggaran (Rp)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={sectorForm.pagu}
+                  onChange={(e) => setSectorForm({ ...sectorForm, pagu: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Realisasi Anggaran (Rp)
+                </label>
+                <input
+                  type="number"
+                  required
+                  value={sectorForm.realisasi}
+                  onChange={(e) => setSectorForm({ ...sectorForm, realisasi: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Keterangan Singkat
+                </label>
+                <textarea
+                  rows={2}
+                  value={sectorForm.keterangan}
+                  onChange={(e) => setSectorForm({ ...sectorForm, keterangan: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs flex justify-between items-center font-mono">
+                <span className="text-slate-500">Persentase Serapan Bidang:</span>
+                <span className="font-bold text-[#009388]">
+                  {sectorForm.pagu > 0 ? ((sectorForm.realisasi / sectorForm.pagu) * 100).toFixed(1) : "0"}%
+                </span>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsEditSectorModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingApbdes}
+                  className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] disabled:bg-slate-300 text-white text-xs font-bold shadow-md transition flex items-center gap-2"
+                >
+                  {isSubmittingApbdes ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Simpan Perubahan Bidang</span>
                     </>
                   )}
                 </button>

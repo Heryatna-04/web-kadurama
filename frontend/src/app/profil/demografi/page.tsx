@@ -1,40 +1,149 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
+import { createClient } from "@/lib/supabase/client";
 import {
   Users,
   ChevronRight,
   TrendingUp,
   PieChart,
   Home,
-  GraduationCap,
   Briefcase,
   ShieldCheck,
+  RefreshCw,
+  Info,
 } from "lucide-react";
 
+interface Resident {
+  nik: string;
+  nama: string;
+  dusun: string;
+  jenis_kelamin: string;
+  pekerjaan: string;
+}
+
+interface SensusKK {
+  no_kk: string;
+  dusun: string;
+  jumlah_anggota?: number;
+}
+
 export default function DemografiPage() {
+  const [loading, setLoading] = useState(true);
+  const [residents, setResidents] = useState<Resident[]>([]);
+  const [kkList, setKkList] = useState<SensusKK[]>([]);
+
+  useEffect(() => {
+    async function loadData() {
+      try {
+        const supabase = createClient();
+        const [{ data: resData }, { data: kkData }] = await Promise.all([
+          supabase.from("residents").select("nik, nama, dusun, jenis_kelamin, pekerjaan").eq("is_deleted", false),
+          supabase.from("sensus_kk").select("no_kk, dusun, jumlah_anggota").eq("is_deleted", false),
+        ]);
+
+        if (resData) setResidents(resData);
+        if (kkData) setKkList(kkData);
+      } catch (err) {
+        console.error("Gagal memuat data demografi:", err);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadData();
+  }, []);
+
+  const totalPenduduk = residents.length;
+  const totalKK = kkList.length;
+
+  const totalLaki = residents.filter((r) =>
+    r.jenis_kelamin?.toLowerCase().includes("laki")
+  ).length;
+  const totalPerempuan = residents.filter((r) =>
+    r.jenis_kelamin?.toLowerCase().includes("perempuan")
+  ).length;
+
+  const persenLaki = totalPenduduk > 0 ? ((totalLaki / totalPenduduk) * 100).toFixed(1) : "0";
+  const persenPerempuan = totalPenduduk > 0 ? ((totalPerempuan / totalPenduduk) * 100).toFixed(1) : "0";
+
+  const dusunDefs = [
+    {
+      key: "manis",
+      name: "Dusun I Manis",
+      slug: "manis",
+      role: "Pusat Pemerintahan, Pelayanan Publik & Sentra Olahan Pangan",
+    },
+    {
+      key: "pahing",
+      name: "Dusun II Pahing",
+      slug: "pahing",
+      role: "Lumbung Padi Organik 28 Ha, Olahraga Gelora & Konservasi Terbuka",
+    },
+    {
+      key: "wage",
+      name: "Dusun III Wage",
+      slug: "wage",
+      role: "Mata Air Cikaduran 45 L/s, Agrowisata Ubi Jalar & Kawasan Hijau Lereng",
+    },
+  ];
+
+  const dusunStats = dusunDefs.map((def) => {
+    const jiwa = residents.filter((r) =>
+      r.dusun?.toLowerCase().includes(def.key)
+    ).length;
+    const kk = kkList.filter((k) =>
+      k.dusun?.toLowerCase().includes(def.key)
+    ).length;
+    const porsi = totalPenduduk > 0 ? ((jiwa / totalPenduduk) * 100).toFixed(1) : "0";
+
+    return {
+      ...def,
+      jiwa,
+      kk,
+      porsi: `${porsi}%`,
+    };
+  });
+
+  // Pekerjaan distribution
+  const jobMap: Record<string, number> = {};
+  residents.forEach((r) => {
+    const job = r.pekerjaan?.trim() || "Lainnya / Belum Bekerja";
+    jobMap[job] = (jobMap[job] || 0) + 1;
+  });
+
+  const pekerjaanStats = Object.entries(jobMap)
+    .map(([bidang, jumlah]) => ({
+      bidang,
+      jumlah: `${jumlah} Jiwa`,
+      persen: totalPenduduk > 0 ? Number(((jumlah / totalPenduduk) * 100).toFixed(1)) : 0,
+    }))
+    .sort((a, b) => b.persen - a.persen);
+
   const stats = [
-    { label: "Total Penduduk", value: "1.768", sub: "Jiwa Warga" },
-    { label: "Kepala Keluarga", value: "522", sub: "Kepala Keluarga (KK)" },
-    { label: "Laki-Laki", value: "894", sub: "50.6% dari total" },
-    { label: "Perempuan", value: "874", sub: "49.4% dari total" },
-  ];
-
-  const dusunStats = [
-    { dusun: "Dusun I Manis", kk: 184, jiwa: 620, porsi: "35.1%", role: "Pusat Pemerintahan & Usaha Olahan Pangan" },
-    { dusun: "Dusun II Pahing", kk: 192, jiwa: 656, porsi: "37.1%", role: "Lumbung Padi Organik 28 Ha & Gelora Olahraga" },
-    { dusun: "Dusun III Wage", kk: 146, jiwa: 492, porsi: "27.8%", role: "Mata Air Cikaduran 45 L/s & Agrowisata Ubi" },
-  ];
-
-  const pekerjaanStats = [
-    { bidang: "Petani & Buruh Tani", jumlah: "612 Jiwa", persen: 46.2 },
-    { bidang: "Wiraswasta / UMKM Pangan", jumlah: "248 Jiwa", persen: 18.7 },
-    { bidang: "Karyawan Swasta / Jasa", jumlah: "195 Jiwa", persen: 14.7 },
-    { bidang: "PNS, Guru, & TNI/Polri", jumlah: "86 Jiwa", persen: 6.5 },
-    { bidang: "Lainnya / Pelajar / Mahasiswa", jumlah: "184 Jiwa", persen: 13.9 },
+    {
+      label: "Total Penduduk",
+      value: loading ? "..." : totalPenduduk.toLocaleString("id-ID"),
+      sub: "Jiwa Warga Terdaftar",
+    },
+    {
+      label: "Kepala Keluarga",
+      value: loading ? "..." : totalKK.toLocaleString("id-ID"),
+      sub: "Kepala Keluarga (KK)",
+    },
+    {
+      label: "Laki-Laki",
+      value: loading ? "..." : totalLaki.toLocaleString("id-ID"),
+      sub: `${persenLaki}% dari total`,
+    },
+    {
+      label: "Perempuan",
+      value: loading ? "..." : totalPerempuan.toLocaleString("id-ID"),
+      sub: `${persenPerempuan}% dari total`,
+    },
   ];
 
   return (
@@ -56,15 +165,22 @@ export default function DemografiPage() {
             </div>
 
             <div className="max-w-3xl space-y-3">
-              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-bold uppercase tracking-wider">
-                <Users className="w-3.5 h-3.5" />
-                Monografi Kependudukan
-              </span>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-bold uppercase tracking-wider">
+                  <Users className="w-3.5 h-3.5" />
+                  Pusat Data Kependudukan
+                </span>
+                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 text-xs font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Sinkronisasi Realtime Supabase
+                </span>
+              </div>
+
               <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
                 Demografi & Kependudukan
               </h1>
               <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal">
-                Visualisasi data agregat penduduk Desa Kadurama berbasis sensus SDGs desa 2026. Mencakup proporsi wilayah 3 dusun, struktur usia, dan mata pencaharian utama warga.
+                Visualisasi data agregat penduduk Desa Kadurama yang bersumber langsung dari database induk kependudukan desa. Data terhitung dinamis sesuai warga yang telah terdata.
               </p>
             </div>
 
@@ -87,13 +203,21 @@ export default function DemografiPage() {
 
         {/* Content Section */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 space-y-10">
+          {/* Status info bar */}
+          <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900">
+            <Info className="w-4 h-4 text-[#009388] shrink-0" />
+            <span>
+              <strong>Pembaruan Otomatis:</strong> Data statistik ini dihitung dinamis secara real-time dari {totalPenduduk} warga ({totalKK} KK) yang telah terverifikasi dalam database kependudukan Desa Kadurama.
+            </span>
+          </div>
+
           {/* Dusun Breakdown */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
             <h3 className="text-xl font-extrabold text-slate-900 mb-2">
               Distribusi Kependudukan per Dusun
             </h3>
             <p className="text-xs text-slate-500 mb-6">
-              Rincian jumlah kepala keluarga dan populasi jiwa yang tersebar di 21 RT pada 3 wilayah dusun.
+              Rincian jumlah kepala keluarga dan populasi jiwa yang terdaftar pada 3 wilayah dusun di Desa Kadurama.
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -104,13 +228,13 @@ export default function DemografiPage() {
                 >
                   <div>
                     <span className="text-xs font-bold text-[#009388] uppercase tracking-wider">
-                      {dsn.dusun}
+                      {dsn.name}
                     </span>
                     <div className="text-2xl font-black text-slate-900 mt-1">
-                      {dsn.jiwa} <span className="text-xs font-normal text-slate-500">Jiwa</span>
+                      {loading ? "..." : dsn.jiwa} <span className="text-xs font-normal text-slate-500">Jiwa</span>
                     </div>
                     <div className="text-xs text-slate-600 font-mono mt-0.5">
-                      {dsn.kk} Kepala Keluarga • Porsi {dsn.porsi}
+                      {loading ? "..." : dsn.kk} Kepala Keluarga • Porsi {dsn.porsi}
                     </div>
                     <p className="text-xs text-slate-600 mt-2 leading-relaxed">
                       {dsn.role}
@@ -119,10 +243,10 @@ export default function DemografiPage() {
 
                   <div className="pt-3 border-t border-slate-200">
                     <Link
-                      href={`/dusun/${dsn.dusun.split(" ")[2].toLowerCase()}`}
+                      href={`/dusun/${dsn.slug}`}
                       className="text-xs font-bold text-[#009388] hover:underline flex items-center justify-between"
                     >
-                      <span>Buka Halaman {dsn.dusun}</span>
+                      <span>Buka Halaman {dsn.name}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
@@ -134,30 +258,34 @@ export default function DemografiPage() {
           {/* Pekerjaan Stats */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
             <h3 className="text-xl font-extrabold text-slate-900 mb-2">
-              Mata Pencaharian Utama Warga
+              Mata Pencaharian Warga Terdaftar
             </h3>
             <p className="text-xs text-slate-500 mb-6">
-              Mayoritas penduduk berprofesi di sektor pertanian padi organik dan perkebunan ubi jalar lereng Ciremai.
+              Distribusi profesi dan lapangan pekerjaan warga yang telah terinput ke dalam sistem.
             </p>
 
-            <div className="space-y-4">
-              {pekerjaanStats.map((pek, idx) => (
-                <div key={idx} className="space-y-1.5">
-                  <div className="flex justify-between items-center text-xs">
-                    <span className="font-bold text-slate-800">{pek.bidang}</span>
-                    <span className="font-mono text-slate-600 font-bold">
-                      {pek.jumlah} ({pek.persen}%)
-                    </span>
+            {pekerjaanStats.length === 0 ? (
+              <p className="text-xs text-slate-400 italic">Belum ada data mata pencaharian terdata.</p>
+            ) : (
+              <div className="space-y-4">
+                {pekerjaanStats.map((pek, idx) => (
+                  <div key={idx} className="space-y-1.5">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="font-bold text-slate-800">{pek.bidang}</span>
+                      <span className="font-mono text-slate-600 font-bold">
+                        {pek.jumlah} ({pek.persen}%)
+                      </span>
+                    </div>
+                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
+                      <div
+                        className="bg-[#009388] h-full rounded-full transition-all duration-500"
+                        style={{ width: `${Math.max(pek.persen, 5)}%` }}
+                      />
+                    </div>
                   </div>
-                  <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                    <div
-                      className="bg-[#009388] h-full rounded-full transition-all duration-500"
-                      style={{ width: `${pek.persen}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </div>
         </section>
       </main>
