@@ -15,34 +15,25 @@ Sistem Pemdes Terintegrasi Desa Kadurama dibangun menggunakan arsitektur web mod
 
 ## 2. Kebutuhan Fungsional (Functional Requirements)
 
-### Modul F-01: Portal Publik Warga (Landing Page)
-- **FR-01.1 (Profil & Branding Desa):** Menampilkan identitas resmi Desa Kadurama, visi misi, potensi desa, dan lokasi geografis.
-- **FR-01.2 (Direktori Layanan Surat & Persyaratan):** Menampilkan daftar seluruh surat administrasi yang dapat dibuat di kantor desa beserta checklist syarat dokumen asli dan fotokopi yang harus dibawa.
-- **FR-01.3 (Transparansi Statistik):** Menampilkan visualisasi ringkas jumlah penduduk, jumlah KK, pembagian RT/RW, dan ringkasan pagu APBDes tahun berjalan.
-- **FR-01.4 (Pusat Kabar & Pengumuman):** Menampilkan feed berita desa, agenda kegiatan masyarakat, dan pengumuman mendesak dari kepala desa.
-- **FR-01.5 (Kontak Pelayanan):** Menampilkan jam operasional loket kantor desa, nomor layanan WhatsApp, dan denah kantor.
+### Modul F-01: Portal Publik Warga (Landing Page & Geografis)
+- **FR-01.1 (Profil & Peta Geografis 3 Dusun):** Menampilkan identitas resmi Desa Kadurama, batas wilayah, elevasi topografi, peta interaktif kondisi wilayah, dan sebaran fasilitas desa di Dusun Manis, Dusun Pahing, dan Dusun Puhun.
+- **FR-01.2 (Pusat Informasi & Persyaratan Warga):** Menampilkan panduan berkas administrasi dan jam operasional balai desa tanpa tombol pembuatan surat online.
+- **FR-01.3 (Transparansi APBDes 2026):** Menampilkan visualisasi interaktif anggaran desa, 5 bidang belanja, dan serapan berjalan dengan animasi GSAP.
+- **FR-01.4 (Pusat Kabar & Pengumuman):** Menampilkan feed berita desa terkini yang terhubung langsung dengan status terbit di panel admin.
+- **FR-01.5 (Aparatur Pemdes & Kontak):** Menampilkan profil kepala desa, sekretaris desa, kaur, dan 3 kepala dusun beserta kontak layanan.
 
-### Modul F-02: Manajemen Kependudukan (Master Resident Data)
-- **FR-02.1 (Pencarian NIK/Nama Cepat):** Operator dapat mencari data warga secara live search dengan waktu respons < 100ms.
-- **FR-02.2 (CRUD Data Warga):** Tambah warga baru, edit informasi (pindah alamat, perubahan status perkawinan, pekerjaan), dan arsipkan data warga.
-- **FR-02.3 (Validasi Data Pokok):** Validasi format NIK 16 digit, tanggal lahir, dan relasi kepala keluarga.
+### Modul F-02: Master Data Kependudukan (3 Dusun Kadurama)
+- **FR-02.1 (Pencarian NIK/Nama Cepat):** Operator dan Kadus dapat mencari data warga secara live search dengan waktu respons < 100ms.
+- **FR-02.2 (Pengelompokan 3 Dusun):** Data warga terstruktur rapi berdasarkan 3 Dusun (Manis, Pahing, Puhun) serta RT dan RW.
+- **FR-02.3 (Sinkronisasi & Pembaruan Internal):** Aksi koreksi data internal warga dan tombol sinkronisasi SIAK Dukcapil satuan maupun massal.
 
-### Modul F-03: Generator & Percetakan Surat Administrasi
-- **FR-03.1 (Pemilihan Template Surat):** Mendukung template standar:
-  - SKU (Surat Keterangan Usaha)
-  - SKTM (Surat Keterangan Tidak Mampu - Umum, Sekolah, KIS/BPJS)
-  - SKD (Surat Keterangan Domisili Warga / Usaha)
-  - SKCK (Surat Pengantar Catatan Kepolisian)
-  - SKK (Surat Keterangan Kematian / Kelahiran)
-  - SKBM (Surat Keterangan Belum Menikah)
-- **FR-03.2 (Auto-fill Data Pemohon):** Saat NIK warga dipilih, sistem otomatis mengisi nama, tempat/tanggal lahir, jenis kelamin, agama, status, pekerjaan, dan alamat ke template surat.
-- **FR-03.3 (Kustomisasi Parameter Surat):** Form isian khusus sesuai jenis surat (contoh: nama usaha & modal untuk SKU, keperluan sekolah/rumah sakit untuk SKTM).
-- **FR-03.4 (Penomoran Otomatis):** Generator penomoran surat resmi desa sesuai kode klasifikasi kearsipan (misal: `470/042/Kdr/IX/2026`).
-- **FR-03.5 (Pratinjau & Cetak PDF):** Pratinjau interaktif format cetak kertas ukuran standar (A4 / F4) lengkap dengan Kop Surat Pemdes Kadurama, stempel/TTD placeholder, QR Code verifikasi, dan tombol perintah cetak (*Print/Save PDF*).
-
-### Modul F-04: Log & Arsip Persuratan
-- **FR-04.1 (Buku Agenda Surat Keluar):** Setiap surat yang dicetak otomatis tercatat dalam register surat keluar (Nomor, Jenis, NIK/Nama Warga, Tanggal, Operator).
-- **FR-04.2 (Filter & Ekspor Rekapitulasi):** Operator dapat memfilter arsip berdasarkan rentang tanggal atau jenis surat.
+### Modul F-03: Sensus & Profil Kesejahteraan Keluarga (Per KK)
+- **FR-03.1 (Formulir Pendataan Sensus Mikro):** Kepala Dusun (Kadus) dan operator menginput survei keluarga berbasis Nomor KK dan NIK Kepala Keluarga.
+- **FR-03.2 (Penilaian Status Desil):** Penentuan desil ekonomi (Desil 1: Sangat Miskin, Desil 2: Miskin, Desil 3: Hampir Miskin, Desil 4+: Rentan/Sejahtera) secara terintegrasi berdasarkan kondisi aset dan penghasilan.
+- **FR-03.3 (Kepatuhan Pajak PBB-P2):** Pencatatan status pembayaran Pajak Bumi dan Bangunan tahun berjalan (Lunas / Belum Lunas).
+- **FR-03.4 (Indikator Fisik Rumah & RTLH):** Pendataan kelayakan atap, lantai, dinding, ketersediaan jamban/sanitasi pribadi, sumber air bersih, dan daya listrik PLN (kriteria program Bedah Rumah / PUPR).
+- **FR-03.5 (Kerentanan Sosial & Bansos Tracker):** Identifikasi anggota keluarga lansia tunggal, balita rawan stunting, disabilitas, dan status penerima bansos (PKH, BPNT, BLT-DD, Non-Bansos) untuk mencegah tumpang tindih bantuan.
+- **FR-03.6 (Ekspor Data & Lembar PDF Terpersonalisasi):** Fitur unduh rekap data sensus ke Excel (CSV/XLSX) dan cetak Lembar Profil & Verifikasi Lapangan format PDF berdesain rapi (Kop Resmi Desa Kadurama, palet Kuningan Teal `#009388` & Gold `#eda50c`, barcode verifikasi).
 
 ---
 

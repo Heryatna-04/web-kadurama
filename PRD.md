@@ -1,84 +1,82 @@
 # 📋 Product Requirement Document (PRD)
 ## Sistem Pemdes Terintegrasi Desa Digital Kadurama
 
-**Versi:** 1.0.0  
-**Status:** Approved (Phase 1 SDLC)  
-**Tanggal:** 13 September 2026  
-**Target Rilis:** v1.0 MVP  
+**Versi:** 2.0.0 (Pivot Pasca-Meeting Klien)  
+**Status:** Approved (Phase 1 SDLC - Updated)  
+**Tanggal:** 15 September 2026  
+**Target Rilis:** v2.0 MVP  
 
 ---
 
 ## 1. Executive Summary & Visi Produk
-Sistem Pemdes Terintegrasi **Desa Kadurama** adalah platform tata kelola pemerintahan desa berbasis digital modern yang menggabungkan:
-1. **Portal Publik Desa (Landing Page & Pusat Informasi Warga):** Menghadirkan transparansi program desa, profil wilayah & kepemimpinan, statistik kependudukan ringkas, agenda, transparansi anggaran, serta direktori persyaratan berkas administrasi.
-2. **Backpanel Admin Pelayanan Terpadu (Pemerintahan Desa):** Sistem internal yang mempermudah operator/staf desa dalam melayani pembuatan surat keterangan resmi secara instan dengan generator cetak format standar (PDF) berbasis data kependudukan (NIK/KK) yang terintegrasi, cepat, akurat, dan minim kesalahan ketik manual.
+Sistem Pemdes Terintegrasi **Desa Kadurama** adalah platform tata kelola pemerintahan desa berbasis digital modern yang berpusat pada akurasi data kependudukan mikro dan keterbukaan informasi publik:
+1. **Portal Publik Desa (Kanal Informasi & Geografis Warga):** Menghadirkan profil 3 Dusun (Manis, Pahing, Puhun), peta geografis interaktif & kondisi wilayah, transparansi APBDes 2026, kabar kegiatan desa, dan direktori fasilitas publik desa.
+2. **Backpanel Admin Data Center & Sensus Dusun:** Pusat pendataan mikro kesejahteraan warga berbasis per Kepala Keluarga (KK) yang diinput oleh Kepala Dusun (Kadus) dan operator desa. Meliputi estimasi status desil ekonomi, kepatuhan pembayaran PBB-P2, kelayakan fisik rumah (RTLH), kerentanan sosial/kesehatan, serta rekam bansos, lengkap dengan fitur ekspor Excel dan lembar profil keluarga terpersonalisasi format PDF. Modul generator persuratan resmi ditiadakan dari alur utama sesuai hasil kesepakatan rapat dengan klien desa.
 
 ---
 
 ## 2. Problem Statement & Latar Belakang Masalah
-1. **Proses Surat Menyurat Manual Lambat:** Pembuatan surat permohonan warga (SKTM, SKU, Domisili, Pengantar SKCK) masih sering menggunakan template Word terpisah-pisah, rawan salah input nomor surat, format tidak konsisten, dan memakan waktu tunggu warga di kantor desa.
-2. **Data Kependudukan Terfragmentasi:** Operator desa kesulitan mencocokkan data warga secara instan saat warga datang membawa KTP/KK tanpa database kependudukan lokal yang responsif.
-3. **Keterbatasan Akses Informasi Publik:** Warga sering datang ke kantor desa tanpa membawa syarat berkas lengkap karena ketiadaan portal informasi terpusat yang informatif dan mudah diakses dari ponsel pintar.
+1. **Kepanikan Pendataan Saat Bantuan Pemerintah Turun Mendadak:** Ketika ada kuota program dari kementerian/Pemkab (seperti PKH, BLT, RTLH/Bedah Rumah, bantuan bibit pertanian, atau penanganan stunting), perangkat desa kesulitan dan panik menyensus ulang warga secara manual door-to-door, memakan waktu lama, dan berisiko salah sasaran.
+2. **Ketiadaan Data Mikro Terpadu Per Dusun:** Data kondisi rumah (atap, lantai, dinding, jamban), status pembayaran PBB-P2, dan kerentanan ekonomi (desil) masih terpisah-pisah di buku catatan Kadus atau RT tanpa format digital terpusat.
+3. **Kebutuhan Visualisasi Geografis & Potensi 3 Dusun:** Warga dan pemangku kepentingan luar desa membutuhkan gambaran jelas mengenai peta kondisi wilayah, batas dusun, topografi, dan persebaran fasilitas umum di Kadurama.
 
 ---
 
 ## 3. Profil Pengguna & Persona
-1. **Warga Desa Kadurama (Masyarakat Umum):**
-   - Mengakses portal publik melalui ponsel pintar/PC.
-   - Mencari informasi syarat dokumen surat sebelum ke kantor desa.
-   - Melihat berita kegiatan desa, transparansi anggaran, dan profil aparat desa.
-2. **Operator / Staf Pelayanan Administrasi Desa:**
-   - Menghadapi warga langsung di loket pelayanan kantor desa.
-   - Menginput NIK/nama warga, memilih jenis surat, mengisi parameter dinamis, dan langsung mencetak (*print*) surat dengan format resmi dan nomor surat otomatis.
-   - Memperbarui data warga atau master kependudukan.
-3. **Kepala Desa & Sekretaris Desa (Pimpinan):**
-   - Memantau volume pelayanan surat harian/bulanan.
-   - Memverifikasi riwayat penerbitan surat dan arsip pelayanan.
+1. **Warga Desa & Publik:**
+   - Mengakses portal publik melalui smartphone atau PC.
+   - Melihat profil 3 dusun, peta geografis, berita kegiatan, dan transparansi APBDes.
+2. **Kepala Dusun (Kadus Manis, Pahing, Puhun):**
+   - Bertanggung jawab melakukan survei dan memperbarui data sensus warga di dusunnya masing-masing.
+   - Mengisi kuesioner profil KK: kondisi rumah, pajak PBB, kerentanan lansia/stunting, dan mata pencaharian.
+3. **Kasi Kesejahteraan / Administrator Balai Desa:**
+   - Menyaring data keluarga saat ada alokasi bantuan pemerintah (filter instan RTLH, Desil 1-2, balita rawan stunting).
+   - Mencetak Lembar Verifikasi Lapangan PDF terpersonalisasi untuk tim dinas dan mengekspor rekapitulasi data sensus ke Excel.
+   - Mengelola publikasi berita kabar desa dan transparansi anggaran APBDes.
 
 ---
 
 ## 4. Ruang Lingkup Fitur (Feature Scope)
 
 ### A. Web Portal Publik (Landing Page)
-- **Hero Section:** Selamat datang di Desa Kadurama, tagline modern, akses cepat ke panduan layanan & kontak kantor.
-- **Profil & Demografi Singkat:** Peta statistik singkat penduduk (total warga, KK, mata pencaharian utama, luas wilayah).
-- **Katalog Layanan Surat & Syarat:** Panduan lengkap dokumen apa saja yang wajib dibawa saat warga ke kantor desa untuk mengurus masing-masing jenis surat.
-- **Berita & Pengumuman:** Publikasi kegiatan desa, musdes, penyaluran bansos, dan agenda resmi.
-- **Transparansi Desa:** Ringkasan infografis APBDes (pendapatan, belanja, pembiayaan).
-- **Struktur Perangkat Desa:** Direktori kepala desa, sekdes, kaur, dan kadus.
-- **Kontak & Lokasi:** Peta kantor desa, jam operasional loket layanan, nomor WhatsApp aduan warga.
+- **Hero Section:** Selamat datang di Desa Kadurama berlatar landmark Gerbang Kuningan 100vh dan Civic Cockpit glassmorphism.
+- **Profil & Potensi 3 Dusun:** Rincian demografi, potensi unggulan, dan fasilitas Dusun Manis, Dusun Pahing, dan Dusun Puhun.
+- **Peta Geografis & Kondisi Wilayah:** Visualisasi peta wilayah desa, batas astronomis & administratif, elevasi/topografi, serta titik fasilitas umum (Balai Desa, Posyandu, Pustu, SD, BUMDes, Mata Air).
+- **Transparansi APBDes 2026:** Ringkasan infografis pendapatan, belanja 5 bidang, dan serapan berjalan dengan animasi GSAP.
+- **Kabar & Berita Desa:** Publikasi berita terbit yang dikelola langsung dari panel admin.
+- **Pamong & Aparatur Desa:** Direktori kepala desa, sekdes, kaur, dan 3 kepala dusun.
+- **Kontak & Lokasi Balai Desa:** Jam operasional dan kontak WhatsApp informasi warga.
 
-### B. Backpanel Admin Pelayanan Pemdes
-- **Dashboard Overview:** Metrik jumlah surat terbit bulan ini, total warga terdaftar, surat terpopuler, dan grafik aktivitas pelayanan.
-- **Generator & Cetak Surat Instan:**
-  - Pilihan jenis surat:
-    1. Surat Keterangan Usaha (SKU)
-    2. Surat Keterangan Tidak Mampu (SKTM - Sekolah & Rumah Sakit)
-    3. Surat Keterangan Domisili
-    4. Surat Pengantar Catatan Kepolisian (SKCK)
-    5. Surat Keterangan Kelahiran / Kematian
-    6. Surat Keterangan Belum Menikah / Penghasilan
-  - Input form adaptif sesuai jenis surat.
-  - Preview cetak dokumen resmi (kop surat resmi desa, nomor surat otomatis, tanda tangan digital/manual barcode).
-  - Ekspor/Cetak langsung ke PDF standar A4 / Folio.
-- **Master Data Kependudukan:**
-  - Manajemen data warga (NIK, No KK, Nama Lengkap, Tempat/Tgl Lahir, Jenis Kelamin, Agama, Pekerjaan, Alamat/RT/RW).
-  - Fitur pencarian instan berdasarkan NIK atau Nama saat proses input surat.
-- **Arsip & Log Surat Keluar:**
-  - Riwayat seluruh surat yang telah dicetak lengkap dengan tanggal terbit, pemohon, dan operator yang memproses.
-- **Autentikasi & Hak Akses:**
-  - Login staf desa & administrator dengan proteksi sesi.
+### B. Backpanel Admin Data Center Pemdes
+- **Sensus & Pendataan Kesejahteraan Warga (Per KK):**
+  - Input & edit kuesioner sensus keluarga berbasis NIK Kepala Keluarga.
+  - Penilaian Desil Kesejahteraan (Desil 1: Sangat Miskin s.d. Desil 4+: Sejahtera).
+  - Status Kepatuhan Pajak Bumi dan Bangunan (PBB-P2).
+  - Indikator Kelayakan Fisik Rumah (RTLH vs Layak: jenis lantai, dinding, atap, jamban, air bersih, listrik).
+  - Profil Kerentanan Sosial (Lansia tunggal, balita/stunting, disabilitas, anak putus sekolah).
+  - Bansos Tracker (PKH, BPNT, BLT-DD, Non-Bansos).
+  - Filter cepat per 3 Dusun, per kategori program, dan status desil.
+  - Ekspor data sensus ke format Excel (XLSX/CSV).
+  - Ekspor Lembar Profil & Verifikasi Keluarga format PDF terpersonalisasi dengan kop resmi, QR verifikasi, dan palet Kuningan Teal & Gold.
+- **Master Data Kependudukan (3 Dusun):**
+  - Tabel master penduduk warga desa Kadurama terkelompok per Dusun Manis, Pahing, Puhun.
+  - Aksi perbarui data internal dan sinkronisasi SIAK Dukcapil.
+  - Reusable Pagination (10 dan 25 baris per halaman).
+- **Manajemen Kabar Desa:**
+  - Tambah, edit, hapus, dan toggle status terbit/draf artikel berita publik.
+- **Kelola Transparansi APBDes 2026:**
+  - Penyesuaian pagu anggaran, realisasi belanja per bidang, dan kalkulasi serapan otomatis.
 
 ---
 
 ## 5. Kriteria Sukses (Success Metrics)
-- **Waktu Layanan Surat:** Durasi pembuatan 1 surat resmi di loket desa terpangkas dari rata-rata 10–15 menit manual menjadi < 1 menit.
-- **Konsistensi Format:** 100% surat resmi desa memiliki kop surat, margin, dan penomoran standar.
-- **Aksesibilitas Informasi:** Warga mendapatkan panduan syarat administrasi yang jelas sebelum datang ke kantor desa.
-- **Performa Antarmuka:** Waktu muat landing page < 1.5 detik (First Contentful Paint) dengan responsivitas tinggi di perangkat mobile.
+- **Kesiapan Data Bantuan:** Waktu persiapan data calon penerima bansos/RTLH terpangkas dari beberapa hari menjadi < 1 menit menggunakan filter cerdas sensus.
+- **Akurasi Data Dusun:** 100% data keluarga teridentifikasi status desil dan PBB-P2 oleh masing-masing Kadus.
+- **Kualitas Dokumen Verifikasi:** Lembar profil PDF terpersonalisasi siap cetak dengan layout profesional berstandar pemkab.
+- **Zero Em-Dash & Anti-Slop:** Seluruh antarmuka mempertahankan tipografi sans-serif bersih (Plus Jakarta Sans) tanpa dekorasi berlebihan.
 
 ---
 
 ## 6. Batasan & Dependensi (Assumptions & Constraints)
-- **Database Phase:** Pada fase awal, modul Express backend menggunakan Provider/Repository Pattern dengan in-memory / mock database terstruktur yang kompatibel penuh untuk migrasi instan ke Supabase PostgreSQL pada tahap berikutnya.
-- **Akses Surat:** Pengajuan surat dilakukan di kantor desa oleh operator (internal-only), tidak ada pengajuan mandiri warga di web publik pada rilis v1.0.
+- **Generator Surat Ditiadakan:** Menu cetak surat permohonan dan buku agenda surat masuk/keluar dihapus sesuai kesepakatan rapat klien.
+- **Cakupan Wilayah:** Data disesuaikan menjadi 3 dusun resmi di Desa Kadurama (Dusun Manis, Dusun Pahing, Dusun Puhun).

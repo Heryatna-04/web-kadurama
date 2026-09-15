@@ -98,10 +98,29 @@
    - Komponen Pagination Reusable:
      - Komponen `Pagination` fleksibel yang mendukung pemilihan jumlah baris (10 atau 25 baris per halaman), penunjuk range data (`Menampilkan X - Y dari Z data`), serta tombol navigasi halaman.
      - Diterapkan pada Buku Agenda Persuratan (`agenda`), Master Data Kependudukan (`residents`), dan Manajemen Kabar Desa (`berita`).
+10. Pivot Kebutuhan Klien Pasca-Meeting & Implementasi Sensus Kesejahteraan 3 Dusun:
+   - Pembatalan Modul Generator Persuratan: Sesuai arahan klien pada meeting, sistem cetak surat dan agenda surat masuk/keluar resmi dihapus dari alur utama.
+   - Transformasi Backpanel Menjadi Village Data Center & Sensus Dusun:
+     - Modul Sensus Kesejahteraan Keluarga (Per KK): Pendataan komprehensif tingkat dusun mencakup NIK, No KK, Kepala Keluarga, 3 Dusun resmi (Manis, Pahing, Puhun), Desil Kesejahteraan (Desil 1 s.d. Desil 4+), status pelunasan PBB-P2 2026, kondisi fisik rumah (kriteria RTLH PUPR: lantai, dinding, atap, sanitasi/jamban, sumber air minum, daya listrik), kerentanan sosial (lansia tunggal, balita/stunting, disabilitas berat), pekerjaan & penghasilan bulanan, kepemilikan lahan/ternak, serta kepesertaan bansos aktif (PKH, BPNT, BLT-DD, Non-Bansos).
+     - Kalkulasi Otomatis Desil Kesejahteraan: Sistem mengkalkulasi rekomendasi desil secara terintegrasi berdasarkan kombinasi kondisi fisik hunian dan rentang penghasilan keluarga.
+     - Role Kadus & Lingkup 3 Dusun: Input sensus difokuskan per wilayah kerja Kepala Dusun dengan fitur Role Switcher interaktif (Kadus Manis: Rusman, Kadus Pahing: Nana Suryana, Kadus Puhun: Agus Setiawan).
+     - Fitur Ekspor Ganda:
+       1. Ekspor Excel (.CSV) terfilter per dusun, desil, status PBB, dan kepesertaan bansos langsung dari browser.
+       2. Ekspor Lembar PDF Profil Keluarga Terpersonalisasi format A4 resmi (*Lembar Hasil Sensus & Verifikasi Profil Kesejahteraan Keluarga*) lengkap dengan Kop Desa Kadurama, QR Code verifikasi, badge desil, rincian kelayakan hunian, rekomendasi intervensi program desa, serta kolom tanda tangan Kades & Kadus.
+   - Penyesuaian Portal Publik:
+     - Section Profil 3 Dusun Kadurama (Dusun Manis, Pahing, Puhun) menampilkan potensi unggulan, demografi KK & jiwa, fasilitas lingkungan, dan kontak Kepala Dusun.
+     - Section Peta Geografis, Topografi & Sebaran Fasilitas Wilayah: Peta interaktif SVG lereng Gunung Ciremai (koordinat 6°59'48"S 108°33'12"E, elevasi 285-340 mdpl, luas 142.8 Ha) dengan pin fasilitas berkategori (Pemerintahan, Ibadah, Kesehatan, Pendidikan, Pertanian) dan kartu detail fasilitas interaktif.
+     - Section Panduan Administrasi Warga: Prosedur pengurusan dokumen kependudukan, jam loket fisik kantor desa, dan kontak WhatsApp layanan warga (tanpa tombol pembuatan surat online).
 
 ---
 
-## 🎯 Pekerjaan Selanjutnya (Next Action)
-- [ ] Presentasi pitch & wawancara kebutuhan sistem ke calon klien Desa Kadurama menggunakan [PANDUAN_WAWANCARA_DESA.md](file:///home/jrilym/Projects/Next/desa/PANDUAN_WAWANCARA_DESA.md).
-- [ ] Konfirmasi format kertas baku (A4 / F4) serta template surat resmi desa setelah rapat.
-- [ ] Setelah deal disepakati: Setup Supabase Database PostgreSQL & sambungkan API Express.
+## 🎯 Status & Pekerjaan Selanjutnya (Next Action)
+- [x] Penghapusan modul cetak surat dan agenda persuratan dari navigasi publik dan backpanel.
+- [x] Standardisasi wilayah menjadi 3 dusun resmi: Dusun Manis, Dusun Pahing, Dusun Puhun.
+- [x] Pembuatan Modul Sensus Kesejahteraan Keluarga (Per KK) dengan kalkulator auto-desil dan kriteria RTLH.
+- [x] Pembuatan fitur ekspor CSV dan lembar cetak PDF A4 berdesain terpersonalisasi.
+- [x] Pembuatan section Profil 3 Dusun dan Peta Geografis Sebaran Fasilitas di portal publik.
+- [x] Verifikasi build Next.js 16 (Turbopack) sukses 100% tanpa error TypeScript/JSX.
+- [ ] Persiapan skema migrasi tabel Supabase (`sensus_kk`, `fasilitas_desa`) jika data akan dipersistensikan ke backend PostgreSQL.
+- [ ] Uji coba lapangan simulasi pendataan sensus oleh Kepala Dusun.
+
