@@ -150,6 +150,18 @@
      - Navigasi geser murni dipusatkan pada tombol panah `< >` di sudut kanan atas header dan tombol panah melayang (*floating edge arrows*) di tepi kiri-kanan kanvas foto.
      - Indikator slide minimalis (*pill dots*) di bawah panggung utama yang melebar halus (*elongated pill*) pada dusun yang aktif.
 
+14. Infinite Forward Loop Carousel & Floating Arrows Cleanups:
+   - Penghapusan Indikator & Panah Atas Kanan:
+     - Sesuai permintaan, tombol `< >` dan teks counter di sudut kanan atas header dihapus sepenuhnya agar tampilan header bersih dan fokus hanya pada judul serta deskripsi wilayah.
+     - Kontrol panah geser murni diposisikan melayang di dalam gambar (*floating edge arrows* di tepi kiri dan kanan kanvas foto) dengan latar belakang kaca gelap (*dark glass backdrop*), ikon yang jelas, dan efek taktil interaktif.
+   - Implementasi Infinite Forward Loop (Unlimited 1, 2, 3, 1, 2, 3):
+     - Mengubah mekanisme carousel menggunakan *cloned buffer virtual track* 5 slide: `[Clone Dusun 3 (Puhun), Real 1 (Manis), Real 2 (Pahing), Real 3 (Puhun), Clone 1 (Manis)]`.
+     - Saat berpindah dari Dusun 3 ke Dusun 1, transisi tetap bergerak maju mulus ke kanan (ke slide Clone 1) dengan durasi 600ms, lalu secara instan berpindah ke posisi Real 1 tanpa animasi rewind ke belakang. Begitu pula saat menekan panah kiri dari Dusun 1, transisi mundur mulus ke slide Clone 3 lalu reposisi ke Real 3.
+     - Hasil: Carousel berputar terus-menerus ke depan secara mulus tanpa batas (*unlimited continuous loop* 1 -> 2 -> 3 -> 1 -> 2 -> 3).
+   - Auto-Slide Otomatis dengan Pause on Hover:
+     - Carousel otomatis bergeser maju setiap 5 detik (5000ms).
+     - Otomatis dijeda (*paused*) ketika kursor mouse warga berada di atas area kanvas foto (*hover*) untuk kenyamanan membaca data kependudukan dan fasilitas.
+
 ---
 
 ## 🎯 Status & Pekerjaan Selanjutnya (Next Action)
@@ -159,9 +171,11 @@
 - [x] Pembuatan fitur ekspor CSV dan lembar cetak PDF A4 berdesain terpersonalisasi.
 - [x] Pembuatan section Profil 3 Dusun dan Peta Geografis Sebaran Fasilitas di portal publik.
 - [x] Redesign Hero Section & Profil 3 Dusun dengan standard taste frontend anti-slop.
-- [x] Implementasi Full-Photo Cinematic Carousel Profil 3 Dusun (Opsi 1: anti card-bertumpuk, navigasi ramping).
+- [x] Implementasi Full-Photo Cinematic Carousel Profil 3 Dusun (Opsi 1: anti card-bertumpuk).
+- [x] Implementasi Infinite Seamless Loop (1, 2, 3, 1, 2, 3) & Auto-Slide 5s dengan navigasi panah di dalam gambar.
 - [x] Verifikasi build Next.js 16 (Turbopack) sukses 100% tanpa error TypeScript/JSX.
 - [ ] Persiapan skema migrasi tabel Supabase (`sensus_kk`, `fasilitas_desa`) jika data akan dipersistensikan ke backend PostgreSQL.
 - [ ] Uji coba lapangan simulasi pendataan sensus oleh Kepala Dusun.
+
 
 
