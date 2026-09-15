@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Eksplorasi Opsi Carousel 3 Dusun - Desa Kadurama</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- Google Fonts: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            tealKuningan: '#009388',
+            tealDark: '#003733',
+            goldKuningan: '#eda50c',
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      height: 6px;
+      width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased selection:bg-[#009388] selection:text-white">
+
+  <!-- ========================================================================= -->
+  <!-- TOP STICKY COMPARISON TOOLBAR                                             -->
+  <!-- ========================================================================= -->
+  <header class="sticky top-0 z-50 bg-[#002b28]/95 backdrop-blur-md border-b border-white/10 text-white shadow-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex flex-col md:flex-row items-center justify-between gap-3">
+      <div class="flex items-center gap-3">
+        <div class="w-8 h-8 rounded-xl bg-[#eda50c]/20 border border-[#eda50c]/30 flex items-center justify-center text-[#eda50c] flex-shrink-0">
+          <i data-lucide="layers" class="w-4 h-4"></i>
+        </div>
+        <div>
+          <div class="text-xs font-bold uppercase tracking-wider text-[#eda50c]">Laboratorium UI Desa Kadurama</div>
+          <div class="text-sm font-extrabold text-white">Eksplorasi 4 Opsi Desain Carousel 3 Dusun</div>
+        </div>
+      </div>
+
+      <!-- Quick Switcher Tabs -->
+      <div class="flex items-center gap-1.5 p-1 bg-black/30 rounded-2xl border border-white/10 overflow-x-auto max-w-full text-xs">
+        <a href="#opsi-1" class="px-3 py-1.5 rounded-xl font-semibold hover:bg-white/10 transition whitespace-nowrap flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+          <span>Opsi 1: Minimalist Stage</span>
+        </a>
+        <a href="#opsi-2" class="px-3 py-1.5 rounded-xl font-semibold hover:bg-white/10 transition whitespace-nowrap flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-amber-400"></span>
+          <span>Opsi 2: Bottom Preview</span>
+        </a>
+        <a href="#opsi-3" class="px-3 py-1.5 rounded-xl font-semibold hover:bg-white/10 transition whitespace-nowrap flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-cyan-400"></span>
+          <span>Opsi 3: Top Tabs Only</span>
+        </a>
+        <a href="#opsi-4" class="px-3 py-1.5 rounded-xl font-semibold hover:bg-white/10 transition whitespace-nowrap flex items-center gap-1.5">
+          <span class="w-2 h-2 rounded-full bg-purple-400"></span>
+          <span>Opsi 4: Card Peek Slider</span>
+        </a>
+      </div>
+    </div>
+  </header>
+
+  <!-- INTRO BANNER -->
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-4">
+    <div class="p-6 bg-white rounded-3xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-[#009388] text-xs font-bold mb-2">
+          <i data-lucide="check-circle-2" class="w-3.5 h-3.5"></i>
+          <span>Interactive Preview File</span>
+        </div>
+        <h1 class="text-xl sm:text-2xl font-black text-slate-900">Perbandingan Format Navigasi Carousel 3 Dusun</h1>
+        <p class="text-xs sm:text-sm text-slate-600 mt-1 max-w-3xl leading-relaxed">
+          Halaman ini dibuat untuk menguji langsung 4 pendekatan navigasi carousel. Anda dapat mencoba menekan tombol geser, tab, dan thumbnail di masing-masing opsi untuk memilih pola interaksi yang paling nyaman dan elegan.
+        </p>
+      </div>
+      <div class="text-xs text-slate-500 bg-slate-50 p-3.5 rounded-2xl border border-slate-200 space-y-1 font-mono">
+        <div>• 3 Dusun: Manis, Pahing, Puhun</div>
+        <div>• Bebas Redudansi Kontrol</div>
+        <div>• Standar Taste UI & Aksesibilitas</div>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-16">
+
+    <!-- ========================================================================= -->
+    <!-- OPSI 1: MINIMALIST STAGE CAROUSEL (RECOMMENDED)                           -->
+    <!-- ========================================================================= -->
+    <section id="opsi-1" class="scroll-mt-24 p-6 sm:p-8 bg-white rounded-3xl border-2 border-emerald-500/40 shadow-xl relative overflow-hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-slate-200 gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-emerald-100 text-[#009388] text-[10px] font-black uppercase tracking-wider">
+              Opsi 1 (Sangat Direkomendasikan)
+            </span>
+            <span class="text-xs font-bold text-slate-400">• Anti-Slop Clean</span>
+          </div>
+          <h2 class="text-xl font-extrabold text-slate-900 mt-1">Minimalist Stage Carousel: Kontrol Panah & Indikator Titik Terintegrasi</h2>
+          <p class="text-xs text-slate-500 mt-1">
+            Menghapus menu pill di atas dan thumbnail di bawah. Kontrol murni mengandalkan tombol panah kiri-kanan dan indikator slide di panggung utama. Sangat bersih, fokus, dan tidak ada elemen yang berulang.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700">Zero Redundancy</span>
+        </div>
+      </div>
+
+      <!-- CAROUSEL 1 COMPONENT -->
+      <div class="relative">
+        <!-- Top Section Header -->
+        <div class="flex items-end justify-between mb-6">
+          <div>
+            <span class="text-[11px] font-bold uppercase tracking-wider text-[#009388] bg-[#e6f7f5] px-3 py-0.5 rounded-full border border-[#009388]/20">
+              Wilayah Administratif
+            </span>
+            <h3 class="text-2xl font-black text-slate-900 mt-2">Karakteristik & Potensi 3 Dusun</h3>
+          </div>
+
+          <!-- Counter & Sleek Navigation Arrows -->
+          <div class="flex items-center gap-3">
+            <div class="text-xs font-mono text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-2">
+              <span id="c1-counter" class="font-black text-slate-900">01</span>
+              <span class="text-slate-400">/</span>
+              <span>03</span>
+            </div>
+            <div class="flex items-center gap-1">
+              <button onclick="prevC1()" class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#009388] shadow-xs active:scale-95 transition cursor-pointer">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i>
+              </button>
+              <button onclick="nextC1()" class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#009388] shadow-xs active:scale-95 transition cursor-pointer">
+                <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Slider Stage -->
+        <div class="relative overflow-hidden rounded-3xl border border-slate-200 shadow-lg bg-white">
+          <div id="c1-track" class="flex transition-transform duration-500 ease-out" style="transform: translateX(0%);">
+            
+            <!-- Slide 1: Manis -->
+            <div class="w-full flex-shrink-0 grid grid-cols-1 lg:grid-cols-12 min-h-[460px]">
+              <div class="lg:col-span-7 relative min-h-[260px] bg-slate-950 overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=80" alt="Dusun Manis" class="w-full h-full object-cover brightness-95">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#021815] via-black/30 to-transparent"></div>
+                <div class="absolute top-4 left-4">
+                  <span class="px-3 py-1 rounded-full bg-[#009388] text-white text-xs font-bold uppercase tracking-wider shadow">Dusun I • Manis</span>
+                </div>
+                <div class="absolute bottom-5 left-5 right-5 text-white">
+                  <h4 class="text-2xl font-black">Dusun Manis</h4>
+                  <p class="text-xs text-emerald-200 mt-0.5">Sentra Administrasi Balai Desa & UMKM Pangan Olahan</p>
+                </div>
+              </div>
+              <div class="lg:col-span-5 p-6 bg-slate-50 flex flex-col justify-between space-y-4">
+                <div class="space-y-4">
+                  <p class="text-xs text-slate-600 leading-relaxed">
+                    Pusat pelayanan masyarakat Desa Kadurama yang menaungi Kantor Balai Desa, Puskesmas Pembantu, SDN 1 Kadurama, dan sentra UMKM keripik ubi jalar.
+                  </p>
+                  <div class="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-white border border-slate-200 text-center font-mono">
+                    <div><div class="text-lg font-black text-[#009388]">184</div><div class="text-[9px] text-slate-500 font-sans">Keluarga</div></div>
+                    <div class="border-x border-slate-200"><div class="text-lg font-black text-slate-900">620</div><div class="text-[9px] text-slate-500 font-sans">Jiwa</div></div>
+                    <div><div class="text-lg font-black text-[#eda50c]">37.4%</div><div class="text-[9px] text-slate-500 font-sans">Porsi</div></div>
+                  </div>
+                  <div class="space-y-1.5 text-xs">
+                    <div class="font-bold text-slate-700 text-[10px] uppercase tracking-wider">Fasilitas Utama:</div>
+                    <div class="grid grid-cols-2 gap-1.5 text-[11px] text-slate-600">
+                      <div>• Kantor Balai Desa</div>
+                      <div>• Pustu Siaga 24 Jam</div>
+                      <div>• SDN 1 Kadurama</div>
+                      <div>• BUMDes Bina Mandiri</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="pt-3 border-t border-slate-200 flex items-center justify-between text-xs">
+                  <div>
+                    <div class="text-[9px] text-slate-400 font-semibold">Kepala Dusun I</div>
+                    <div class="font-bold text-slate-900">Bpk. Ahmad Dahlan</div>
+                  </div>
+                  <button class="px-3 py-1.5 rounded-xl bg-[#009388] text-white font-bold text-[11px] hover:bg-[#007b71] transition">
+                    Lihat di Peta
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 2: Pahing -->
+            <div class="w-full flex-shrink-0 grid grid-cols-1 lg:grid-cols-12 min-h-[460px]">
+              <div class="lg:col-span-7 relative min-h-[260px] bg-slate-950 overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1200&q=80" alt="Dusun Pahing" class="w-full h-full object-cover brightness-95">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#021815] via-black/30 to-transparent"></div>
+                <div class="absolute top-4 left-4">
+                  <span class="px-3 py-1 rounded-full bg-[#eda50c] text-slate-950 text-xs font-bold uppercase tracking-wider shadow">Dusun II • Pahing</span>
+                </div>
+                <div class="absolute bottom-5 left-5 right-5 text-white">
+                  <h4 class="text-2xl font-black">Dusun Pahing</h4>
+                  <p class="text-xs text-amber-200 mt-0.5">Lumbung Padi Organik & Hamparan 64 Ha Sawah Irigasi</p>
+                </div>
+              </div>
+              <div class="lg:col-span-5 p-6 bg-amber-50/40 flex flex-col justify-between space-y-4">
+                <div class="space-y-4">
+                  <p class="text-xs text-slate-600 leading-relaxed">
+                    Kawasan lumbung kedaulatan pangan desa dengan hamparan sawah produktif beririgasi teknis, kelompok tani Sri Rejeki, dan sarana olahraga Gelora Kadurama.
+                  </p>
+                  <div class="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-white border border-slate-200 text-center font-mono">
+                    <div><div class="text-lg font-black text-[#009388]">162</div><div class="text-[9px] text-slate-500 font-sans">Keluarga</div></div>
+                    <div class="border-x border-slate-200"><div class="text-lg font-black text-slate-900">548</div><div class="text-[9px] text-slate-500 font-sans">Jiwa</div></div>
+                    <div><div class="text-lg font-black text-[#eda50c]">64 Ha</div><div class="text-[9px] text-slate-500 font-sans">Sawah</div></div>
+                  </div>
+                  <div class="space-y-1.5 text-xs">
+                    <div class="font-bold text-slate-700 text-[10px] uppercase tracking-wider">Fasilitas Utama:</div>
+                    <div class="grid grid-cols-2 gap-1.5 text-[11px] text-slate-600">
+                      <div>• Lumbung & Rice Milling</div>
+                      <div>• Posyandu Melati I</div>
+                      <div>• Gelora Lapangan Bola</div>
+                      <div>• Pintu Saluran Irigasi</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="pt-3 border-t border-slate-200 flex items-center justify-between text-xs">
+                  <div>
+                    <div class="text-[9px] text-slate-400 font-semibold">Kepala Dusun II</div>
+                    <div class="font-bold text-slate-900">Bpk. Rohmat Hidayat</div>
+                  </div>
+                  <button class="px-3 py-1.5 rounded-xl bg-[#eda50c] text-slate-950 font-bold text-[11px] hover:bg-amber-400 transition">
+                    Lihat di Peta
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slide 3: Puhun -->
+            <div class="w-full flex-shrink-0 grid grid-cols-1 lg:grid-cols-12 min-h-[460px]">
+              <div class="lg:col-span-7 relative min-h-[260px] bg-slate-950 overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1200&q=80" alt="Dusun Puhun" class="w-full h-full object-cover brightness-95">
+                <div class="absolute inset-0 bg-gradient-to-t from-[#021815] via-black/30 to-transparent"></div>
+                <div class="absolute top-4 left-4">
+                  <span class="px-3 py-1 rounded-full bg-[#003733] text-emerald-200 border border-emerald-400/30 text-xs font-bold uppercase tracking-wider shadow">Dusun III • Puhun</span>
+                </div>
+                <div class="absolute bottom-5 left-5 right-5 text-white">
+                  <h4 class="text-2xl font-black">Dusun Puhun</h4>
+                  <p class="text-xs text-cyan-200 mt-0.5">Perkebunan Lereng Ciremai & Mata Air Alami Purba Cikaduran</p>
+                </div>
+              </div>
+              <div class="lg:col-span-5 p-6 bg-teal-50/40 flex flex-col justify-between space-y-4">
+                <div class="space-y-4">
+                  <p class="text-xs text-slate-600 leading-relaxed">
+                    Kawasan perbukitan sejuk di elevasi 340 mdpl. Menampung mata air Cikaduran berdebit 45 L/detik untuk air bersih desa, kebun ubi jalar, dan peternakan sapi perah.
+                  </p>
+                  <div class="grid grid-cols-3 gap-2 p-2.5 rounded-xl bg-white border border-slate-200 text-center font-mono">
+                    <div><div class="text-lg font-black text-[#009388]">146</div><div class="text-[9px] text-slate-500 font-sans">Keluarga</div></div>
+                    <div class="border-x border-slate-200"><div class="text-lg font-black text-slate-900">492</div><div class="text-[9px] text-slate-500 font-sans">Jiwa</div></div>
+                    <div><div class="text-lg font-black text-[#003733]">45 L/s</div><div class="text-[9px] text-slate-500 font-sans">Mata Air</div></div>
+                  </div>
+                  <div class="space-y-1.5 text-xs">
+                    <div class="font-bold text-slate-700 text-[10px] uppercase tracking-wider">Fasilitas Utama:</div>
+                    <div class="grid grid-cols-2 gap-1.5 text-[11px] text-slate-600">
+                      <div>• Mata Air Cikaduran</div>
+                      <div>• Posyandu Melati II</div>
+                      <div>• Agrowisata Ubi Jalar</div>
+                      <div>• Peternakan Sapi Perah</div>
+                    </div>
+                  </div>
+                </div>
+                <div class="pt-3 border-t border-slate-200 flex items-center justify-between text-xs">
+                  <div>
+                    <div class="text-[9px] text-slate-400 font-semibold">Kepala Dusun III</div>
+                    <div class="font-bold text-slate-900">Bpk. Agus Setiawan</div>
+                  </div>
+                  <button class="px-3 py-1.5 rounded-xl bg-[#003733] text-white font-bold text-[11px] hover:bg-[#002824] transition">
+                    Lihat di Peta
+                  </button>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Bottom Slide Indicator Dots -->
+          <div class="py-3 bg-white border-t border-slate-200 flex items-center justify-center gap-2">
+            <button onclick="goToC1(0)" id="c1-dot-0" class="w-8 h-2 rounded-full bg-[#009388] transition-all"></button>
+            <button onclick="goToC1(1)" id="c1-dot-1" class="w-2 h-2 rounded-full bg-slate-300 hover:bg-slate-400 transition-all"></button>
+            <button onclick="goToC1(2)" id="c1-dot-2" class="w-2 h-2 rounded-full bg-slate-300 hover:bg-slate-400 transition-all"></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- OPSI 2: BOTTOM PREVIEW THUMBNAILS (HYBRID CAROUSEL)                      -->
+    <!-- ========================================================================= -->
+    <section id="opsi-2" class="scroll-mt-24 p-6 sm:p-8 bg-white rounded-3xl border border-slate-200 shadow-md relative overflow-hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-slate-200 gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-amber-100 text-[#b45309] text-[10px] font-black uppercase tracking-wider">
+              Opsi 2
+            </span>
+            <span class="text-xs font-bold text-slate-400">• Panggung + 3 Kartu Bawah</span>
+          </div>
+          <h2 class="text-xl font-extrabold text-slate-900 mt-1">Bottom Preview Switcher: Panah & 3 Kartu Mini di Bawah</h2>
+          <p class="text-xs text-slate-500 mt-1">
+            Menghapus menu pill di atas, namun mempertahankan 3 kartu mini di bawah sebagai thumbnail klik untuk berpindah antar dusun.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700">Visual Overview</span>
+        </div>
+      </div>
+
+      <!-- CAROUSEL 2 COMPONENT -->
+      <div class="relative">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-black text-slate-900">Eksplorasi Wilayah 3 Dusun</h3>
+          <div class="flex items-center gap-2">
+            <button onclick="prevC2()" class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#009388] shadow-xs active:scale-95 transition cursor-pointer">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button onclick="nextC2()" class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#009388] shadow-xs active:scale-95 transition cursor-pointer">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Stage Card -->
+        <div class="overflow-hidden rounded-3xl border border-slate-200 shadow-sm bg-white">
+          <div id="c2-track" class="flex transition-transform duration-500 ease-out" style="transform: translateX(0%);">
+            <!-- Content 1 -->
+            <div class="w-full flex-shrink-0 p-6 sm:p-7 bg-slate-50 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div class="md:col-span-6 h-56 rounded-2xl overflow-hidden relative">
+                <img src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                <span class="absolute top-3 left-3 bg-[#009388] text-white text-[10px] font-bold px-2.5 py-1 rounded-md">Dusun I • Manis</span>
+              </div>
+              <div class="md:col-span-6 space-y-3">
+                <h4 class="text-xl font-extrabold text-slate-900">Dusun Manis: Sentra Administrasi & UMKM</h4>
+                <p class="text-xs text-slate-600 leading-relaxed">Gerbang masuk desa dengan Balai Desa, Puskesmas Pembantu, SDN 1, dan gerai UMKM olahan ubi jalar.</p>
+                <div class="text-xs font-mono font-bold text-[#009388]">184 KK • 620 Jiwa • 8 RT / 2 RW</div>
+              </div>
+            </div>
+            <!-- Content 2 -->
+            <div class="w-full flex-shrink-0 p-6 sm:p-7 bg-amber-50/40 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div class="md:col-span-6 h-56 rounded-2xl overflow-hidden relative">
+                <img src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                <span class="absolute top-3 left-3 bg-[#eda50c] text-slate-950 text-[10px] font-bold px-2.5 py-1 rounded-md">Dusun II • Pahing</span>
+              </div>
+              <div class="md:col-span-6 space-y-3">
+                <h4 class="text-xl font-extrabold text-slate-900">Dusun Pahing: Lumbung Padi Organik</h4>
+                <p class="text-xs text-slate-600 leading-relaxed">Hamparan sawah 64 hektar beririgasi teknis teratur dan pusat rice milling mandiri desa.</p>
+                <div class="text-xs font-mono font-bold text-[#b45309]">162 KK • 548 Jiwa • 7 RT / 2 RW</div>
+              </div>
+            </div>
+            <!-- Content 3 -->
+            <div class="w-full flex-shrink-0 p-6 sm:p-7 bg-teal-50/40 grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
+              <div class="md:col-span-6 h-56 rounded-2xl overflow-hidden relative">
+                <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                <span class="absolute top-3 left-3 bg-[#003733] text-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-md">Dusun III • Puhun</span>
+              </div>
+              <div class="md:col-span-6 space-y-3">
+                <h4 class="text-xl font-extrabold text-slate-900">Dusun Puhun: Mata Air Cikaduran & Lereng Ciremai</h4>
+                <p class="text-xs text-slate-600 leading-relaxed">Ketinggian 340 mdpl lereng Gunung Ciremai dengan mata air alami berdebit 45 L/detik.</p>
+                <div class="text-xs font-mono font-bold text-[#005851]">146 KK • 492 Jiwa • 6 RT / 2 RW</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3 Bottom Thumbnail Cards -->
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div onclick="goToC2(0)" id="c2-thumb-0" class="p-3 bg-white rounded-2xl border-2 border-[#009388] shadow-sm flex items-center gap-3 cursor-pointer transition">
+            <img src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=200&q=80" class="w-12 h-12 rounded-xl object-cover">
+            <div>
+              <div class="text-[10px] font-bold text-[#009388] uppercase">Dusun I</div>
+              <div class="text-xs font-bold text-slate-900">Dusun Manis</div>
+            </div>
+          </div>
+          <div onclick="goToC2(1)" id="c2-thumb-1" class="p-3 bg-slate-50 opacity-70 hover:opacity-100 rounded-2xl border border-slate-200 flex items-center gap-3 cursor-pointer transition">
+            <img src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=200&q=80" class="w-12 h-12 rounded-xl object-cover">
+            <div>
+              <div class="text-[10px] font-bold text-[#eda50c] uppercase">Dusun II</div>
+              <div class="text-xs font-bold text-slate-900">Dusun Pahing</div>
+            </div>
+          </div>
+          <div onclick="goToC2(2)" id="c2-thumb-2" class="p-3 bg-slate-50 opacity-70 hover:opacity-100 rounded-2xl border border-slate-200 flex items-center gap-3 cursor-pointer transition">
+            <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=200&q=80" class="w-12 h-12 rounded-xl object-cover">
+            <div>
+              <div class="text-[10px] font-bold text-[#003733] uppercase">Dusun III</div>
+              <div class="text-xs font-bold text-slate-900">Dusun Puhun</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- OPSI 3: TOP TABS ONLY (HEADER TABBED CAROUSEL)                           -->
+    <!-- ========================================================================= -->
+    <section id="opsi-3" class="scroll-mt-24 p-6 sm:p-8 bg-white rounded-3xl border border-slate-200 shadow-md relative overflow-hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-slate-200 gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-cyan-100 text-[#005851] text-[10px] font-black uppercase tracking-wider">
+              Opsi 3
+            </span>
+            <span class="text-xs font-bold text-slate-400">• Tab Menu Atas Sahaja</span>
+          </div>
+          <h2 class="text-xl font-extrabold text-slate-900 mt-1">Top Tabs Only: Tab Menu Dusun di Bagian Atas</h2>
+          <p class="text-xs text-slate-500 mt-1">
+            Menggunakan tab pill di bagian atas untuk berpindah antar dusun. Menghapus 3 kartu thumbnail di bawah.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700">Tab-First Navigation</span>
+        </div>
+      </div>
+
+      <!-- CAROUSEL 3 COMPONENT -->
+      <div class="relative space-y-4">
+        <!-- Top Tab Bar -->
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex items-center gap-2 overflow-x-auto pb-1">
+            <button onclick="goToC3(0)" id="c3-tab-0" class="px-4 py-2 rounded-2xl text-xs font-bold bg-[#009388] text-white shadow-sm transition">
+              1. Dusun Manis (Pemerintahan)
+            </button>
+            <button onclick="goToC3(1)" id="c3-tab-1" class="px-4 py-2 rounded-2xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+              2. Dusun Pahing (Lumbung Padi)
+            </button>
+            <button onclick="goToC3(2)" id="c3-tab-2" class="px-4 py-2 rounded-2xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition">
+              3. Dusun Puhun (Mata Air Ciremai)
+            </button>
+          </div>
+          <div class="hidden sm:flex items-center gap-1">
+            <button onclick="prevC3()" class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700"><i data-lucide="chevron-left" class="w-4 h-4"></i></button>
+            <button onclick="nextC3()" class="p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700"><i data-lucide="chevron-right" class="w-4 h-4"></i></button>
+          </div>
+        </div>
+
+        <!-- Stage Card -->
+        <div class="overflow-hidden rounded-3xl border border-slate-200 shadow-sm bg-white">
+          <div id="c3-track" class="flex transition-transform duration-500 ease-out" style="transform: translateX(0%);">
+            <div class="w-full flex-shrink-0 p-7 bg-slate-50 space-y-3">
+              <h4 class="text-xl font-extrabold text-slate-900">Dusun I: Manis</h4>
+              <p class="text-xs text-slate-600 max-w-xl">Pusat pemerintahan desa, balai desa, Puskesmas Pembantu, dan sentra UMKM keripik ubi jalar.</p>
+              <div class="font-mono text-xs font-bold text-[#009388]">184 KK • 620 Jiwa • 8 RT / 2 RW</div>
+            </div>
+            <div class="w-full flex-shrink-0 p-7 bg-amber-50/40 space-y-3">
+              <h4 class="text-xl font-extrabold text-slate-900">Dusun II: Pahing</h4>
+              <p class="text-xs text-slate-600 max-w-xl">Lumbung pangan utama 64 hektar sawah padi organik irigasi teknis dan lumbung pangan desa.</p>
+              <div class="font-mono text-xs font-bold text-[#b45309]">162 KK • 548 Jiwa • 7 RT / 2 RW</div>
+            </div>
+            <div class="w-full flex-shrink-0 p-7 bg-teal-50/40 space-y-3">
+              <h4 class="text-xl font-extrabold text-slate-900">Dusun III: Puhun</h4>
+              <p class="text-xs text-slate-600 max-w-xl">Perbukitan 340 mdpl lereng Gunung Ciremai dengan mata air purba Cikaduran 45 Liter/detik.</p>
+              <div class="font-mono text-xs font-bold text-[#005851]">146 KK • 492 Jiwa • 6 RT / 2 RW</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========================================================================= -->
+    <!-- OPSI 4: HORIZONTAL CARD PEEK SLIDER (PHYSICAL TRACK)                      -->
+    <!-- ========================================================================= -->
+    <section id="opsi-4" class="scroll-mt-24 p-6 sm:p-8 bg-white rounded-3xl border border-slate-200 shadow-md relative overflow-hidden">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-6 mb-6 border-b border-slate-200 gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <span class="px-2.5 py-0.5 rounded-md bg-purple-100 text-purple-700 text-[10px] font-black uppercase tracking-wider">
+              Opsi 4
+            </span>
+            <span class="text-xs font-bold text-slate-400">• Kartu Fisik Berjejer Mengintip</span>
+          </div>
+          <h2 class="text-xl font-extrabold text-slate-900 mt-1">Horizontal Card Peek Slider: Geser Kartu Nyata</h2>
+          <p class="text-xs text-slate-500 mt-1">
+            Kartu dusun berjejer horizontal secara fisik. Kartu yang aktif berada di tengah dalam skala 100%, sementara kartu sebelum dan sesudahnya mengintip di tepi layar.
+          </p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-100 text-slate-700">Peek & Slide</span>
+        </div>
+      </div>
+
+      <!-- CAROUSEL 4 COMPONENT -->
+      <div class="relative py-4">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-xl font-black text-slate-900">Sentra 3 Dusun Kadurama</h3>
+          <div class="flex items-center gap-2">
+            <button onclick="prevC4()" class="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#009388] shadow-xs active:scale-95 transition cursor-pointer">
+              <i data-lucide="chevron-left" class="w-4 h-4"></i>
+            </button>
+            <button onclick="nextC4()" class="p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-[#009388] shadow-xs active:scale-95 transition cursor-pointer">
+              <i data-lucide="chevron-right" class="w-4 h-4"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Peek Viewport -->
+        <div class="overflow-hidden py-4 -mx-4 px-4">
+          <div id="c4-track" class="flex gap-6 transition-transform duration-500 ease-out" style="transform: translateX(0px);">
+            
+            <!-- Card 1 -->
+            <div onclick="goToC4(0)" id="c4-card-0" class="w-[85vw] sm:w-[540px] flex-shrink-0 bg-white rounded-3xl border-2 border-[#009388] shadow-xl overflow-hidden transition-all duration-300 cursor-pointer scale-100 opacity-100">
+              <div class="h-48 relative bg-slate-900 overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                <span class="absolute top-3 left-3 bg-[#009388] text-white text-xs font-bold px-3 py-1 rounded-full">Dusun I • Manis</span>
+                <div class="absolute bottom-3 left-4 right-4 text-white">
+                  <h4 class="text-lg font-black">Dusun Manis</h4>
+                  <p class="text-xs text-emerald-200">Sentra Pemerintahan & UMKM</p>
+                </div>
+              </div>
+              <div class="p-5 space-y-3 bg-slate-50/50">
+                <p class="text-xs text-slate-600 leading-relaxed">Pusat pemerintahan Balai Desa, Puskesmas Pembantu, SDN 1, dan gerai UMKM.</p>
+                <div class="p-2.5 rounded-xl bg-white border border-slate-200 text-xs font-mono font-bold text-[#009388] text-center">
+                  184 KK • 620 Jiwa (37.4%)
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 2 -->
+            <div onclick="goToC4(1)" id="c4-card-1" class="w-[85vw] sm:w-[540px] flex-shrink-0 bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden transition-all duration-300 cursor-pointer scale-95 opacity-70 hover:opacity-90">
+              <div class="h-48 relative bg-slate-900 overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                <span class="absolute top-3 left-3 bg-[#eda50c] text-slate-950 text-xs font-bold px-3 py-1 rounded-full">Dusun II • Pahing</span>
+                <div class="absolute bottom-3 left-4 right-4 text-white">
+                  <h4 class="text-lg font-black">Dusun Pahing</h4>
+                  <p class="text-xs text-amber-200">Lumbung Padi Organik & Irigasi</p>
+                </div>
+              </div>
+              <div class="p-5 space-y-3 bg-amber-50/20">
+                <p class="text-xs text-slate-600 leading-relaxed">Hamparan sawah 64 hektar beririgasi teknis teratur dan lumbung pangan desa.</p>
+                <div class="p-2.5 rounded-xl bg-white border border-slate-200 text-xs font-mono font-bold text-[#b45309] text-center">
+                  162 KK • 548 Jiwa (33.0%)
+                </div>
+              </div>
+            </div>
+
+            <!-- Card 3 -->
+            <div onclick="goToC4(2)" id="c4-card-2" class="w-[85vw] sm:w-[540px] flex-shrink-0 bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden transition-all duration-300 cursor-pointer scale-95 opacity-70 hover:opacity-90">
+              <div class="h-48 relative bg-slate-900 overflow-hidden">
+                <img src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=800&q=80" class="w-full h-full object-cover">
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent"></div>
+                <span class="absolute top-3 left-3 bg-[#003733] text-emerald-200 border border-emerald-400/30 text-xs font-bold px-3 py-1 rounded-full">Dusun III • Puhun</span>
+                <div class="absolute bottom-3 left-4 right-4 text-white">
+                  <h4 class="text-lg font-black">Dusun Puhun</h4>
+                  <p class="text-xs text-cyan-200">Mata Air Cikaduran 45 L/dtk</p>
+                </div>
+              </div>
+              <div class="p-5 space-y-3 bg-teal-50/20">
+                <p class="text-xs text-slate-600 leading-relaxed">Ketinggian 340 mdpl lereng Gunung Ciremai dengan mata air purba dan kebun ubi.</p>
+                <div class="p-2.5 rounded-xl bg-white border border-slate-200 text-xs font-mono font-bold text-[#005851] text-center">
+                  146 KK • 492 Jiwa (29.6%)
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- JAVASCRIPT CONTROLLERS -->
+  <script>
+    // Initialize Lucide Icons
+    lucide.createIcons();
+
+    // ==========================================
+    // CONTROLLER OPSI 1
+    // ==========================================
+    let c1Index = 0;
+    const c1Track = document.getElementById('c1-track');
+    const c1Counter = document.getElementById('c1-counter');
+    function updateC1() {
+      c1Track.style.transform = `translateX(-${c1Index * 100}%)`;
+      c1Counter.textContent = `0${c1Index + 1}`;
+      for (let i = 0; i < 3; i++) {
+        const dot = document.getElementById(`c1-dot-${i}`);
+        if (i === c1Index) {
+          dot.className = "w-8 h-2 rounded-full bg-[#009388] transition-all";
+        } else {
+          dot.className = "w-2 h-2 rounded-full bg-slate-300 hover:bg-slate-400 transition-all";
+        }
+      }
+    }
+    function nextC1() {
+      c1Index = (c1Index + 1) % 3;
+      updateC1();
+    }
+    function prevC1() {
+      c1Index = (c1Index - 1 + 3) % 3;
+      updateC1();
+    }
+    function goToC1(idx) {
+      c1Index = idx;
+      updateC1();
+    }
+
+    // ==========================================
+    // CONTROLLER OPSI 2
+    // ==========================================
+    let c2Index = 0;
+    const c2Track = document.getElementById('c2-track');
+    function updateC2() {
+      c2Track.style.transform = `translateX(-${c2Index * 100}%)`;
+      for (let i = 0; i < 3; i++) {
+        const thumb = document.getElementById(`c2-thumb-${i}`);
+        if (i === c2Index) {
+          thumb.className = "p-3 bg-white rounded-2xl border-2 border-[#009388] shadow-sm flex items-center gap-3 cursor-pointer transition";
+        } else {
+          thumb.className = "p-3 bg-slate-50 opacity-70 hover:opacity-100 rounded-2xl border border-slate-200 flex items-center gap-3 cursor-pointer transition";
+        }
+      }
+    }
+    function nextC2() {
+      c2Index = (c2Index + 1) % 3;
+      updateC2();
+    }
+    function prevC2() {
+      c2Index = (c2Index - 1 + 3) % 3;
+      updateC2();
+    }
+    function goToC2(idx) {
+      c2Index = idx;
+      updateC2();
+    }
+
+    // ==========================================
+    // CONTROLLER OPSI 3
+    // ==========================================
+    let c3Index = 0;
+    const c3Track = document.getElementById('c3-track');
+    function updateC3() {
+      c3Track.style.transform = `translateX(-${c3Index * 100}%)`;
+      for (let i = 0; i < 3; i++) {
+        const tab = document.getElementById(`c3-tab-${i}`);
+        if (i === c3Index) {
+          tab.className = "px-4 py-2 rounded-2xl text-xs font-bold bg-[#009388] text-white shadow-sm transition";
+        } else {
+          tab.className = "px-4 py-2 rounded-2xl text-xs font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition";
+        }
+      }
+    }
+    function nextC3() {
+      c3Index = (c3Index + 1) % 3;
+      updateC3();
+    }
+    function prevC3() {
+      c3Index = (c3Index - 1 + 3) % 3;
+      updateC3();
+    }
+    function goToC3(idx) {
+      c3Index = idx;
+      updateC3();
+    }
+
+    // ==========================================
+    // CONTROLLER OPSI 4
+    // ==========================================
+    let c4Index = 0;
+    const c4Track = document.getElementById('c4-track');
+    function updateC4() {
+      const cardWidth = window.innerWidth >= 640 ? 540 + 24 : window.innerWidth * 0.85 + 24;
+      c4Track.style.transform = `translateX(-${c4Index * cardWidth}px)`;
+      for (let i = 0; i < 3; i++) {
+        const card = document.getElementById(`c4-card-${i}`);
+        if (i === c4Index) {
+          card.classList.add('scale-100', 'opacity-100', 'border-[#009388]', 'border-2', 'shadow-xl');
+          card.classList.remove('scale-95', 'opacity-70', 'border-slate-200');
+        } else {
+          card.classList.remove('scale-100', 'opacity-100', 'border-[#009388]', 'border-2', 'shadow-xl');
+          card.classList.add('scale-95', 'opacity-70', 'border-slate-200');
+        }
+      }
+    }
+    function nextC4() {
+      c4Index = (c4Index + 1) % 3;
+      updateC4();
+    }
+    function prevC4() {
+      c4Index = (c4Index - 1 + 3) % 3;
+      updateC4();
+    }
+    function goToC4(idx) {
+      c4Index = idx;
+      updateC4();
+    }
+  </script>
+</body>
+</html>
