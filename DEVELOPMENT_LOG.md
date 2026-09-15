@@ -190,12 +190,13 @@
        3. **Potensi Mata Air Alami:** `45 Liter / Detik` (Debit Mata Air Purba Cikaduran Dusun Puhun).
        4. **Sentra Ekonomi & Potensi Unggulan:** `3 Klaster Potensi` (Tani Organik, Peternakan Sapi & UMKM Olahan Ubi).
 
- 17. Penyesuaian Dimensi Landmark Gerbang Kuningan (Tinggi Proporsional & Flank Putih Full-Width):
+17. Penyesuaian Dimensi Landmark Gerbang Kuningan (Tinggi Proporsional & Flank Putih Full-Width):
    - Penyelesaian Masalah Skala Gambar (Mencegah "Kegedan" saat Full-Width):
      - Mempertahankan tinggi asli landmark gerbang Kuningan yang proporsional dan tidak mendominasi layar (`h-[150px] sm:h-[175px] md:h-[190px]`).
      - Membuat aset panorama [frontend/public/kuningan-gate-wide.png](file:///home/jrilym/Projects/Next/desa/frontend/public/kuningan-gate-wide.png) berukuran 2400 x 179 piksel: gerbang landmark tetap berada di tengah dengan dimensi asli, sementara area kiri dan kanannya di-insert warna putih murni (`#ffffff`) yang identik dengan background foto gerbang.
      - Menggunakan `mix-blend-multiply` dengan container `inset-x-0 bottom-0 w-full justify-center`: area putih di kiri, tengah, dan kanan secara mulus ter-multiplikasi sempurna dengan gradien teal Kuningan, menghilangkan batas potongan blocking putih tanpa memperbesar ukuran gerbang secara berlebihan.
-      18. Pembuatan Berkas Mockup Interaktif Geospasial Wilayah (`mockups/geospatial_options.html`):
+
+18. Pembuatan Berkas Mockup Interaktif Geospasial Wilayah (`mockups/geospatial_options.html`):
    - Penyusunan 3 Paradigma Desain Geospasial Berbeda & Interaktif:
      - **Opsi 1: Peta GIS & Satelit Nyata (Leaflet.js Engine):**
        - Citra satelit asli (Esri World Imagery) dipadukan dengan poligon zonasi 3 Dusun (Manis, Pahing, Puhun).
@@ -209,6 +210,20 @@
        - Analisis neraca lahan 142.8 Ha: 64.0 Ha Sawah (44.8%), 38.5 Ha Pemukiman (27.0%), 24.3 Ha Perkebunan Ubi (17.0%), 16.0 Ha Hutan & Mata Air (11.2%).
        - Slider perbandingan interaktif (*before-after split view*): Kondisi Eksisting 2026 vs Proyeksi Rencana Tata Ruang Desa (RTRW) 2030.
    - Dokumen Mockup Visual: Tersedia dan dapat langsung dibuka di browser pada [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html).
+
+19. Pembaruan Opsi Geospasial: Penguncian Zoom Opsi 1 (Leaflet GIS) & Citra Satelit Nyata Desa Kadurama Opsi 2 (Three.js 3D Relief):
+   - **Opsi 1 (Leaflet GIS Lock Zoom):**
+     - Mengunci tingkat zoom secara absolut pada level 15 (`minZoom: 15, maxZoom: 15`, `scrollWheelZoom: false`, `doubleClickZoom: false`, `touchZoom: false`, `boxZoom: false`, `keyboard: false`, `zoomControl: false`).
+     - Navigasi geser (pan/drag) tetap aktif dan mulus, sehingga pengunjung dapat menjelajah batas dusun dan fasilitas tanpa gangguan perubahan zoom saat scrolling halaman.
+     - Menambahkan badge indikator status penguncian zoom ("Zoom Dikunci: Skala Tetap 1:5.000").
+   - **Opsi 2 (Three.js 3D Terrain dengan Citra Satelit Asli Desa Kadurama):**
+     - Mengunduh dan mengekstraksi citra satelit resolusi tinggi asli Desa Kadurama, Kec. Ciawigebang, Kab. Kuningan (`bbox: 108.542, -7.008, 108.568, -6.988`) dari ArcGIS World Imagery.
+     - Menyiapkan aset citra di [frontend/public/kadurama_real_satellite.png](file:///home/jrilym/Projects/Next/desa/frontend/public/kadurama_real_satellite.png) dan tekstur teroptimasi [mockups/kadurama_satellite_opt.jpg](file:///home/jrilym/Projects/Next/desa/mockups/kadurama_satellite_opt.jpg).
+     - Menyematkan tekstur satelit asli sebagai Base64 Data URI langsung di dalam [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html) agar Three.js WebGL dapat me-render tekstur secara instan tanpa kendala CORS pada protokol `file:///`.
+     - Rekonstruksi topografi 3D lereng timur Gunung Ciremai dengan elevasi bertingkat (285 mdpl di Dusun Pahing hingga 340 mdpl di Dusun Puhun).
+     - Menempatkan pin fasilitas 3D interaktif di lokasi nyata: Balai Desa Kadurama, SDN Kadurama, Lumbung Padi Organik 64 Ha, Gelora Kadurama, Mata Air Purba Cikaduran (45 L/dtk), dan Peternakan Sapi Perah.
+     - Raycasting interaktif: klik pin 3D memunculkan floating HUD informasi fasilitas dengan link Google Maps, rotasi bebas 360°, dan 4 preset kamera (Isometrik, Satelit Atas, Punggung Ciremai, Hamparan Padi).
+   - Pembaruan berkas mockup visual: Siap diuji langsung di browser pada [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html).
 
 ---
 
@@ -227,12 +242,9 @@
 - [x] Pembaruan strip data bawah Hero dengan 4 indikator vital (492 KK, 64 Ha Padi, 45 L/s Air, 3 Klaster Potensi).
 - [x] Penyesuaian dimensi Gerbang Kuningan: tinggi asli proporsional di tengah, flank kiri-kanan putih seamless 2400px tanpa blocking putih.
 - [x] Pembuatan mockup interaktif 3 opsi konsep section Geospasial di [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html).
+- [x] Penguncian zoom pada Opsi 1 (Leaflet GIS) di [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html).
+- [x] Implementasi Citra Satelit Nyata Desa Kadurama pada Model 3D Terrain Opsi 2 di [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html).
 - [x] Verifikasi build Next.js 16 (Turbopack) sukses 100% tanpa error TypeScript/JSX.
-- [ ] Review dan pemilihan opsi geospasial oleh stakeholder/user untuk diterapkan ke `page.tsx`.
+- [ ] Review dan pemilihan opsi geospasial akhir oleh stakeholder/user untuk integrasi ke portal utama `page.tsx`.
 - [ ] Persiapan skema migrasi tabel Supabase (`sensus_kk`, `fasilitas_desa`) jika data akan dipersistensikan ke backend PostgreSQL.
-- [ ] Uji coba lapangan simulasi pendataan sensus oleh Kepala Dusun.
-
-
-
-
 
