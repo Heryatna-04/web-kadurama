@@ -139,6 +139,17 @@
      - 3 Kartu Mini-Preview (Thumbnail Switcher) di bagian bawah carousel yang memperlihatkan rangkuman seluruh dusun secara simultan, dengan indikator ring aktif dan badge "Fokus Aktif" pada dusun yang sedang ditampilkan di panggung utama.
    - Tetap mempertahankan *Demographic Balance Summary Bar* di bagian bawah sebagai rangkuman proporsi sebaran warga (Manis 37.4%, Pahing 33.0%, Puhun 29.6%).
 
+13. Redesign Profil 3 Dusun: Full-Photo Cinematic Canvas (Anti-Nested Cards & Opsi 1 Minimalist Navigation):
+   - Eliminasi Anti-Pola "Cards-in-Cards":
+     - Mengubah seluruh slide carousel menjadi satu panggung kanvas foto sinematik penuh (*Full-Bleed Photographic Canvas* setinggi 540-620px), tanpa ada kotak card putih bertumpuk di dalam card.
+     - Penerapan *Cinematic Multi-Stop Directional Scrim* (`bg-gradient-to-t` dan `bg-gradient-to-r`) yang memberikan keterbacaan tipografi 100% kontras tinggi (WCAG AA) di sisi kiri, sembari membiarkan keindahan panorama alam dusun bersinar utuh di sisi kanan.
+     - Metrik demografi (KK, Jiwa, Porsi Desa, RT/RW) disajikan secara murni tipografis dengan pemisah garis horizontal (`border-y border-white/15`) tanpa pembungkus kotak/box bertumpuk.
+     - Fasilitas wilayah disajikan berupa *inline glass badges* elegan bernuansa kaca transparan.
+   - Penerapan Navigasi Opsi 1 (Bersih & Zero-Redundancy):
+     - Menghapus tab menu pill di atas dan 3 kartu thumbnail di bawah untuk meniadakan kontrol ganda yang berlebih.
+     - Navigasi geser murni dipusatkan pada tombol panah `< >` di sudut kanan atas header dan tombol panah melayang (*floating edge arrows*) di tepi kiri-kanan kanvas foto.
+     - Indikator slide minimalis (*pill dots*) di bawah panggung utama yang melebar halus (*elongated pill*) pada dusun yang aktif.
+
 ---
 
 ## 🎯 Status & Pekerjaan Selanjutnya (Next Action)
@@ -148,7 +159,7 @@
 - [x] Pembuatan fitur ekspor CSV dan lembar cetak PDF A4 berdesain terpersonalisasi.
 - [x] Pembuatan section Profil 3 Dusun dan Peta Geografis Sebaran Fasilitas di portal publik.
 - [x] Redesign Hero Section & Profil 3 Dusun dengan standard taste frontend anti-slop.
-- [x] Implementasi Focal Carousel Profil 3 Dusun dengan navigasi slide, tombol geser, tab cepat, dan thumbnail preview switcher.
+- [x] Implementasi Full-Photo Cinematic Carousel Profil 3 Dusun (Opsi 1: anti card-bertumpuk, navigasi ramping).
 - [x] Verifikasi build Next.js 16 (Turbopack) sukses 100% tanpa error TypeScript/JSX.
 - [ ] Persiapan skema migrasi tabel Supabase (`sensus_kk`, `fasilitas_desa`) jika data akan dipersistensikan ke backend PostgreSQL.
 - [ ] Uji coba lapangan simulasi pendataan sensus oleh Kepala Dusun.
