@@ -1695,8 +1695,8 @@ export default function Home() {
   // Public GIS Map State (Satellite-Only with Official Boundaries)
   const [gisSelectedDusun, setGisSelectedDusun] = useState<"all" | "manis" | "pahing" | "wage">("all");
   const [gisSelectedPoiId, setGisSelectedPoiId] = useState<number | null>(null);
-  const [gisShowOuter, setGisShowOuter] = useState<boolean>(true);
-  const [gisShowDusuns, setGisShowDusuns] = useState<boolean>(true);
+  const [gisShowOuter, setGisShowOuter] = useState<boolean>(false);
+  const [gisShowDusuns, setGisShowDusuns] = useState<boolean>(false);
   const [gisShowWater, setGisShowWater] = useState<boolean>(true);
 
   // Admin Panel States

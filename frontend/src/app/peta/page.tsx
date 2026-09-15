@@ -168,8 +168,8 @@ export default function PetaPage() {
                   selectedPoiId={selectedPoiId}
                   onSelectDusun={(d) => setSelectedDusun(d)}
                   onSelectPoi={(poi) => setSelectedPoiId(poi ? poi.id : null)}
-                  showOuterBoundary={true}
-                  showDusunBoundaries={true}
+                  showOuterBoundary={false}
+                  showDusunBoundaries={false}
                   showWaterways={true}
                 />
               </div>

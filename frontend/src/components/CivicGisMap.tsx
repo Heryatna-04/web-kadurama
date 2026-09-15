@@ -89,9 +89,9 @@ export default function CivicGisMap({
   selectedPoiId,
   onSelectDusun,
   onSelectPoi,
-  showOuterBoundary,
-  showDusunBoundaries,
-  showWaterways
+  showOuterBoundary = false,
+  showDusunBoundaries = false,
+  showWaterways = true
 }: CivicGisMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -135,22 +135,27 @@ export default function CivicGisMap({
       satelliteLayer.addTo(map);
 
       // Layer Groups
-      const dusunsGroup = L.layerGroup().addTo(map);
-      const waterGroup = L.layerGroup().addTo(map);
+      const dusunsGroup = L.layerGroup();
+      if (showDusunBoundaries) dusunsGroup.addTo(map);
+
+      const waterGroup = L.layerGroup();
+      if (showWaterways) waterGroup.addTo(map);
+
       const poiGroup = L.layerGroup().addTo(map);
 
       dusunsGroupRef.current = dusunsGroup;
       waterGroupRef.current = waterGroup;
       poiGroupRef.current = poiGroup;
 
-      // 1. Outer Village Boundary (Gold Kuningan #eda50c)
+      // 1. Outer Village Boundary (Gold Kuningan #eda50c) - Optional / Hidden by default
       const outerPoly = L.polygon(KADURAMA_OUTER, {
         color: "#eda50c",
         weight: 3.5,
         dashArray: "8, 6",
         fillOpacity: 0.04,
         fillColor: "#eda50c"
-      }).addTo(map);
+      });
+      if (showOuterBoundary) outerPoly.addTo(map);
       outerLayerRef.current = outerPoly;
 
       // 2. Dusun Boundaries (Manis, Pahing, Wage)
