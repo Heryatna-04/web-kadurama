@@ -190,6 +190,13 @@
        3. **Potensi Mata Air Alami:** `45 Liter / Detik` (Debit Mata Air Purba Cikaduran Dusun Puhun).
        4. **Sentra Ekonomi & Potensi Unggulan:** `3 Klaster Potensi` (Tani Organik, Peternakan Sapi & UMKM Olahan Ubi).
 
+ 17. Penyesuaian Dimensi Landmark Gerbang Kuningan (Tinggi Proporsional & Flank Putih Full-Width):
+   - Penyelesaian Masalah Skala Gambar (Mencegah "Kegedan" saat Full-Width):
+     - Mempertahankan tinggi asli landmark gerbang Kuningan yang proporsional dan tidak mendominasi layar (`h-[150px] sm:h-[175px] md:h-[190px]`).
+     - Membuat aset panorama [frontend/public/kuningan-gate-wide.png](file:///home/jrilym/Projects/Next/desa/frontend/public/kuningan-gate-wide.png) berukuran 2400 x 179 piksel: gerbang landmark tetap berada di tengah dengan dimensi asli, sementara area kiri dan kanannya di-insert warna putih murni (`#ffffff`) yang identik dengan background foto gerbang.
+     - Menggunakan `mix-blend-multiply` dengan container `inset-x-0 bottom-0 w-full justify-center`: area putih di kiri, tengah, dan kanan secara mulus ter-multiplikasi sempurna dengan gradien teal Kuningan, menghilangkan batas potongan blocking putih tanpa memperbesar ukuran gerbang secara berlebihan.
+     - Siluet gerbang, kuda emas, dan pilar Kuningan tetap tampil estetik, proporsional, dan terintegrasi di dasar hero section di atas strip indikator data desa.
+
 ---
 
 ## 🎯 Status & Pekerjaan Selanjutnya (Next Action)
@@ -205,6 +212,7 @@
 - [x] Restorasi palet warna Hero section kembali ke nuansa Kuningan Teal [index.html](file:///home/jrilym/Projects/Next/desa/index.html) (tidak pekat hitam).
 - [x] Restorasi Home Cockpit Card dengan aksen kotak kuning emas KD, jam buka, dan motto resmi Kuningan.
 - [x] Pembaruan strip data bawah Hero dengan 4 indikator vital (492 KK, 64 Ha Padi, 45 L/s Air, 3 Klaster Potensi).
+- [x] Penyesuaian dimensi Gerbang Kuningan: tinggi asli proporsional di tengah, flank kiri-kanan putih seamless 2400px tanpa blocking putih.
 - [x] Verifikasi build Next.js 16 (Turbopack) sukses 100% tanpa error TypeScript/JSX.
 - [ ] Persiapan skema migrasi tabel Supabase (`sensus_kk`, `fasilitas_desa`) jika data akan dipersistensikan ke backend PostgreSQL.
 - [ ] Uji coba lapangan simulasi pendataan sensus oleh Kepala Dusun.
