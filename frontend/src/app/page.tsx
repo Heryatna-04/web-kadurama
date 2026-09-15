@@ -2414,12 +2414,12 @@ export default function Home() {
             <div className="absolute -right-20 -bottom-20 w-[550px] h-[550px] bg-[#eda50c]/25 rounded-full blur-3xl pointer-events-none" />
             <div className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-[#009388]/30 rounded-full blur-3xl pointer-events-none" />
 
-            {/* 2. Landmark Gerbang Kuningan Asri (Tinggi Asli di Tengah, Kiri Kanan Putih Menyatu Tanpa Blocking) */}
+            {/* 2. Landmark Gerbang Kuningan Asri (2x Size di Tengah, Kiri Kanan Putih Menyatu Tanpa Blocking) */}
             <div className="absolute inset-x-0 bottom-0 w-full flex items-end justify-center pointer-events-none select-none z-0 mix-blend-multiply opacity-80 overflow-hidden">
               <img
                 src="/kuningan-gate-wide.png"
                 alt="Landmark Gerbang Kuningan Asri"
-                className="w-full h-[150px] sm:h-[175px] md:h-[190px] object-cover object-bottom select-none [mask-image:linear-gradient(to_top,black_80%,transparent)] filter brightness-105 contrast-110"
+                className="w-full h-[280px] sm:h-[320px] md:h-[360px] object-cover object-bottom select-none [mask-image:linear-gradient(to_top,black_80%,transparent)] filter brightness-105 contrast-110"
               />
             </div>
 

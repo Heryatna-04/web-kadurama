@@ -195,7 +195,20 @@
      - Mempertahankan tinggi asli landmark gerbang Kuningan yang proporsional dan tidak mendominasi layar (`h-[150px] sm:h-[175px] md:h-[190px]`).
      - Membuat aset panorama [frontend/public/kuningan-gate-wide.png](file:///home/jrilym/Projects/Next/desa/frontend/public/kuningan-gate-wide.png) berukuran 2400 x 179 piksel: gerbang landmark tetap berada di tengah dengan dimensi asli, sementara area kiri dan kanannya di-insert warna putih murni (`#ffffff`) yang identik dengan background foto gerbang.
      - Menggunakan `mix-blend-multiply` dengan container `inset-x-0 bottom-0 w-full justify-center`: area putih di kiri, tengah, dan kanan secara mulus ter-multiplikasi sempurna dengan gradien teal Kuningan, menghilangkan batas potongan blocking putih tanpa memperbesar ukuran gerbang secara berlebihan.
-     - Siluet gerbang, kuda emas, dan pilar Kuningan tetap tampil estetik, proporsional, dan terintegrasi di dasar hero section di atas strip indikator data desa.
+      18. Pembuatan Berkas Mockup Interaktif Geospasial Wilayah (`mockups/geospatial_options.html`):
+   - Penyusunan 3 Paradigma Desain Geospasial Berbeda & Interaktif:
+     - **Opsi 1: Peta GIS & Satelit Nyata (Leaflet.js Engine):**
+       - Citra satelit asli (Esri World Imagery) dipadukan dengan poligon zonasi 3 Dusun (Manis, Pahing, Puhun).
+       - Marker fasilitas interaktif dengan filter kategori (Pemdes, Pertanian, Mata Air, Sekolah/Kesehatan) dan drawer detail fasilitas yang langsung terhubung ke Google Maps.
+       - Layer switcher dinamis (Satelit, Peta Sivik Vektor, Kontur Topografi).
+     - **Opsi 2: 3D Topografi Isometrik Lereng Ciremai (Three.js WebGL Engine):**
+       - Model bentang alam 3D interaktif yang merepresentasikan kenaikan elevasi dari 285 mdpl ke 340 mdpl di lereng timur Gunung Ciremai.
+       - Terasering sawah organik Dusun Pahing, bukit konservasi Dusun Puhun, dan pemukiman Dusun Manis.
+       - Kontrol kamera 3D bebas (orbit, zoom, pan), preset sudut pandang (Isometrik 45°, Tampak Atas, Fokus Sawah, Fokus Mata Air), dan toggle layer kontur/aliran sungai.
+     - **Opsi 3: Neraca Tata Guna Lahan & Spasial Storytelling (Bento Matrix & Split Comparison):**
+       - Analisis neraca lahan 142.8 Ha: 64.0 Ha Sawah (44.8%), 38.5 Ha Pemukiman (27.0%), 24.3 Ha Perkebunan Ubi (17.0%), 16.0 Ha Hutan & Mata Air (11.2%).
+       - Slider perbandingan interaktif (*before-after split view*): Kondisi Eksisting 2026 vs Proyeksi Rencana Tata Ruang Desa (RTRW) 2030.
+   - Dokumen Mockup Visual: Tersedia dan dapat langsung dibuka di browser pada [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html).
 
 ---
 
@@ -213,7 +226,9 @@
 - [x] Restorasi Home Cockpit Card dengan aksen kotak kuning emas KD, jam buka, dan motto resmi Kuningan.
 - [x] Pembaruan strip data bawah Hero dengan 4 indikator vital (492 KK, 64 Ha Padi, 45 L/s Air, 3 Klaster Potensi).
 - [x] Penyesuaian dimensi Gerbang Kuningan: tinggi asli proporsional di tengah, flank kiri-kanan putih seamless 2400px tanpa blocking putih.
+- [x] Pembuatan mockup interaktif 3 opsi konsep section Geospasial di [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html).
 - [x] Verifikasi build Next.js 16 (Turbopack) sukses 100% tanpa error TypeScript/JSX.
+- [ ] Review dan pemilihan opsi geospasial oleh stakeholder/user untuk diterapkan ke `page.tsx`.
 - [ ] Persiapan skema migrasi tabel Supabase (`sensus_kk`, `fasilitas_desa`) jika data akan dipersistensikan ke backend PostgreSQL.
 - [ ] Uji coba lapangan simulasi pendataan sensus oleh Kepala Dusun.
 

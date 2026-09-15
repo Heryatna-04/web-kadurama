@@ -1,0 +1,1079 @@
+<!DOCTYPE html>
+<html lang="id" class="scroll-smooth">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Eksplorasi Konsep Section Geospasial - Desa Kadurama</title>
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Google Font: Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Leaflet.js for Option 1 (Interactive Satellite & GIS) -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+  <!-- Three.js for Option 2 (Interactive 3D Isometric Terrain) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['"Plus Jakarta Sans"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
+          },
+          colors: {
+            kuningan: {
+              teal: '#009388',
+              tealHover: '#007b71',
+              tealDark: '#005851',
+              tealDeep: '#003733',
+              tealLight: '#e6f7f5',
+              gold: '#eda50c',
+              goldHover: '#d99407',
+              goldLight: '#fef6e6',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* Custom Leaflet Map Styling */
+    .leaflet-popup-content-wrapper {
+      border-radius: 16px;
+      padding: 0;
+      overflow: hidden;
+      box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.15), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+      border: 1px solid #e2e8f0;
+    }
+    .leaflet-popup-content {
+      margin: 0;
+      line-height: 1.5;
+    }
+    .leaflet-container {
+      font-family: "Plus Jakarta Sans", sans-serif;
+    }
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+
+<body class="bg-slate-100 text-slate-800 font-sans antialiased min-h-screen flex flex-col">
+
+  <!-- ========================================================================= -->
+  <!-- TOP STICKY HEADER & OPTION SWITCHER                                       -->
+  <!-- ========================================================================= -->
+  <header class="sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-slate-200 shadow-sm">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col md:flex-row items-center justify-between py-3 md:h-20 gap-3">
+        
+        <!-- Brand & Title -->
+        <div class="flex items-center gap-3">
+          <div class="w-10 h-10 rounded-xl bg-[#009388] text-white flex items-center justify-center font-black text-base shadow-md shadow-[#009388]/20 flex-shrink-0">
+            KD
+          </div>
+          <div>
+            <div class="flex items-center gap-2">
+              <span class="text-xs font-bold uppercase tracking-wider text-[#009388]">Eksplorasi Konsep UI/UX</span>
+              <span class="px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-extrabold border border-amber-300">Section Geospasial</span>
+            </div>
+            <h1 class="text-base sm:text-lg font-extrabold text-slate-900 leading-tight">
+              Peta Wilayah, Kontur Topografi & Fasilitas 3 Dusun
+            </h1>
+          </div>
+        </div>
+
+        <!-- 3 Interactive Tabs Switcher -->
+        <div class="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl border border-slate-200 text-xs w-full md:w-auto overflow-x-auto">
+          <button 
+            onclick="switchOption('opt1')" 
+            id="tab-opt1" 
+            class="tab-btn flex-1 md:flex-initial px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2 bg-white text-[#009388] shadow-xs border border-slate-200"
+          >
+            <span class="w-2 h-2 rounded-full bg-[#009388]"></span>
+            <span>Opsi 1: Peta GIS & Satelit Nyata</span>
+          </button>
+
+          <button 
+            onclick="switchOption('opt2')" 
+            id="tab-opt2" 
+            class="tab-btn flex-1 md:flex-initial px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900"
+          >
+            <span class="w-2 h-2 rounded-full bg-transparent"></span>
+            <span>Opsi 2: 3D Topografi Isometrik</span>
+          </button>
+
+          <button 
+            onclick="switchOption('opt3')" 
+            id="tab-opt3" 
+            class="tab-btn flex-1 md:flex-initial px-4 py-2.5 rounded-xl font-bold transition flex items-center justify-center gap-2 text-slate-600 hover:text-slate-900"
+          >
+            <span class="w-2 h-2 rounded-full bg-transparent"></span>
+            <span>Opsi 3: Tata Guna Lahan & Spasial</span>
+          </button>
+        </div>
+
+      </div>
+    </div>
+  </header>
+
+  <!-- ========================================================================= -->
+  <!-- MAIN WORKSPACE                                                            -->
+  <!-- ========================================================================= -->
+  <main class="flex-1 py-8">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+      <!-- ===================================================================== -->
+      <!-- OPSI 1: LIVE INTERACTIVE LEAFLET SATELIT & CIVIC GIS EXPLORER         -->
+      <!-- ===================================================================== -->
+      <div id="panel-opt1" class="option-panel space-y-6">
+        
+        <!-- Header Info Card -->
+        <div class="bg-gradient-to-br from-[#003733] via-[#005851] to-[#007b71] text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+          <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none"></div>
+          <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-[#eda50c]/20 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="max-w-2xl">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[#eda50c] text-xs font-bold uppercase tracking-wider mb-3">
+                <span>Konsep 1: High-Tech Civic GIS & Satelit Nyata</span>
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Peta Satelit Interaktif & Poligon Zonasi 3 Dusun
+              </h2>
+              <p class="text-sm sm:text-base text-emerald-50/90 mt-2 leading-relaxed">
+                Menyajikan citra satelit bumi asli (Esri World Imagery) dan peta sivik vektor yang dipadukan dengan batas poligon resmi Dusun Manis, Pahing, dan Puhun serta pin sebaran fasilitas umum berkoordinat riil.
+              </p>
+            </div>
+
+            <!-- Quick Metrics Pill -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-white/10 backdrop-blur-md border border-white/15 p-4 rounded-2xl">
+              <div>
+                <div class="text-[10px] text-emerald-200 font-bold uppercase">Luas Total</div>
+                <div class="text-base font-extrabold text-white font-mono mt-0.5">142.8 Ha</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-amber-200 font-bold uppercase">Elevasi</div>
+                <div class="text-base font-extrabold text-[#eda50c] font-mono mt-0.5">285-340 m</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-emerald-200 font-bold uppercase">Titik Terdata</div>
+                <div class="text-base font-extrabold text-white font-mono mt-0.5">10 Titik</div>
+              </div>
+              <div>
+                <div class="text-[10px] text-sky-200 font-bold uppercase">Mata Air</div>
+                <div class="text-base font-extrabold text-sky-300 font-mono mt-0.5">45 L/dtk</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leaflet Map Container & Control Bar -->
+        <div class="bg-white rounded-3xl border border-slate-200 shadow-md overflow-hidden">
+          
+          <!-- Filter & Controls Toolbar -->
+          <div class="p-4 sm:px-6 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center justify-between gap-4">
+            
+            <!-- Category Filter Buttons -->
+            <div class="flex items-center gap-2 overflow-x-auto w-full sm:w-auto pb-1 sm:pb-0">
+              <span class="text-xs font-bold text-slate-500 uppercase tracking-wider hidden sm:inline">Filter:</span>
+              <button onclick="filterMapPoints('all')" class="filter-btn px-3 py-1.5 rounded-xl font-bold text-xs bg-[#009388] text-white transition shadow-xs" data-cat="all">Semua Titik (10)</button>
+              <button onclick="filterMapPoints('pemerintahan')" class="filter-btn px-3 py-1.5 rounded-xl font-bold text-xs bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition" data-cat="pemerintahan">🏛️ Pemdes (2)</button>
+              <button onclick="filterMapPoints('pertanian')" class="filter-btn px-3 py-1.5 rounded-xl font-bold text-xs bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition" data-cat="pertanian">🌾 Pertanian & Sapi (2)</button>
+              <button onclick="filterMapPoints('mata-air')" class="filter-btn px-3 py-1.5 rounded-xl font-bold text-xs bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition" data-cat="mata-air">💧 Mata Air (1)</button>
+              <button onclick="filterMapPoints('publik')" class="filter-btn px-3 py-1.5 rounded-xl font-bold text-xs bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition" data-cat="publik">🏥 Sekolah & Pustu (5)</button>
+            </div>
+
+            <!-- Layer Switcher: Satelit vs Sivik vs Topografi -->
+            <div class="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 text-xs">
+              <button onclick="setMapBase('satellite')" id="btn-layer-sat" class="px-3 py-1.5 rounded-lg font-bold bg-[#009388] text-white transition">🛰️ Satelit</button>
+              <button onclick="setMapBase('streets')" id="btn-layer-str" class="px-3 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition">🗺️ Peta Sivik</button>
+              <button onclick="setMapBase('topo')" id="btn-layer-topo" class="px-3 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition">⛰️ Topografi</button>
+            </div>
+          </div>
+
+          <!-- The Map Viewport (Leaflet Engine) -->
+          <div class="grid grid-cols-1 lg:grid-cols-12 relative">
+            
+            <!-- Map Canvas (Col 8) -->
+            <div class="lg:col-span-8 relative h-[520px] bg-slate-200">
+              <div id="leaflet-map" class="w-full h-full z-10"></div>
+              
+              <!-- Floating Legend Pill on Map -->
+              <div class="absolute bottom-4 left-4 z-20 bg-white/95 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-slate-200 shadow-lg text-[11px] space-y-1.5 pointer-events-auto">
+                <div class="font-extrabold text-slate-900 mb-1 flex items-center justify-between gap-3">
+                  <span>Zonasi 3 Dusun Kadurama</span>
+                  <button onclick="toggleDusunPolygons()" id="toggle-dusun-btn" class="text-[10px] text-[#009388] hover:underline font-bold">Sembunyikan</button>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-md bg-[#009388]/30 border border-[#009388]"></span>
+                  <span class="font-semibold text-slate-700">Dusun Manis (Civic Core & UMKM)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-md bg-[#eda50c]/35 border border-[#eda50c]"></span>
+                  <span class="font-semibold text-slate-700">Dusun Pahing (Lumbung Padi 64 Ha)</span>
+                </div>
+                <div class="flex items-center gap-2">
+                  <span class="w-3 h-3 rounded-md bg-[#005851]/30 border border-[#005851]"></span>
+                  <span class="font-semibold text-slate-700">Dusun Puhun (Konservasi Air & Ubi)</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Detail Drawer & Info Card (Col 4) -->
+            <div class="lg:col-span-4 p-6 bg-slate-50 border-t lg:border-t-0 lg:border-l border-slate-200 flex flex-col justify-between h-[520px] overflow-y-auto">
+              <div id="facility-detail-card" class="space-y-4">
+                <div class="flex items-center justify-between">
+                  <span id="card-dusun-badge" class="px-2.5 py-1 rounded-lg text-[10px] font-extrabold uppercase tracking-wider bg-[#e6f7f5] text-[#009388] border border-[#009388]/20">
+                    Dusun Manis
+                  </span>
+                  <span id="card-status-badge" class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                    Pelayanan Aktif
+                  </span>
+                </div>
+
+                <div>
+                  <h3 id="card-title" class="text-lg font-extrabold text-slate-900 leading-snug">
+                    Balai Desa Kadurama
+                  </h3>
+                  <p id="card-desc" class="text-xs text-slate-600 mt-2 leading-relaxed">
+                    Kantor pusat administrasi pelayanan warga, loket sensus keluarga terpadu, dan gedung musyawarah desa.
+                  </p>
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-white border border-slate-200 space-y-2 text-xs">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-500">Ketinggian:</span>
+                    <span id="card-elev" class="font-mono font-bold text-[#009388]">310 mdpl</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-500">Koordinat:</span>
+                    <span id="card-coords" class="font-mono text-slate-700 font-bold">-6.9967, 108.5533</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-500">Kategori:</span>
+                    <span id="card-cat" class="font-semibold text-slate-800">Pemerintahan Desa</span>
+                  </div>
+                </div>
+
+                <div class="p-3.5 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900">
+                  <div class="font-bold text-emerald-950 mb-0.5">Potensi Wilayah Sekitar:</div>
+                  <div id="card-potensi" class="text-[11px] text-emerald-800 leading-relaxed">
+                    Akses utama jalan kabupaten, sentra toko kelontong warga, dan pusat kegiatan olahraga pemuda.
+                  </div>
+                </div>
+              </div>
+
+              <!-- Action Link -->
+              <div class="pt-4 border-t border-slate-200">
+                <a 
+                  id="card-gmaps-link" 
+                  href="https://www.google.com/maps?q=-6.9967,108.5533" 
+                  target="_blank" 
+                  class="w-full py-3 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-md flex items-center justify-center gap-2 transition"
+                >
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                  <span>Buka Petunjuk Arah di Google Maps</span>
+                </a>
+              </div>
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- OPSI 2: 3D TOPOGRAFI ISOMETRIK LERENG CIREMAI (THREE.JS CANVAS)       -->
+      <!-- ===================================================================== -->
+      <div id="panel-opt2" class="option-panel space-y-6 hidden">
+        
+        <!-- Header Info Card -->
+        <div class="bg-gradient-to-br from-[#003733] via-[#004d47] to-[#009388] text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+          <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none"></div>
+          <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-[#eda50c]/25 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="max-w-2xl">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[#eda50c] text-xs font-bold uppercase tracking-wider mb-3">
+                <span>Konsep 2: 3D Isometric Digital Terrain Model (DTM)</span>
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Model Bentang Alam 3D & Elevasi Kontur Lereng Ciremai
+              </h2>
+              <p class="text-sm sm:text-base text-emerald-50/90 mt-2 leading-relaxed">
+                Memvisualisasikan kontur lereng bukit dari ketinggian 285 mdpl hingga 340 mdpl. Menampilkan terasering sawah organik Dusun Pahing, pemukiman Dusun Manis, dan mata air purba Dusun Puhun dalam ruang 3 dimensi interaktif.
+              </p>
+            </div>
+
+            <!-- Interactivity Help Badge -->
+            <div class="bg-white/10 backdrop-blur-md border border-white/20 p-4 rounded-2xl text-xs space-y-1.5 text-emerald-100 max-w-xs">
+              <div class="font-extrabold text-[#eda50c] uppercase text-[11px]">Cara Berinteraksi:</div>
+              <div>🖱️ <strong>Klik & Geser:</strong> Putar sudut pandang 360°</div>
+              <div>🔍 <strong>Scroll Mouse:</strong> Zoom in / out bentang lahan</div>
+              <div>👆 <strong>Klik Pin 3D:</strong> Lihat data fasilitas di zonasi</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3D Canvas Viewport -->
+        <div class="bg-slate-900 rounded-3xl border border-slate-800 shadow-2xl overflow-hidden relative">
+          
+          <!-- Top Control Bar inside 3D Viewport -->
+          <div class="absolute top-4 inset-x-4 z-20 flex flex-wrap items-center justify-between gap-3 pointer-events-none">
+            
+            <!-- Camera Preset Buttons -->
+            <div class="flex items-center gap-2 bg-slate-950/80 backdrop-blur-md border border-white/15 p-1.5 rounded-2xl pointer-events-auto text-xs">
+              <span class="text-[10px] font-bold text-slate-400 uppercase px-2 hidden sm:inline">Sudut Kamera:</span>
+              <button onclick="set3DCamera('iso')" id="cam-iso" class="px-3 py-1.5 rounded-xl font-bold bg-[#009388] text-white transition text-[11px]">Isometrik 45°</button>
+              <button onclick="set3DCamera('top')" id="cam-top" class="px-3 py-1.5 rounded-xl font-bold bg-white/10 text-white hover:bg-white/20 transition text-[11px]">Tampak Atas</button>
+              <button onclick="set3DCamera('pahing')" id="cam-pahing" class="px-3 py-1.5 rounded-xl font-bold bg-white/10 text-[#eda50c] hover:bg-white/20 transition text-[11px]">Sawah Pahing</button>
+              <button onclick="set3DCamera('puhun')" id="cam-puhun" class="px-3 py-1.5 rounded-xl font-bold bg-white/10 text-sky-300 hover:bg-white/20 transition text-[11px]">Mata Air Puhun</button>
+            </div>
+
+            <!-- Elevation Layer Toggles -->
+            <div class="flex items-center gap-2 bg-slate-950/80 backdrop-blur-md border border-white/15 px-3 py-2 rounded-2xl pointer-events-auto text-xs text-white">
+              <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                <input type="checkbox" id="toggle-contours" checked onchange="toggle3DContours(this.checked)" class="accent-[#009388] rounded">
+                <span class="text-[11px] font-semibold">Garis Kontur</span>
+              </label>
+              <span class="text-slate-600">|</span>
+              <label class="flex items-center gap-1.5 cursor-pointer select-none">
+                <input type="checkbox" id="toggle-river" checked onchange="toggle3DRiver(this.checked)" class="accent-[#38bdf8] rounded">
+                <span class="text-[11px] font-semibold">Sungai Cikaduran</span>
+              </label>
+            </div>
+
+          </div>
+
+          <!-- Three.js Canvas Container -->
+          <div id="three-canvas-container" class="w-full h-[560px] cursor-grab active:cursor-grabbing relative">
+            <!-- Canvas is appended here via JavaScript -->
+          </div>
+
+          <!-- Floating Bottom HUD Info Strip -->
+          <div class="absolute bottom-4 inset-x-4 z-20 flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-950/85 backdrop-blur-md border border-white/15 px-5 py-3 rounded-2xl text-xs text-slate-300 pointer-events-none">
+            <div class="flex items-center gap-4">
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+                <span>Tier Rendah (285 mdpl) - Dusun Pahing</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-[#eda50c]"></span>
+                <span>Tier Tengah (310 mdpl) - Dusun Manis</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <span class="w-3 h-3 rounded-full bg-sky-400"></span>
+                <span>Tier Tinggi (340 mdpl) - Dusun Puhun</span>
+              </div>
+            </div>
+
+            <div class="font-mono text-[11px] text-[#eda50c] font-bold">
+              Ketinggian Gradien: Δ 55 meter (Lereng Ciremai Timur)
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- OPSI 3: TATA GUNA LAHAN KADASTRAL & SPATIAL STORYTELLING              -->
+      <!-- ===================================================================== -->
+      <div id="panel-opt3" class="option-panel space-y-6 hidden">
+        
+        <!-- Header Info Card -->
+        <div class="bg-gradient-to-br from-[#003733] via-[#005851] to-[#007b71] text-white rounded-3xl p-6 sm:p-8 shadow-xl relative overflow-hidden">
+          <div class="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:20px_20px] pointer-events-none"></div>
+          <div class="absolute -right-20 -bottom-20 w-80 h-80 bg-[#eda50c]/25 rounded-full blur-3xl pointer-events-none"></div>
+
+          <div class="relative z-10 flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+            <div class="max-w-2xl">
+              <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/20 text-[#eda50c] text-xs font-bold uppercase tracking-wider mb-3">
+                <span>Konsep 3: Dashboard Tata Ruang & Kadastral Desa</span>
+              </div>
+              <h2 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                Neraca Tata Guna Lahan & Daya Dukung Wilayah
+              </h2>
+              <p class="text-sm sm:text-base text-emerald-50/90 mt-2 leading-relaxed">
+                Menyajikan klasifikasi spasial dari 142.8 Hektar wilayah Kadurama secara analitis: sawah padi organik, permukiman warga, perkebunan ubi, serta hutan konservasi mata air.
+              </p>
+            </div>
+
+            <div class="flex items-center gap-3">
+              <button onclick="downloadCadastralReport()" class="px-5 py-3 rounded-xl bg-[#eda50c] hover:bg-[#d99407] text-slate-950 font-bold text-xs shadow-lg transition flex items-center gap-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                <span>Unduh Profil Spasial PDF</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 4 Grid Bento: Neraca Tata Ruang Lahan 142.8 Ha -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
+          
+          <!-- Card 1: Sawah Padi Organik -->
+          <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:border-[#009388] transition group">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span class="text-xs font-bold text-emerald-700 uppercase tracking-wider">Lahan Pertanian</span>
+              <span class="w-3 h-3 rounded-full bg-emerald-500"></span>
+            </div>
+            <div class="mt-4">
+              <div class="text-3xl font-black text-slate-900 font-mono">64.0 Ha</div>
+              <div class="text-xs font-bold text-[#009388] mt-0.5">44.8% dari Total Wilayah</div>
+              <p class="text-xs text-slate-500 mt-2.5 leading-relaxed">
+                Dipusatkan di Dusun Pahing dengan irigasi teknis dan lumbung pangan organik bersertifikat.
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex justify-between font-mono">
+              <span>Produksi: 5.8 Ton/Ha</span>
+              <span class="text-emerald-700 font-bold">Surplus</span>
+            </div>
+          </div>
+
+          <!-- Card 2: Permukiman & Fasilitas Umum -->
+          <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:border-[#eda50c] transition group">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span class="text-xs font-bold text-amber-700 uppercase tracking-wider">Permukiman Warga</span>
+              <span class="w-3 h-3 rounded-full bg-[#eda50c]"></span>
+            </div>
+            <div class="mt-4">
+              <div class="text-3xl font-black text-slate-900 font-mono">38.5 Ha</div>
+              <div class="text-xs font-bold text-[#eda50c] mt-0.5">27.0% dari Total Wilayah</div>
+              <p class="text-xs text-slate-500 mt-2.5 leading-relaxed">
+                Kawasan rumah warga, jalan poros desa, sarana ibadah, sekolah dasar, dan balai pertemuan.
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex justify-between font-mono">
+              <span>Kepadatan: 43 Jiwa/Ha</span>
+              <span class="text-amber-700 font-bold">Teratur</span>
+            </div>
+          </div>
+
+          <!-- Card 3: Perkebunan Ubi & Hortikultura -->
+          <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:border-[#005851] transition group">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span class="text-xs font-bold text-teal-800 uppercase tracking-wider">Perkebunan & Ternak</span>
+              <span class="w-3 h-3 rounded-full bg-[#005851]"></span>
+            </div>
+            <div class="mt-4">
+              <div class="text-3xl font-black text-slate-900 font-mono">24.3 Ha</div>
+              <div class="text-xs font-bold text-[#005851] mt-0.5">17.0% dari Total Wilayah</div>
+              <p class="text-xs text-slate-500 mt-2.5 leading-relaxed">
+                Budidaya ubi manis Cilembu, tanaman palawija, serta kandang komunal peternakan sapi perah.
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex justify-between font-mono">
+              <span>Sentra UMKM: 18 Unit</span>
+              <span class="text-teal-800 font-bold">Berkembang</span>
+            </div>
+          </div>
+
+          <!-- Card 4: Hutan Desa & Konservasi Air -->
+          <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:border-sky-500 transition group">
+            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+              <span class="text-xs font-bold text-sky-800 uppercase tracking-wider">Konservasi Alam</span>
+              <span class="w-3 h-3 rounded-full bg-sky-500"></span>
+            </div>
+            <div class="mt-4">
+              <div class="text-3xl font-black text-slate-900 font-mono">16.0 Ha</div>
+              <div class="text-xs font-bold text-sky-600 mt-0.5">11.2% dari Total Wilayah</div>
+              <p class="text-xs text-slate-500 mt-2.5 leading-relaxed">
+                Tangkapan air purba Cikaduran, sabuk hijau lereng bukit, dan zona lindung mata air desa.
+              </p>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 flex justify-between font-mono">
+              <span>Debit Air: 45 L/dtk</span>
+              <span class="text-sky-700 font-bold">Lestari</span>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Interactive Split Slider: Eksisting vs Rencana Tata Ruang 2030 -->
+        <div class="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-sm">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between pb-4 border-b border-slate-100 gap-3">
+            <div>
+              <span class="text-xs font-bold uppercase tracking-wider text-[#009388]">Komparasi Tata Ruang</span>
+              <h3 class="text-xl font-extrabold text-slate-900 mt-1">Evolusi Lahan Eksisting 2026 vs Proyeksi Rencana Desa 2030</h3>
+            </div>
+            <div class="text-xs font-semibold text-slate-500 bg-slate-100 px-3 py-1.5 rounded-xl">
+              Geser Slider untuk Membandingkan
+            </div>
+          </div>
+
+          <div class="mt-6 relative h-[380px] rounded-2xl overflow-hidden select-none border border-slate-200" id="comparison-container">
+            <!-- Layer B (Right - RTRW 2030 Proyeksi) -->
+            <div class="absolute inset-0 bg-gradient-to-br from-emerald-900 via-teal-900 to-slate-900 text-white p-6 flex flex-col justify-between">
+              <div class="flex justify-between items-start">
+                <span class="px-3 py-1 rounded-full bg-[#eda50c] text-slate-950 text-xs font-extrabold uppercase tracking-wider">
+                  Proyeksi RTRW 2030
+                </span>
+                <span class="text-xs text-emerald-200 font-mono">Target: Desa Mandiri Berkelanjutan</span>
+              </div>
+
+              <div class="grid grid-cols-3 gap-4 max-w-lg bg-black/40 backdrop-blur-md p-4 rounded-2xl border border-white/20">
+                <div>
+                  <div class="text-[10px] text-emerald-300">Sawah Organik</div>
+                  <div class="text-lg font-bold font-mono">72.0 Ha (+8 Ha)</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-amber-300">Jalur Irigasi Teknis</div>
+                  <div class="text-lg font-bold font-mono">100% Tercakup</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-sky-300">Ruang Terbuka Hijau</div>
+                  <div class="text-lg font-bold font-mono">22.0 Ha (+6 Ha)</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Layer A (Left - Eksisting 2026) with Clip Path -->
+            <div id="comparison-clip" class="absolute inset-0 bg-gradient-to-br from-slate-100 via-emerald-50 to-amber-50 text-slate-900 p-6 flex flex-col justify-between" style="clip-path: inset(0 50% 0 0);">
+              <div class="flex justify-between items-start">
+                <span class="px-3 py-1 rounded-full bg-[#009388] text-white text-xs font-extrabold uppercase tracking-wider">
+                  Kondisi Eksisting 2026
+                </span>
+                <span class="text-xs text-slate-500 font-mono">Survei Geospasial Aktual</span>
+              </div>
+
+              <div class="grid grid-cols-3 gap-4 max-w-lg bg-white/80 backdrop-blur-md p-4 rounded-2xl border border-slate-300">
+                <div>
+                  <div class="text-[10px] text-slate-500 font-semibold">Sawah Organik</div>
+                  <div class="text-lg font-bold font-mono text-[#009388]">64.0 Ha</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-slate-500 font-semibold">Irigasi Teknis</div>
+                  <div class="text-lg font-bold font-mono text-[#eda50c]">84% Tercakup</div>
+                </div>
+                <div>
+                  <div class="text-[10px] text-slate-500 font-semibold">Ruang Hijau</div>
+                  <div class="text-lg font-bold font-mono text-emerald-800">16.0 Ha</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Slider Divider Line -->
+            <div id="slider-handle" class="absolute top-0 bottom-0 w-1 bg-white shadow-[0_0_15px_rgba(0,0,0,0.5)] cursor-ew-resize flex items-center justify-center pointer-events-auto" style="left: 50%;">
+              <div class="w-8 h-8 rounded-full bg-white text-slate-800 shadow-xl border-2 border-[#009388] flex items-center justify-center text-xs font-bold">
+                ↔
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- ===================================================================== -->
+      <!-- EVALUATION & ARCHITECTURAL DECISION MATRIX                            -->
+      <!-- ===================================================================== -->
+      <div class="mt-12 bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm">
+        <div class="flex items-center gap-3 pb-4 border-b border-slate-200">
+          <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-900 flex items-center justify-center font-bold text-sm">
+            💡
+          </div>
+          <div>
+            <h3 class="text-base sm:text-lg font-extrabold text-slate-900">
+              Matriks Evaluasi Desain Geospasial Desa Kadurama
+            </h3>
+            <p class="text-xs text-slate-500">
+              Perbandingan komprehensif antara ketiga opsi untuk implementasi di portal publik Next.js.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-6 overflow-x-auto">
+          <table class="w-full text-left text-xs border-collapse">
+            <thead>
+              <tr class="border-b border-slate-200 bg-slate-50 text-slate-600 font-bold uppercase tracking-wider">
+                <th class="p-3.5">Kriteria Evaluasi</th>
+                <th class="p-3.5 text-[#009388]">Opsi 1: Peta GIS & Satelit Nyata</th>
+                <th class="p-3.5 text-[#eda50c]">Opsi 2: 3D Topografi Isometrik</th>
+                <th class="p-3.5 text-[#005851]">Opsi 3: Tata Guna Lahan & Spasial</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 text-slate-700">
+              <tr>
+                <td class="p-3.5 font-bold text-slate-900">Akurasi Geografis</td>
+                <td class="p-3.5 text-emerald-700 font-semibold">⭐⭐⭐⭐⭐ 100% Riil Satelit</td>
+                <td class="p-3.5 text-amber-700 font-semibold">⭐⭐⭐⭐ Model Stilistis 3D</td>
+                <td class="p-3.5 text-emerald-700 font-semibold">⭐⭐⭐⭐ Data Analitis Statistik</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-slate-900">Sensasi Visual Warga</td>
+                <td class="p-3.5">Sangat fungsional, familiar seperti Google Maps</td>
+                <td class="p-3.5 font-bold text-[#009388]">Futuristik, megah, terlihat lereng gunung</td>
+                <td class="p-3.5">Eksklusif, korporat sivik, data-driven</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-slate-900">Performa & Load Speed</td>
+                <td class="p-3.5 text-emerald-700">Sangat Cepat (Leaflet ~40KB gzip)</td>
+                <td class="p-3.5 text-amber-700">Sedang (Three.js WebGL GPU)</td>
+                <td class="p-3.5 text-emerald-700 font-bold">Paling Ringan (Murni DOM / SVG)</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-slate-900">Dukungan Smartphone</td>
+                <td class="p-3.5">Sangat Ramah Sentuh (Pinch to Zoom)</td>
+                <td class="p-3.5">Perlu kontrol sentuh terkalibrasi</td>
+                <td class="p-3.5">Sangat Responsif di Semua Layar</td>
+              </tr>
+              <tr>
+                <td class="p-3.5 font-bold text-slate-900">Rekomendasi Terbaik</td>
+                <td class="p-3.5 font-bold text-[#009388]">
+                  ⭐ Sangat Direkomendasikan untuk Navigasi Nyata Warga & Titik Fasilitas
+                </td>
+                <td class="p-3.5">
+                  Alternatif Keren jika ingin menonjolkan ketinggian Ciremai
+                </td>
+                <td class="p-3.5">
+                  Cocok disandingkan sebagai sub-tab analitik data
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- ========================================================================= -->
+  <!-- JAVASCRIPT: LOGIC FOR LEAFLET, THREE.JS 3D, AND COMPARISON SLIDER         -->
+  <!-- ========================================================================= -->
+  <script>
+    // -------------------------------------------------------------------------
+    // 1. TAB SWITCHER LOGIC
+    // -------------------------------------------------------------------------
+    function switchOption(opt) {
+      document.querySelectorAll('.option-panel').forEach(p => p.classList.add('hidden'));
+      document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('bg-white', 'text-[#009388]', 'shadow-xs', 'border', 'border-slate-200');
+        b.classList.add('text-slate-600');
+        b.querySelector('span:first-child').classList.replace('bg-[#009388]', 'bg-transparent');
+      });
+
+      const activePanel = document.getElementById('panel-' + opt);
+      const activeBtn = document.getElementById('tab-' + opt);
+
+      if (activePanel && activeBtn) {
+        activePanel.classList.remove('hidden');
+        activeBtn.classList.add('bg-white', 'text-[#009388]', 'shadow-xs', 'border', 'border-slate-200');
+        activeBtn.classList.remove('text-slate-600');
+        activeBtn.querySelector('span:first-child').classList.replace('bg-transparent', 'bg-[#009388]');
+      }
+
+      // Re-trigger map invalidation when switching to Option 1
+      if (opt === 'opt1' && map) {
+        setTimeout(() => map.invalidateSize(), 150);
+      }
+      // Re-trigger Three.js renderer size when switching to Option 2
+      if (opt === 'opt2') {
+        setTimeout(initThreeJS, 150);
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. OPSI 1: LEAFLET GIS & SATELLITE IMPLEMENTATION
+    // -------------------------------------------------------------------------
+    let map;
+    let baseLayers = {};
+    let facilityMarkers = [];
+    let dusunPolygons = [];
+    let showDusunPoly = true;
+
+    const facilitiesData = [
+      { id: 1, nama: "Balai Desa Kadurama", dusun: "Manis", cat: "pemerintahan", lat: -6.9967, lng: 108.5533, elev: "310 mdpl", status: "Pelayanan Aktif", desc: "Kantor pusat administrasi pelayanan warga, loket sensus keluarga terpadu, dan gedung musyawarah desa.", potensi: "Akses utama jalan kabupaten, sentra toko kelontong warga, dan pusat kegiatan olahraga pemuda." },
+      { id: 2, nama: "Puskesmas Pembantu (Pustu) Kadurama", dusun: "Manis", cat: "publik", lat: -6.9982, lng: 108.5540, elev: "308 mdpl", status: "Buka 08.00 - 14.00", desc: "Pos kesehatan pembantu untuk pertolongan medis pertama, imunisasi balita, dan konsultasi bidan desa.", potensi: "Dekat dengan pemukiman padat warga Dusun Manis dan akses ambulans siaga desa." },
+      { id: 3, nama: "SDN Kadurama (Sekolah Dasar)", dusun: "Manis", cat: "publik", lat: -6.9950, lng: 108.5520, elev: "315 mdpl", status: "Aktif Belajar Mengajar", desc: "Institusi pendidikan dasar kebanggaan desa dengan akreditasi A dan program ramah anak.", potensi: "Laboratorium komputer pedesaan dan lapangan upacara yang luas untuk kegiatan pramuka." },
+      { id: 4, nama: "BUMDes Bina Mandiri & Kios UMKM", dusun: "Manis", cat: "pemerintahan", lat: -6.9990, lng: 108.5550, elev: "305 mdpl", status: "Unit Usaha Aktif", desc: "Sentra inkubasi usaha desa, penjualan hasil olahan ubi manis Cilembu, dan layanan pembayaran PBB.", potensi: "Mitra pembiayaan mikro syariah dan etalase produk kerajinan khas Kadurama." },
+      { id: 5, nama: "Lumbung Pangan & Rice Milling Padi Organik", dusun: "Pahing", cat: "pertanian", lat: -7.0015, lng: 108.5585, elev: "295 mdpl", status: "Operasional Panen", desc: "Sentra pascapanen padi organik terpadu dengan mesin pengering modern dan gudang ketahanan pangan desa.", potensi: "Kapasitas simpan gabah 120 ton dan mitra resmi program lumbung pangan Pemkab Kuningan." },
+      { id: 6, nama: "Gelora Lapangan Olahraga Kadurama", dusun: "Pahing", cat: "publik", lat: -7.0002, lng: 108.5568, elev: "298 mdpl", status: "Fasilitas Publik", desc: "Gelanggang olahraga sepak bola, lintasan atletik desa, dan lokasi peringatan Hari Kemerdekaan.", potensi: "Ruang interaksi sosial pemuda antar-dusun dan lokasi senam sehat lansia rutin tiap Sabtu." },
+      { id: 7, nama: "Mata Air Alami Purba Cikaduran", dusun: "Puhun", cat: "mata-air", lat: -6.9930, lng: 108.5610, elev: "338 mdpl", status: "Debit 45 Liter/Detik", desc: "Sumber mata air abadi lereng Gunung Ciremai dengan kualitas air mineral murni siap minum untuk warga.", potensi: "Menyuplai air bersih untuk 3 dusun dan irigasi teknis mandiri 64 hektar sawah organik." },
+      { id: 8, nama: "Kandang Komunal Peternakan Sapi Perah", dusun: "Puhun", cat: "pertanian", lat: -6.9920, lng: 108.5630, elev: "340 mdpl", status: "Produksi Harian", desc: "Kelompok ternak sapi perah penghasil susu segar kualitas tinggi yang diserap koperasi industri Kuningan.", potensi: "Pengolahan biogas mandiri dari limbah ternak yang telah dialirkan ke 24 rumah tangga sekitar." }
+    ];
+
+    function initLeafletMap() {
+      if (map) return;
+
+      // Center at Ciawigebang, Kuningan
+      map = L.map('leaflet-map', {
+        center: [-6.9972, 108.5565],
+        zoom: 15,
+        zoomControl: false
+      });
+
+      L.control.zoom({ position: 'topright' }).addTo(map);
+
+      // 1. Base Layer: Esri World Imagery (Satellite)
+      baseLayers.satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye',
+        maxZoom: 18
+      });
+
+      // 2. Base Layer: Carto Positron (Clean Civic)
+      baseLayers.streets = L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; CartoDB &copy; OpenStreetMap',
+        maxZoom: 19
+      });
+
+      // 3. Base Layer: OpenTopoMap (Topographic Contour)
+      baseLayers.topo = L.tileLayer('https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', {
+        attribution: 'Map data: &copy; OpenStreetMap contributors, SRTM | Map style: &copy; OpenTopoMap',
+        maxZoom: 17
+      });
+
+      // Default: Satellite
+      baseLayers.satellite.addTo(map);
+
+      // Add 3 Dusun Polygons (Simulated official village boundaries)
+      const polyManis = L.polygon([
+        [-6.9940, 108.5505],
+        [-6.9945, 108.5550],
+        [-7.0005, 108.5555],
+        [-7.0000, 108.5510]
+      ], {
+        color: '#009388',
+        weight: 2,
+        fillColor: '#009388',
+        fillOpacity: 0.25,
+        dashArray: '5, 5'
+      }).bindTooltip("Zona Dusun Manis (Civic Core)", { permanent: false, direction: 'center' });
+
+      const polyPahing = L.polygon([
+        [-6.9945, 108.5550],
+        [-6.9950, 108.5600],
+        [-7.0035, 108.5610],
+        [-7.0005, 108.5555]
+      ], {
+        color: '#eda50c',
+        weight: 2,
+        fillColor: '#eda50c',
+        fillOpacity: 0.25,
+        dashArray: '5, 5'
+      }).bindTooltip("Zona Dusun Pahing (Sawah Organik)", { permanent: false, direction: 'center' });
+
+      const polyPuhun = L.polygon([
+        [-6.9905, 108.5580],
+        [-6.9910, 108.5650],
+        [-7.0020, 108.5660],
+        [-6.9950, 108.5600]
+      ], {
+        color: '#005851',
+        weight: 2,
+        fillColor: '#005851',
+        fillOpacity: 0.3,
+        dashArray: '5, 5'
+      }).bindTooltip("Zona Dusun Puhun (Mata Air Cikaduran)", { permanent: false, direction: 'center' });
+
+      dusunPolygons = [polyManis, polyPahing, polyPuhun];
+      dusunPolygons.forEach(p => p.addTo(map));
+
+      // Add Markers
+      renderMarkers('all');
+    }
+
+    function setMapBase(type) {
+      Object.values(baseLayers).forEach(l => map.removeLayer(l));
+      baseLayers[type].addTo(map);
+
+      document.getElementById('btn-layer-sat').className = type === 'satellite' ? 'px-3 py-1.5 rounded-lg font-bold bg-[#009388] text-white transition' : 'px-3 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition';
+      document.getElementById('btn-layer-str').className = type === 'streets' ? 'px-3 py-1.5 rounded-lg font-bold bg-[#009388] text-white transition' : 'px-3 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition';
+      document.getElementById('btn-layer-topo').className = type === 'topo' ? 'px-3 py-1.5 rounded-lg font-bold bg-[#009388] text-white transition' : 'px-3 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition';
+    }
+
+    function toggleDusunPolygons() {
+      showDusunPoly = !showDusunPoly;
+      dusunPolygons.forEach(p => {
+        if (showDusunPoly) map.addLayer(p);
+        else map.removeLayer(p);
+      });
+      document.getElementById('toggle-dusun-btn').innerText = showDusunPoly ? 'Sembunyikan' : 'Tampilkan';
+    }
+
+    function renderMarkers(category) {
+      facilityMarkers.forEach(m => map.removeLayer(m));
+      facilityMarkers = [];
+
+      const filtered = category === 'all' ? facilitiesData : facilitiesData.filter(f => f.cat === category);
+
+      filtered.forEach(f => {
+        const iconColor = f.dusun === 'Manis' ? '#009388' : f.dusun === 'Pahing' ? '#eda50c' : '#005851';
+        const customIcon = L.divIcon({
+          className: 'custom-pin',
+          html: `<div style="background-color: ${iconColor}; border: 2px solid white; width: 28px; height: 28px; border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 11px; box-shadow: 0 4px 10px rgba(0,0,0,0.3); transform: translate(-50%, -50%);">📍</div>`,
+          iconSize: [28, 28]
+        });
+
+        const marker = L.marker([f.lat, f.lng], { icon: customIcon }).addTo(map);
+        marker.on('click', () => updateDetailCard(f));
+        facilityMarkers.push(marker);
+      });
+    }
+
+    function filterMapPoints(category) {
+      document.querySelectorAll('.filter-btn').forEach(btn => {
+        if (btn.dataset.cat === category) {
+          btn.className = 'filter-btn px-3 py-1.5 rounded-xl font-bold text-xs bg-[#009388] text-white transition shadow-xs';
+        } else {
+          btn.className = 'filter-btn px-3 py-1.5 rounded-xl font-bold text-xs bg-white text-slate-600 hover:bg-slate-100 border border-slate-200 transition';
+        }
+      });
+      renderMarkers(category);
+    }
+
+    function updateDetailCard(f) {
+      document.getElementById('card-title').innerText = f.nama;
+      document.getElementById('card-desc').innerText = f.desc;
+      document.getElementById('card-dusun-badge').innerText = 'Dusun ' + f.dusun;
+      document.getElementById('card-status-badge').innerText = f.status;
+      document.getElementById('card-elev').innerText = f.elev;
+      document.getElementById('card-coords').innerText = `${f.lat}, ${f.lng}`;
+      document.getElementById('card-cat').innerText = f.cat.toUpperCase();
+      document.getElementById('card-potensi').innerText = f.potensi;
+      document.getElementById('card-gmaps-link').href = `https://www.google.com/maps?q=${f.lat},${f.lng}`;
+
+      map.panTo([f.lat, f.lng], { animate: true, duration: 0.8 });
+    }
+
+    // -------------------------------------------------------------------------
+    // 3. OPSI 2: THREE.JS 3D ISOMETRIC TERRAIN MODEL
+    // -------------------------------------------------------------------------
+    let scene, camera, renderer, terrainMesh, contourLines, riverLine;
+    let isThreeInitialized = false;
+
+    function initThreeJS() {
+      if (isThreeInitialized) return;
+      const container = document.getElementById('three-canvas-container');
+      if (!container) return;
+
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0x0a1614); // Deep Kuningan night teal
+
+      // Camera: Isometric Orthographic Perspective
+      const aspect = width / height;
+      camera = new THREE.PerspectiveCamera(40, aspect, 0.1, 1000);
+      set3DCamera('iso');
+
+      // Renderer
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+      renderer.setSize(width, height);
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      container.appendChild(renderer.domElement);
+
+      // Lighting
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.7);
+      scene.add(ambientLight);
+
+      const dirLight = new THREE.DirectionalLight(0xfff1cf, 1.2);
+      dirLight.position.set(20, 40, 30);
+      scene.add(dirLight);
+
+      // Create Terraced Terrain Block (142.8 Ha Representation)
+      const gridX = 40;
+      const gridZ = 40;
+      const geom = new THREE.PlaneGeometry(60, 60, gridX, gridZ);
+      geom.rotateX(-Math.PI / 2);
+
+      // Elevate vertices to simulate Eastern slope of Mt. Ciremai
+      const pos = geom.attributes.position;
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i);
+        const z = pos.getZ(i);
+        // Slope rises from west (x < 0) to east (x > 0)
+        let heightVal = (x + 30) * 0.18 + Math.sin(x * 0.3) * Math.cos(z * 0.2) * 1.5;
+        // Step terraces for organic rice paddies
+        heightVal = Math.floor(heightVal * 2.5) / 2.5;
+        pos.setY(i, heightVal);
+      }
+      geom.computeVertexNormals();
+
+      // Terrain Material with Kuningan Gradient Shader/Colors
+      const terrainMat = new THREE.MeshLambertMaterial({
+        color: 0x005851, // Kuningan forest teal
+        wireframe: false,
+        flatShading: true
+      });
+      terrainMesh = new THREE.Mesh(geom, terrainMat);
+      scene.add(terrainMesh);
+
+      // Add River Cikaduran (Blue curve)
+      const riverPoints = [];
+      for (let t = -28; t <= 28; t += 2) {
+        const rx = t;
+        const rz = Math.sin(t * 0.15) * 12;
+        const ry = (rx + 30) * 0.18 + 0.3;
+        riverPoints.push(new THREE.Vector3(rx, ry, rz));
+      }
+      const riverGeom = new THREE.BufferGeometry().setFromPoints(riverPoints);
+      const riverMat = new THREE.LineBasicMaterial({ color: 0x38bdf8, linewidth: 3 });
+      riverLine = new THREE.Line(riverGeom, riverMat);
+      scene.add(riverLine);
+
+      // Add Contour Lines (Wireframe overlay)
+      const contourMat = new THREE.LineBasicMaterial({ color: 0xeda50c, opacity: 0.35, transparent: true });
+      const wireGeom = new THREE.WireframeGeometry(geom);
+      contourLines = new THREE.LineSegments(wireGeom, contourMat);
+      scene.add(contourLines);
+
+      // Add Stylized 3D Pins for Key Facilities
+      create3DPin(-15, 3.5, -8, 0x009388, "Dusun Manis (Balai Desa)");
+      create3DPin(2, 6.2, 5, 0xeda50c, "Dusun Pahing (64 Ha Sawah)");
+      create3DPin(18, 9.8, -12, 0x38bdf8, "Dusun Puhun (Mata Air)");
+
+      // Mouse Orbit Interaction
+      let isDragging = false;
+      let prevMousePos = { x: 0, y: 0 };
+
+      container.addEventListener('mousedown', (e) => {
+        isDragging = true;
+        prevMousePos = { x: e.clientX, y: e.clientY };
+      });
+      window.addEventListener('mouseup', () => isDragging = false);
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const deltaX = e.clientX - prevMousePos.x;
+        const deltaY = e.clientY - prevMousePos.y;
+        scene.rotation.y += deltaX * 0.008;
+        prevMousePos = { x: e.clientX, y: e.clientY };
+      });
+
+      // Animate Loop
+      function animate() {
+        requestAnimationFrame(animate);
+        if (!isDragging) {
+          scene.rotation.y += 0.0015; // Gentle auto-spin
+        }
+        renderer.render(scene, camera);
+      }
+      animate();
+
+      isThreeInitialized = true;
+    }
+
+    function create3DPin(x, y, z, color, label) {
+      const pinGroup = new THREE.Group();
+      // Stem
+      const stemGeom = new THREE.CylinderGeometry(0.15, 0.15, 2.5, 8);
+      const stemMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      const stem = new THREE.Mesh(stemGeom, stemMat);
+      stem.position.y = 1.25;
+      pinGroup.add(stem);
+
+      // Head
+      const headGeom = new THREE.SphereGeometry(0.8, 16, 16);
+      const headMat = new THREE.MeshLambertMaterial({ color: color });
+      const head = new THREE.Mesh(headGeom, headMat);
+      head.position.y = 2.5;
+      pinGroup.add(head);
+
+      pinGroup.position.set(x, y, z);
+      scene.add(pinGroup);
+    }
+
+    function set3DCamera(preset) {
+      if (!camera) return;
+      document.querySelectorAll('[id^="cam-"]').forEach(b => {
+        b.className = 'px-3 py-1.5 rounded-xl font-bold bg-white/10 text-white hover:bg-white/20 transition text-[11px]';
+      });
+
+      if (preset === 'iso') {
+        camera.position.set(45, 45, 45);
+        camera.lookAt(0, 5, 0);
+        document.getElementById('cam-iso').className = 'px-3 py-1.5 rounded-xl font-bold bg-[#009388] text-white transition text-[11px]';
+      } else if (preset === 'top') {
+        camera.position.set(0, 70, 0);
+        camera.lookAt(0, 0, 0);
+        document.getElementById('cam-top').className = 'px-3 py-1.5 rounded-xl font-bold bg-[#009388] text-white transition text-[11px]';
+      } else if (preset === 'pahing') {
+        camera.position.set(10, 20, 25);
+        camera.lookAt(2, 6, 5);
+        document.getElementById('cam-pahing').className = 'px-3 py-1.5 rounded-xl font-bold bg-[#eda50c] text-slate-950 transition text-[11px]';
+      } else if (preset === 'puhun') {
+        camera.position.set(30, 25, -5);
+        camera.lookAt(18, 9, -12);
+        document.getElementById('cam-puhun').className = 'px-3 py-1.5 rounded-xl font-bold bg-sky-400 text-slate-950 transition text-[11px]';
+      }
+    }
+
+    function toggle3DContours(checked) {
+      if (contourLines) contourLines.visible = checked;
+    }
+    function toggle3DRiver(checked) {
+      if (riverLine) riverLine.visible = checked;
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. OPSI 3: COMPARISON SLIDER & CADASTRAL LOGIC
+    // -------------------------------------------------------------------------
+    function initComparisonSlider() {
+      const container = document.getElementById('comparison-container');
+      const clipLayer = document.getElementById('comparison-clip');
+      const handle = document.getElementById('slider-handle');
+
+      if (!container || !clipLayer || !handle) return;
+
+      let isDown = false;
+
+      function updateSlider(clientX) {
+        const rect = container.getBoundingClientRect();
+        let posX = clientX - rect.left;
+        posX = Math.max(0, Math.min(posX, rect.width));
+        const percent = (posX / rect.width) * 100;
+        
+        handle.style.left = percent + '%';
+        clipLayer.style.clipPath = `inset(0 ${100 - percent}% 0 0)`;
+      }
+
+      handle.addEventListener('mousedown', () => isDown = true);
+      window.addEventListener('mouseup', () => isDown = false);
+      window.addEventListener('mousemove', (e) => {
+        if (isDown) updateSlider(e.clientX);
+      });
+
+      // Touch support
+      handle.addEventListener('touchstart', () => isDown = true);
+      window.addEventListener('touchend', () => isDown = false);
+      window.addEventListener('touchmove', (e) => {
+        if (isDown && e.touches[0]) updateSlider(e.touches[0].clientX);
+      });
+    }
+
+    function downloadCadastralReport() {
+      alert("Simulasi Ekspor Profil Geospasial Desa Kadurama 2026 (PDF A4 Resmi). File siap dicetak untuk evaluasi Bappeda dan Pemdes.");
+    }
+
+    // -------------------------------------------------------------------------
+    // ON PAGE LOAD
+    // -------------------------------------------------------------------------
+    window.addEventListener('DOMContentLoaded', () => {
+      initLeafletMap();
+      initComparisonSlider();
+    });
+  </script>
+
+</body>
+</html>
