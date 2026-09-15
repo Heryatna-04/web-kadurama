@@ -83,7 +83,7 @@ export interface AuditLog {
   actor_email: string;
   actor_name: string;
   actor_role: string;
-  action: "CREATE" | "UPDATE" | "DELETE" | "RESTORE" | "LOGIN";
+  action: "CREATE" | "UPDATE" | "DELETE" | "RESTORE" | "LOGIN" | "IMPORT";
   entity_type: "residents" | "sensus_kk" | "news_articles" | "apbdes_sectors" | "aparatur_users";
   entity_id: string;
   description: string;

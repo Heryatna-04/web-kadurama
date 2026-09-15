@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import * as XLSX from "xlsx";
 import { createClient } from "@/lib/supabase/client";
 import { recordAuditLog } from "@/lib/supabase/audit";
 import {
@@ -39,6 +40,10 @@ import {
   AlertTriangle,
   Camera,
   RefreshCw,
+  Upload,
+  FileText,
+  CheckCircle2,
+  Database,
 } from "lucide-react";
 
 export default function MasterPanelPage() {
@@ -100,6 +105,19 @@ export default function MasterPanelPage() {
   const [editingResident, setEditingResident] = useState<Resident | null>(null);
 
   const [selectedSensusForPdf, setSelectedSensusForPdf] = useState<SensusKK | null>(null);
+
+  // Modal Impor Excel (Dukcapil SIAK)
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importFileName, setImportFileName] = useState("");
+  const [importParsedResidents, setImportParsedResidents] = useState<Resident[]>([]);
+  const [importParsedSensus, setImportParsedSensus] = useState<any[]>([]);
+  const [importDefaultDusun, setImportDefaultDusun] = useState<"Manis" | "Pahing" | "Wage">("Wage");
+  const [importDefaultRt, setImportDefaultRt] = useState("01");
+  const [importDefaultRw, setImportDefaultRw] = useState("01");
+  const [importCreateSensusKK, setImportCreateSensusKK] = useState(true);
+  const [isProcessingImport, setIsProcessingImport] = useState(false);
+  const [importError, setImportError] = useState("");
+  const [importPreviewTab, setImportPreviewTab] = useState<"warga" | "kk">("warga");
 
   // Toast Notifikasi
   const [toastMessage, setToastMessage] = useState<string | null>(null);
@@ -660,6 +678,284 @@ export default function MasterPanelPage() {
   };
 
   // --------------------------------------------------------------------------
+  // 3B. HANDLER IMPOR OTOMATIS BERKAS EXCEL DUKCAPIL
+  // --------------------------------------------------------------------------
+  const parseExcelDate = (serial: any): string => {
+    if (typeof serial === "number") {
+      const utc_days = Math.floor(serial - 25569);
+      const utc_value = utc_days * 86400;
+      const date_info = new Date(utc_value * 1000);
+      const y = date_info.getUTCFullYear();
+      const m = String(date_info.getUTCMonth() + 1).padStart(2, "0");
+      const d = String(date_info.getUTCDate()).padStart(2, "0");
+      return `${d}-${m}-${y}`;
+    }
+    return String(serial || "").trim();
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setImportError("");
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setImportFileName(file.name);
+    const reader = new FileReader();
+
+    reader.onload = (evt) => {
+      try {
+        const bstr = evt.target?.result;
+        const wb = XLSX.read(bstr, { type: "binary" });
+        const wsName = wb.SheetNames[0];
+        const ws = wb.Sheets[wsName];
+        const rawData: any[] = XLSX.utils.sheet_to_json(ws);
+
+        if (!rawData || rawData.length === 0) {
+          setImportError("File Excel kosong atau tidak terbaca.");
+          return;
+        }
+
+        // Hitung anggota keluarga per No KK
+        const familyCountMap: Record<string, number> = {};
+        rawData.forEach((row) => {
+          const noKk = String(row.NO_KK || row.no_kk || "").trim();
+          if (noKk) {
+            familyCountMap[noKk] = (familyCountMap[noKk] || 0) + 1;
+          }
+        });
+
+        const targetDusun =
+          currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all"
+            ? (currentUser.dusun as "Manis" | "Pahing" | "Wage")
+            : importDefaultDusun;
+
+        // Parse Residents
+        const parsedResidents: Resident[] = [];
+        const parsedSensusList: any[] = [];
+        const processedKkSet = new Set<string>();
+
+        rawData.forEach((row) => {
+          const nik = String(row.NIK || row.nik || "").trim();
+          const noKk = String(row.NO_KK || row.no_kk || "").trim();
+          const nama = String(row.NAMA || row.nama || "").trim().toUpperCase();
+
+          if (!nik || !nama) return;
+
+          // Deteksi JK
+          const rawJk = String(row.JK || row.KODE_JK || "").toUpperCase();
+          const jenisKelamin: "Laki-laki" | "Perempuan" =
+            rawJk === "P" || rawJk === "2" || rawJk.includes("PEREMPUAN")
+              ? "Perempuan"
+              : "Laki-laki";
+
+          // Deteksi TTL
+          const tmptLhr = String(row.TMPT_LHR || row.tempat_lahir || "Kuningan").trim();
+          const tglLhr = parseExcelDate(row.TGL_LHR || row.tanggal_lahir);
+          const ttl = tmptLhr ? `${tmptLhr}, ${tglLhr}` : tglLhr;
+
+          // Deteksi RT & RW
+          const rawRt = String(row.RT || row.rt || "").trim();
+          const rawRw = String(row.RW || row.rw || "").trim();
+          const rt = rawRt ? rawRt.padStart(2, "0") : importDefaultRt.padStart(2, "0");
+          const rw = rawRw ? rawRw.padStart(2, "0") : importDefaultRw.padStart(2, "0");
+
+          // Deteksi Dusun
+          let dusunRow: "Manis" | "Pahing" | "Wage" = targetDusun;
+          const rtNum = parseInt(rt, 10);
+          if (!isNaN(rtNum) && rawRt) {
+            if (rtNum >= 1 && rtNum <= 7) dusunRow = "Manis";
+            else if (rtNum >= 8 && rtNum <= 14) dusunRow = "Pahing";
+            else if (rtNum >= 15 && rtNum <= 21) dusunRow = "Wage";
+          }
+
+          const rawAlamat = String(row.ALAMAT || row.alamat || "").trim();
+          const alamat =
+            rawAlamat && rawAlamat !== "KADURAMA"
+              ? `${rawAlamat}, Dusun ${dusunRow}`
+              : `Dusun ${dusunRow} RT ${rt} / RW ${rw}, Desa Kadurama`;
+
+          const shdk = String(row.SHDK || row.hubungan_keluarga || "Anggota Keluarga").trim();
+          const pekerjaan = String(row.PEKERJAAN || row.pekerjaan || "Lainnya").trim();
+          const status = String(row.STATUS || row.status_perkawinan || "Kawin").trim();
+          const agama = String(row.AGAMA || row.agama || "Islam").trim();
+
+          const residentItem: Resident = {
+            nik,
+            noKk: noKk || "3208100000000000",
+            nama,
+            ttl,
+            jenisKelamin,
+            pekerjaan,
+            agama,
+            statusPerkawinan: status,
+            hubunganKeluarga: shdk,
+            dusun: dusunRow,
+            rt,
+            rw,
+            alamat,
+            status: "Warga Tetap",
+            syncStatus: "Tersinkronisasi",
+          };
+
+          parsedResidents.push(residentItem);
+
+          // Jika Kepala Keluarga dan belum ada di Sensus
+          const isKepalaKeluarga =
+            shdk.toLowerCase().includes("kepala") ||
+            Number(row.KODESHDK) === 1 ||
+            String(row.NAMA_KEP_KEL || "").trim().toUpperCase() === nama;
+
+          if (isKepalaKeluarga && noKk && !processedKkSet.has(noKk)) {
+            processedKkSet.add(noKk);
+            parsedSensusList.push({
+              id: `SN-${noKk.slice(-4)}-${Math.floor(1000 + Math.random() * 9000)}`,
+              no_kk: noKk,
+              nik_kepala_keluarga: nik,
+              nama_kepala_keluarga: nama,
+              dusun: dusunRow,
+              rt,
+              rw,
+              alamat,
+              jumlah_anggota: familyCountMap[noKk] || 1,
+              desil: 3,
+              status_pbb: "Belum Lunas",
+              tahun_pbb: 2026,
+              nominal_pbb: 45000,
+              kondisi_rumah: "Layak Huni",
+              status_kepemilikan_rumah: "Milik Sendiri",
+              luas_lantai: 48,
+              dinding: "Tembok Permanen",
+              lantai: "Keramik / Granit",
+              atap: "Genteng Baik",
+              jamban_sanitasi: "Jamban Sendiri (Septic Tank)",
+              sumber_air: "PDAM / Sumur Bor Bersih",
+              daya_listrik: "900 VA",
+              pekerjaan_utama: pekerjaan,
+              penghasilan_bulanan: "Rp 1.000.000 - Rp 2.000.000",
+              kepemilikan_lahan: "Pekarangan Rumah",
+              kerentanan: {
+                adaLansiaTunggal: false,
+                adaBalitaStunting: false,
+                adaDisabilitas: false,
+                adaAnakPutusSekolah: false,
+              },
+              bansos_aktif: "Tidak Ada (Non-Bansos)",
+              surveyor_kadus: currentUser?.nama || "Pamong Desa",
+              tanggal_sensus: new Date().toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              }),
+              catatan_verifikasi: `Diimpor otomatis dari berkas ${file.name}`,
+              is_deleted: false,
+              version: 1,
+              created_by: currentUser?.email || "system",
+              updated_by: currentUser?.email || "system",
+            });
+          }
+        });
+
+        setImportParsedResidents(parsedResidents);
+        setImportParsedSensus(parsedSensusList);
+      } catch (err: any) {
+        console.error("Gagal membaca file Excel:", err);
+        setImportError("Gagal membaca struktur berkas Excel. Pastikan format tabel sesuai.");
+      }
+    };
+
+    reader.readAsBinaryString(file);
+  };
+
+  const handleExecuteImport = async () => {
+    if (importParsedResidents.length === 0) {
+      setImportError("Tidak ada data warga valid untuk diimpor.");
+      return;
+    }
+
+    setIsProcessingImport(true);
+    setImportError("");
+
+    try {
+      // 1. Upsert residents ke database Supabase
+      const residentPayload = importParsedResidents.map((r) => ({
+        nik: r.nik,
+        no_kk: r.noKk,
+        nama: r.nama,
+        ttl: r.ttl,
+        jenis_kelamin: r.jenisKelamin,
+        pekerjaan: r.pekerjaan,
+        agama: r.agama,
+        status_perkawinan: r.statusPerkawinan,
+        hubungan_keluarga: r.hubunganKeluarga,
+        dusun: r.dusun,
+        rt: r.rt,
+        rw: r.rw,
+        alamat: r.alamat,
+        status: "Warga Tetap",
+        sync_status: "Tersinkronisasi",
+        created_by: currentUser?.email || "system",
+        updated_by: currentUser?.email || "system",
+        is_deleted: false,
+      }));
+
+      const { error: residentErr } = await supabase
+        .from("residents")
+        .upsert(residentPayload, { onConflict: "nik" });
+
+      if (residentErr) {
+        throw new Error(`Gagal menyimpan data kependudukan: ${residentErr.message}`);
+      }
+
+      // 2. Jika opsi buat Sensus KK dicentang
+      let sensusSuccessCount = 0;
+      if (importCreateSensusKK && importParsedSensus.length > 0) {
+        const { error: sensusErr } = await supabase
+          .from("sensus_kk")
+          .upsert(importParsedSensus, { onConflict: "no_kk" });
+
+        if (!sensusErr) {
+          sensusSuccessCount = importParsedSensus.length;
+        } else {
+          console.warn("Gagal membuat data sensus otomatis:", sensusErr);
+        }
+      }
+
+      // 3. Catat Audit Trail
+      await recordAuditLog({
+        actor_email: currentUser?.email || "system",
+        actor_name: currentUser?.nama || "Pamong Desa",
+        actor_role: currentUser?.role || "master",
+        action: "IMPORT",
+        entity_type: "residents",
+        entity_id: importFileName || "excel-upload",
+        description: `Impor otomatis kependudukan: ${importParsedResidents.length} data warga & ${sensusSuccessCount} profil sensus keluarga dari berkas ${importFileName}`,
+        new_data: {
+          totalWarga: importParsedResidents.length,
+          totalKk: sensusSuccessCount,
+          fileName: importFileName,
+        },
+      });
+
+      showToast(
+        `Sukses! ${importParsedResidents.length} warga & ${sensusSuccessCount} KK berhasil diimpor.`
+      );
+
+      // Refresh data
+      await fetchAllData();
+
+      // Tutup modal & bersihkan state
+      setIsImportModalOpen(false);
+      setImportFileName("");
+      setImportParsedResidents([]);
+      setImportParsedSensus([]);
+    } catch (err: any) {
+      console.error("Error import:", err);
+      setImportError(err.message || "Terjadi kesalahan saat memproses impor data.");
+    } finally {
+      setIsProcessingImport(false);
+    }
+  };
+
+  // --------------------------------------------------------------------------
   // FILTERING LOGIC
   // --------------------------------------------------------------------------
   const filteredSensus = sensusList.filter((item) => {
@@ -1009,6 +1305,18 @@ export default function MasterPanelPage() {
                     <RefreshCw className={`w-4 h-4 ${isLoadingData ? "animate-spin text-[#009388]" : ""}`} />
                   </button>
                   <button
+                    onClick={() => {
+                      setIsImportModalOpen(true);
+                      if (currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all") {
+                        setImportDefaultDusun(currentUser.dusun as "Wage" | "Manis" | "Pahing");
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    <span>Impor Data Excel</span>
+                  </button>
+                  <button
                     onClick={handleOpenCreateSensus}
                     className="px-4 py-2.5 bg-[#009388] hover:bg-[#007b71] text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition"
                   >
@@ -1114,12 +1422,27 @@ export default function MasterPanelPage() {
                     <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
                       Tabel di database Supabase siap digunakan. Klik tombol di bawah untuk menginput survei KK pertama.
                     </p>
-                    <button
-                      onClick={handleOpenCreateSensus}
-                      className="mt-4 px-4 py-2 bg-[#009388] text-white rounded-xl text-xs font-bold hover:bg-[#007b71] transition"
-                    >
-                      + Input Sensus Pertama
-                    </button>
+                    <div className="mt-4 flex items-center justify-center gap-2">
+                      <button
+                        onClick={handleOpenCreateSensus}
+                        className="px-4 py-2 bg-[#009388] text-white rounded-xl text-xs font-bold hover:bg-[#007b71] transition flex items-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>+ Input Sensus Pertama</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsImportModalOpen(true);
+                          if (currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all") {
+                            setImportDefaultDusun(currentUser.dusun as "Wage" | "Manis" | "Pahing");
+                          }
+                        }}
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition flex items-center gap-1.5"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5" />
+                        <span>Impor File Excel</span>
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -1262,6 +1585,18 @@ export default function MasterPanelPage() {
                     <RefreshCw className={`w-4 h-4 ${isLoadingData ? "animate-spin text-[#009388]" : ""}`} />
                   </button>
                   <button
+                    onClick={() => {
+                      setIsImportModalOpen(true);
+                      if (currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all") {
+                        setImportDefaultDusun(currentUser.dusun as "Wage" | "Manis" | "Pahing");
+                      }
+                    }}
+                    className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition"
+                  >
+                    <FileSpreadsheet className="w-4 h-4" />
+                    <span>Impor File Excel (Dukcapil)</span>
+                  </button>
+                  <button
                     onClick={handleOpenCreateResident}
                     className="px-4 py-2.5 bg-[#009388] hover:bg-[#007b71] text-white rounded-xl text-xs font-bold shadow-sm flex items-center gap-2 transition"
                   >
@@ -1305,12 +1640,27 @@ export default function MasterPanelPage() {
                     <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
                       Tabel master kependudukan bersih di Supabase. Klik tombol di bawah untuk mendaftarkan warga pertama.
                     </p>
-                    <button
-                      onClick={handleOpenCreateResident}
-                      className="mt-4 px-4 py-2 bg-[#009388] text-white rounded-xl text-xs font-bold hover:bg-[#007b71] transition"
-                    >
-                      + Daftarkan Warga Pertama
-                    </button>
+                    <div className="mt-4 flex items-center justify-center gap-2">
+                      <button
+                        onClick={handleOpenCreateResident}
+                        className="px-4 py-2 bg-[#009388] text-white rounded-xl text-xs font-bold hover:bg-[#007b71] transition flex items-center gap-1.5"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>+ Daftarkan Warga Pertama</span>
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsImportModalOpen(true);
+                          if (currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all") {
+                            setImportDefaultDusun(currentUser.dusun as "Wage" | "Manis" | "Pahing");
+                          }
+                        }}
+                        className="px-4 py-2 bg-emerald-600 text-white rounded-xl text-xs font-bold hover:bg-emerald-700 transition flex items-center gap-1.5"
+                      >
+                        <FileSpreadsheet className="w-3.5 h-3.5" />
+                        <span>Impor File Excel</span>
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="overflow-x-auto">
@@ -2023,6 +2373,319 @@ export default function MasterPanelPage() {
                 <Printer className="w-4 h-4" />
                 <span>Cetak Lembar A4</span>
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL IMPOR EXCEL DUKCAPIL SIAK                                     */}
+      {/* =================================================================== */}
+      {isImportModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 max-h-[92vh] flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100 gap-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200 shrink-0">
+                  <FileSpreadsheet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-950">
+                    Impor Otomatis Kependudukan & Sensus KK (Dukcapil)
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Mendukung berkas spreadsheet SIAK Dukcapil Kuningan (format 34 kolom: NO_KK, NIK, NAMA, SHDK, JK, dll.)
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-center gap-2 shrink-0">
+                <a
+                  href="/template_kependudukan_kadurama.xlsx"
+                  download="template_kependudukan_kadurama.xlsx"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 text-[11px] font-semibold text-slate-700 bg-slate-50 hover:bg-slate-100 hover:text-slate-900 transition"
+                  title="Unduh file contoh format SIAK Dukcapil"
+                >
+                  <Download className="w-3.5 h-3.5 text-slate-500" />
+                  <span className="hidden sm:inline">Unduh Contoh (.xlsx)</span>
+                  <span className="sm:hidden">Contoh</span>
+                </a>
+                <button
+                  onClick={() => {
+                    setIsImportModalOpen(false);
+                    setImportError("");
+                  }}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Body */}
+            <div className="overflow-y-auto py-5 space-y-5 flex-1 pr-1">
+              {/* Opsi & Konfigurasi Wilayah */}
+              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
+                    1. Konfigurasi Wilayah Target & Fallback
+                  </span>
+                  {currentUser?.role === "kadus" && currentUser.dusun && (
+                    <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                      Otoritas Terkunci: Dusun {currentUser.dusun}
+                    </span>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      Dusun Target
+                    </label>
+                    <select
+                      value={importDefaultDusun}
+                      disabled={currentUser?.role === "kadus" && currentUser.dusun !== "all"}
+                      onChange={(e) => setImportDefaultDusun(e.target.value as any)}
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white font-medium text-slate-800 disabled:bg-slate-100 disabled:text-slate-500"
+                    >
+                      <option value="Wage">Dusun Wage</option>
+                      <option value="Manis">Dusun Manis</option>
+                      <option value="Pahing">Dusun Pahing</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      RT Fallback (Bila kosong)
+                    </label>
+                    <input
+                      type="text"
+                      value={importDefaultRt}
+                      onChange={(e) => setImportDefaultRt(e.target.value)}
+                      placeholder="Contoh: 01"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-800 text-center font-mono"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-600 mb-1">
+                      RW Fallback (Bila kosong)
+                    </label>
+                    <input
+                      type="text"
+                      value={importDefaultRw}
+                      onChange={(e) => setImportDefaultRw(e.target.value)}
+                      placeholder="Contoh: 01"
+                      className="w-full px-3 py-2 text-xs rounded-xl border border-slate-300 bg-white text-slate-800 text-center font-mono"
+                    />
+                  </div>
+                </div>
+
+                <div className="pt-2 border-t border-slate-200 flex items-start gap-2.5">
+                  <input
+                    type="checkbox"
+                    id="chkCreateSensusKK"
+                    checked={importCreateSensusKK}
+                    onChange={(e) => setImportCreateSensusKK(e.target.checked)}
+                    className="mt-0.5 rounded border-slate-300 text-[#009388] focus:ring-[#009388]"
+                  />
+                  <label htmlFor="chkCreateSensusKK" className="text-xs text-slate-700 select-none">
+                    <span className="font-bold text-slate-900">
+                      Otomatisasi Sensus KK:
+                    </span>{" "}
+                    Setiap baris dengan hubungan Kepala Keluarga (SHDK) otomatis didaftarkan sebagai kartu keluarga di tabel sensus_kk desa.
+                  </label>
+                </div>
+              </div>
+
+              {/* Upload Drop Area */}
+              <div>
+                <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-700 mb-2">
+                  2. Pilih Berkas Spreadsheet Dukcapil (.xlsx / .xls / .csv)
+                </label>
+                <label
+                  htmlFor="fileExcelInput"
+                  className={`border-2 border-dashed rounded-2xl p-6 flex flex-col items-center justify-center cursor-pointer transition text-center ${
+                    importFileName
+                      ? "border-emerald-500 bg-emerald-50/30"
+                      : "border-slate-300 hover:border-[#009388] hover:bg-slate-50"
+                  }`}
+                >
+                  <input
+                    id="fileExcelInput"
+                    type="file"
+                    accept=".xlsx, .xls, .csv"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                  {importFileName ? (
+                    <div className="space-y-1">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center">
+                        <CheckCircle2 className="w-6 h-6" />
+                      </div>
+                      <div className="font-bold text-sm text-slate-900">{importFileName}</div>
+                      <p className="text-xs text-emerald-700 font-medium">
+                        {importParsedResidents.length} data warga & {importParsedSensus.length} KK terdeteksi. Klik untuk mengganti berkas.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <div className="w-12 h-12 mx-auto rounded-full bg-slate-100 text-slate-500 flex items-center justify-center">
+                        <Upload className="w-6 h-6" />
+                      </div>
+                      <div className="font-bold text-sm text-slate-800">
+                        Klik atau seret file spreadsheet kemari
+                      </div>
+                      <p className="text-xs text-slate-400">
+                        Mendukung .xlsx, .xls, .csv (format SIAK Dukcapil atau Buku Induk Desa)
+                      </p>
+                    </div>
+                  )}
+                </label>
+              </div>
+
+              {/* Alert Error */}
+              {importError && (
+                <div className="p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0 text-red-600" />
+                  <span>{importError}</span>
+                </div>
+              )}
+
+              {/* Preview Tabel */}
+              {importParsedResidents.length > 0 && (
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setImportPreviewTab("warga")}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                          importPreviewTab === "warga"
+                            ? "bg-[#009388] text-white"
+                            : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                        }`}
+                      >
+                        Pratinjau Warga ({importParsedResidents.length})
+                      </button>
+                      {importCreateSensusKK && (
+                        <button
+                          type="button"
+                          onClick={() => setImportPreviewTab("kk")}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-bold transition ${
+                            importPreviewTab === "kk"
+                              ? "bg-[#009388] text-white"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                          }`}
+                        >
+                          Pratinjau Profil KK ({importParsedSensus.length})
+                        </button>
+                      )}
+                    </div>
+                    <span className="text-[11px] text-slate-400">
+                      Menampilkan sampel 10 data pertama
+                    </span>
+                  </div>
+
+                  <div className="border border-slate-200 rounded-2xl overflow-hidden max-h-56 overflow-y-auto">
+                    {importPreviewTab === "warga" ? (
+                      <table className="w-full text-left text-[11px] text-slate-700">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[9px] sticky top-0">
+                          <tr>
+                            <th className="py-2.5 px-3">NIK</th>
+                            <th className="py-2.5 px-3">No KK</th>
+                            <th className="py-2.5 px-3">Nama</th>
+                            <th className="py-2.5 px-3">JK</th>
+                            <th className="py-2.5 px-3">Hub. Keluarga</th>
+                            <th className="py-2.5 px-3">Dusun / RT / RW</th>
+                            <th className="py-2.5 px-3">Pekerjaan</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {importParsedResidents.slice(0, 10).map((r, i) => (
+                            <tr key={i} className="hover:bg-slate-50">
+                              <td className="py-2 px-3 font-mono font-bold text-slate-900">{r.nik}</td>
+                              <td className="py-2 px-3 font-mono text-slate-500">{r.noKk}</td>
+                              <td className="py-2 px-3 font-semibold text-slate-800">{r.nama}</td>
+                              <td className="py-2 px-3">{r.jenisKelamin === "Laki-laki" ? "L" : "P"}</td>
+                              <td className="py-2 px-3">{r.hubunganKeluarga}</td>
+                              <td className="py-2 px-3">{r.dusun} RT {r.rt}/{r.rw}</td>
+                              <td className="py-2 px-3 text-slate-500">{r.pekerjaan}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    ) : (
+                      <table className="w-full text-left text-[11px] text-slate-700">
+                        <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[9px] sticky top-0">
+                          <tr>
+                            <th className="py-2.5 px-3">No KK</th>
+                            <th className="py-2.5 px-3">Nama Kepala Keluarga</th>
+                            <th className="py-2.5 px-3">NIK Kepala Keluarga</th>
+                            <th className="py-2.5 px-3">Dusun / RT / RW</th>
+                            <th className="py-2.5 px-3">Anggota</th>
+                            <th className="py-2.5 px-3">Desil Awal</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100">
+                          {importParsedSensus.slice(0, 10).map((s, i) => (
+                            <tr key={i} className="hover:bg-slate-50">
+                              <td className="py-2 px-3 font-mono font-bold text-slate-900">{s.no_kk}</td>
+                              <td className="py-2 px-3 font-semibold text-slate-800">{s.nama_kepala_keluarga}</td>
+                              <td className="py-2 px-3 font-mono text-slate-500">{s.nik_kepala_keluarga}</td>
+                              <td className="py-2 px-3">{s.dusun} RT {s.rt}/{s.rw}</td>
+                              <td className="py-2 px-3">{s.jumlah_anggota} Jiwa</td>
+                              <td className="py-2 px-3 font-bold text-[#009388]">Desil {s.desil}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Modal Footer */}
+            <div className="pt-4 border-t border-slate-100 flex flex-wrap items-center justify-between gap-3">
+              <div className="text-xs text-slate-500">
+                {importParsedResidents.length > 0 ? (
+                  <span>
+                    Siap mengimpor <strong className="text-slate-800">{importParsedResidents.length}</strong> warga &{" "}
+                    <strong className="text-[#009388]">{importCreateSensusKK ? importParsedSensus.length : 0}</strong> profil KK ke Supabase.
+                  </span>
+                ) : (
+                  <span>Unggah berkas untuk melihat kalkulasi & pratinjau data.</span>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setIsImportModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 text-xs font-semibold transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="button"
+                  disabled={importParsedResidents.length === 0 || isProcessingImport}
+                  onClick={handleExecuteImport}
+                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:bg-slate-300 disabled:cursor-not-allowed text-white text-xs font-bold shadow-sm flex items-center gap-2 transition"
+                >
+                  {isProcessingImport ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan ke Supabase...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Database className="w-4 h-4" />
+                      <span>Jalankan Impor Otomatis</span>
+                    </>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
         </div>
