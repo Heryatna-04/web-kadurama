@@ -44,6 +44,12 @@ import {
   FileText,
   CheckCircle2,
   Database,
+  Eye,
+  EyeOff,
+  ArrowLeft,
+  Key,
+  Info,
+  Mail,
 } from "lucide-react";
 
 export default function MasterPanelPage() {
@@ -56,21 +62,24 @@ export default function MasterPanelPage() {
   const [currentUser, setCurrentUser] = useState<AparaturUser | null>(null);
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
-  // Form login jika belum terotentikasi
-  const [selectedRoleEmail, setSelectedRoleEmail] = useState("master@kadurama.com");
-  const [loginEmail, setLoginEmail] = useState("master@kadurama.com");
-  const [loginPassword, setLoginPassword] = useState("kadurama2026");
+  // Form login jika belum terotentikasi (Fitur Login Sungguhan)
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
+  const [showAccountGuide, setShowAccountGuide] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
 
-  const handleSelectRole = (email: string) => {
-    setSelectedRoleEmail(email);
-    setLoginEmail(email);
-    setLoginError("");
-  };
-
-  const selectedAccountInfo =
-    APARATUR_ACCOUNTS.find((a) => a.email === selectedRoleEmail) || APARATUR_ACCOUNTS[0];
+  // Modal Ubah Kata Sandi Akun
+  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
+  const [passwordForm, setPasswordForm] = useState({
+    oldPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+    error: "",
+    isSubmitting: false,
+  });
 
   // --------------------------------------------------------------------------
   // STATE NAVIGASI TAB UTAMA
@@ -132,6 +141,12 @@ export default function MasterPanelPage() {
   // --------------------------------------------------------------------------
   useEffect(() => {
     try {
+      // Baca email yang diingat
+      const rememberedEmail = localStorage.getItem("kadurama_remembered_email");
+      if (rememberedEmail) {
+        setLoginEmail(rememberedEmail);
+      }
+
       const savedSession = localStorage.getItem("kadurama_admin_session");
       if (savedSession) {
         const parsed = JSON.parse(savedSession);
@@ -258,97 +273,202 @@ export default function MasterPanelPage() {
   }, [currentUser]);
 
   // --------------------------------------------------------------------------
-  // 3. HANDLER LOGIN & LOGOUT
+  // 3. HANDLER LOGIN SUNGGUHAN, LOGOUT & GANTI PASSWORD
   // --------------------------------------------------------------------------
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoginError("");
+
+    const cleanEmail = loginEmail.trim().toLowerCase();
+    if (!cleanEmail) {
+      setLoginError("Silakan masukkan email resmi aparatur desa.");
+      return;
+    }
+    if (!loginPassword) {
+      setLoginError("Silakan masukkan kata sandi akun Anda.");
+      return;
+    }
+
     setIsSubmittingLogin(true);
 
     try {
-      // 1. Cek ke tabel aparatur_users di Supabase
-      const { data, error } = await supabase
+      // 1. Cek langsung ke tabel public.aparatur_users di database Supabase
+      const { data: user, error } = await supabase
         .from("aparatur_users")
         .select("*")
-        .eq("email", loginEmail.trim().toLowerCase())
+        .eq("email", cleanEmail)
         .single();
 
-      if (error || !data) {
-        // Fallback cek ke daftar akun lokal
-        const matchedLocal = APARATUR_ACCOUNTS.find(
-          (acc) => acc.email.toLowerCase() === loginEmail.trim().toLowerCase()
-        );
-        if (matchedLocal) {
-          localStorage.setItem("kadurama_admin_session", JSON.stringify(matchedLocal));
-          setCurrentUser(matchedLocal);
-          recordAuditLog({
-            actor_email: matchedLocal.email,
-            actor_name: matchedLocal.nama,
-            actor_role: matchedLocal.role,
-            action: "LOGIN",
-            entity_type: "aparatur_users",
-            entity_id: matchedLocal.email,
-            description: `${matchedLocal.nama} (${matchedLocal.jabatan}) berhasil login ke panel master`,
-          });
-          showToast(`Selamat datang, ${matchedLocal.nama}`);
-          return;
-        }
-
-        setLoginError("Email tidak terdaftar sebagai aparatur Pemdes Kadurama.");
+      if (error || !user) {
+        // Catat percobaan login gagal ke tabel audit_logs
+        await recordAuditLog({
+          actor_email: cleanEmail,
+          actor_name: "Tamu / Anonim",
+          actor_role: "anon",
+          action: "LOGIN",
+          entity_type: "aparatur_users",
+          entity_id: cleanEmail,
+          description: `Gagal login: Email '${cleanEmail}' tidak terdaftar di basis data aparatur desa`,
+        });
+        setLoginError("Email akun tidak terdaftar di basis data aparatur Pemdes Kadurama.");
         return;
       }
 
-      if (data.password_hash !== loginPassword && loginPassword !== "kadurama2026") {
-        setLoginError("Kata sandi yang Anda masukkan salah.");
+      if (!user.is_active) {
+        setLoginError("Akun aparatur ini berstatus non-aktif. Silakan hubungi Administrator Desa.");
         return;
       }
 
+      // 2. Verifikasi kata sandi langsung dari kolom password_hash Supabase
+      if (user.password_hash !== loginPassword) {
+        await recordAuditLog({
+          actor_email: user.email,
+          actor_name: user.nama,
+          actor_role: user.role,
+          action: "LOGIN",
+          entity_type: "aparatur_users",
+          entity_id: user.email,
+          description: `Gagal login: Kata sandi salah untuk akun ${user.nama} (${user.email})`,
+        });
+        setLoginError("Kata sandi yang Anda masukkan salah. Silakan periksa kembali huruf besar/kecil.");
+        return;
+      }
+
+      // 3. Login Valid: Bentuk sesi aparatur
       const sessionObj: AparaturUser = {
-        id: data.id,
-        email: data.email,
-        nama: data.nama,
-        role: data.role,
-        jabatan: data.jabatan,
-        dusun: data.dusun,
+        id: user.id,
+        email: user.email,
+        nama: user.nama,
+        role: user.role,
+        jabatan: user.jabatan,
+        dusun: user.dusun,
       };
 
-      localStorage.setItem("kadurama_admin_session", JSON.stringify(sessionObj));
+      localStorage.setItem(
+        "kadurama_admin_session",
+        JSON.stringify({
+          ...sessionObj,
+          loginAt: new Date().toISOString(),
+        })
+      );
+
+      if (rememberMe) {
+        localStorage.setItem("kadurama_remembered_email", user.email);
+      } else {
+        localStorage.removeItem("kadurama_remembered_email");
+      }
+
       setCurrentUser(sessionObj);
 
-      // Catat Login ke Audit Log
-      recordAuditLog({
-        actor_email: sessionObj.email,
-        actor_name: sessionObj.nama,
-        actor_role: sessionObj.role,
+      // 4. Catat riwayat login berhasil di tabel audit_logs
+      await recordAuditLog({
+        actor_email: user.email,
+        actor_name: user.nama,
+        actor_role: user.role,
         action: "LOGIN",
         entity_type: "aparatur_users",
-        entity_id: sessionObj.email,
-        description: `${sessionObj.nama} (${sessionObj.jabatan}) masuk ke panel data center`,
+        entity_id: user.email,
+        description: `${user.nama} (${user.jabatan}) berhasil login ke panel data center`,
       });
 
-      showToast(`Selamat datang, ${sessionObj.nama}`);
+      showToast(`Selamat datang kembali, ${user.nama}`);
+      fetchAllData();
     } catch (err: any) {
-      setLoginError("Terjadi kesalahan sistem autentikasi.");
+      console.error("Login error:", err);
+      setLoginError("Terjadi kendala koneksi ke server database.");
     } finally {
       setIsSubmittingLogin(false);
     }
   };
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
     if (currentUser) {
-      recordAuditLog({
-        actor_email: currentUser.email,
-        actor_name: currentUser.nama,
-        actor_role: currentUser.role,
-        action: "LOGIN",
-        entity_type: "aparatur_users",
-        entity_id: currentUser.email,
-        description: `${currentUser.nama} keluar (logout) dari panel data center`,
-      });
+      try {
+        await recordAuditLog({
+          actor_email: currentUser.email,
+          actor_name: currentUser.nama,
+          actor_role: currentUser.role,
+          action: "LOGIN",
+          entity_type: "aparatur_users",
+          entity_id: currentUser.email,
+          description: `${currentUser.nama} (${currentUser.jabatan}) keluar (logout) dari panel data center`,
+        });
+      } catch (e) {
+        console.warn("Logout audit error:", e);
+      }
     }
     localStorage.removeItem("kadurama_admin_session");
     setCurrentUser(null);
     router.push("/");
+  };
+
+  const handleChangePassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!currentUser) return;
+    if (!passwordForm.oldPassword) {
+      setPasswordForm((prev) => ({ ...prev, error: "Silakan masukkan kata sandi lama Anda." }));
+      return;
+    }
+    if (!passwordForm.newPassword || passwordForm.newPassword.length < 6) {
+      setPasswordForm((prev) => ({ ...prev, error: "Kata sandi baru minimal 6 karakter." }));
+      return;
+    }
+    if (passwordForm.newPassword !== passwordForm.confirmPassword) {
+      setPasswordForm((prev) => ({ ...prev, error: "Konfirmasi kata sandi baru tidak cocok." }));
+      return;
+    }
+
+    setPasswordForm((prev) => ({ ...prev, isSubmitting: true, error: "" }));
+
+    try {
+      const { data: user, error: fetchErr } = await supabase
+        .from("aparatur_users")
+        .select("password_hash")
+        .eq("id", currentUser.id)
+        .single();
+
+      if (fetchErr || !user || user.password_hash !== passwordForm.oldPassword) {
+        setPasswordForm((prev) => ({
+          ...prev,
+          isSubmitting: false,
+          error: "Kata sandi lama yang Anda masukkan tidak sesuai.",
+        }));
+        return;
+      }
+
+      const { error: updateErr } = await supabase
+        .from("aparatur_users")
+        .update({ password_hash: passwordForm.newPassword })
+        .eq("id", currentUser.id);
+
+      if (updateErr) throw updateErr;
+
+      await recordAuditLog({
+        actor_email: currentUser.email,
+        actor_name: currentUser.nama,
+        actor_role: currentUser.role,
+        action: "UPDATE",
+        entity_type: "aparatur_users",
+        entity_id: currentUser.email,
+        description: `${currentUser.nama} memperbarui kata sandi akun resmi`,
+      });
+
+      setIsPasswordModalOpen(false);
+      setPasswordForm({
+        oldPassword: "",
+        newPassword: "",
+        confirmPassword: "",
+        error: "",
+        isSubmitting: false,
+      });
+      showToast("Kata sandi berhasil diperbarui!");
+    } catch (err: any) {
+      setPasswordForm((prev) => ({
+        ...prev,
+        isSubmitting: false,
+        error: err.message || "Gagal memperbarui kata sandi.",
+      }));
+    }
   };
 
   // Helper Izin Ubah (Kadus hanya bisa ubah dusunnya, Master/Sekdes bisa semua)
@@ -1007,123 +1127,174 @@ export default function MasterPanelPage() {
       <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 font-sans relative overflow-hidden">
         <div className="absolute inset-0 bg-[radial-gradient(#009388_1px,transparent_1px)] [background-size:24px_24px] opacity-20" />
 
-        <div className="bg-white rounded-3xl max-w-md w-full p-8 shadow-2xl border border-slate-200 relative z-10 animate-in fade-in zoom-in-95 duration-200">
-          <div className="flex items-center justify-between pb-5 border-b border-slate-100">
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-[#e6f7f5] text-[#003733] flex items-center justify-center border border-[#009388]/30">
-                <Lock className="w-5 h-5 text-[#009388]" />
+        <div className="bg-white rounded-3xl max-w-lg w-full p-7 sm:p-9 shadow-2xl border border-slate-200 relative z-10 animate-in fade-in zoom-in-95 duration-200">
+          {/* Header Card */}
+          <div className="flex items-start justify-between pb-5 border-b border-slate-100 gap-4">
+            <div className="flex items-center gap-3.5">
+              <div className="w-12 h-12 rounded-2xl bg-[#e6f7f5] text-[#003733] flex items-center justify-center border border-[#009388]/30 shrink-0">
+                <Lock className="w-6 h-6 text-[#009388]" />
               </div>
               <div>
-                <h2 className="font-extrabold text-base text-slate-900 leading-tight">
-                  Otorisasi Data Center
+                <div className="text-[10px] font-bold uppercase tracking-wider text-[#009388]">
+                  Portal Aparatur Pemdes Kadurama
+                </div>
+                <h2 className="font-extrabold text-lg text-slate-950 leading-tight">
+                  Masuk Data Center
                 </h2>
-                <p className="text-xs text-slate-500 mt-0.5">Pemerintah Desa Kadurama • Kuningan</p>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Kecamatan Ciawigebang, Kabupaten Kuningan
+                </p>
               </div>
             </div>
-            <Link
-              href="/"
-              className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-              title="Kembali ke Beranda"
+            <button
+              onClick={() => {
+                localStorage.removeItem("kadurama_admin_session");
+                router.push("/");
+              }}
+              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition shrink-0"
+              title="Kembali ke Portal Publik"
             >
               <X className="w-5 h-5" />
-            </Link>
+            </button>
           </div>
 
           <form onSubmit={handleLoginSubmit} className="mt-5 space-y-4 text-xs">
             {loginError && (
-              <div className="p-3 bg-red-50 text-red-700 rounded-xl border border-red-200 flex items-center gap-2">
-                <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                <span>{loginError}</span>
+              <div className="p-3.5 bg-red-50 text-red-700 rounded-xl border border-red-200 flex items-start gap-2.5">
+                <AlertTriangle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">{loginError}</span>
               </div>
             )}
 
-            {/* 1. Pilih Akun / Role Pamong dari Database */}
-            <div>
-              <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                Pilih Akun / Peran Pamong (Database)
-              </label>
-              <select
-                value={selectedRoleEmail}
-                onChange={(e) => handleSelectRole(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#009388]"
-              >
-                <option value="master@kadurama.com">Super Admin • Developer & Master Admin (Semua Hak Akses)</option>
-                <option value="sekdes@kadurama.com">Sekretaris Desa • Dadang Kurnia (Verifikasi & Koordinasi)</option>
-                <option value="kadus.manis@kadurama.com">Kepala Dusun I Manis • Ahmad Dahlan</option>
-                <option value="kadus.pahing@kadurama.com">Kepala Dusun II Pahing • Rohmat Hidayat</option>
-                <option value="kadus.wage@kadurama.com">Kepala Dusun III Wage • Agus Setiawan</option>
-                <option value="keuangan@kadurama.com">Kaur Keuangan • Ismail Saleh, S.E (APBDes & Realisasi)</option>
-                <option value="kesra@kadurama.com">Kasi Kesra • Iskandar Zulkarnaen (Desil & Bansos)</option>
-                <option value="operator@kadurama.com">Operator Balai Desa • Staf Pelayanan Warga</option>
-              </select>
-            </div>
-
-            {/* Kartu Profil Akun Terpilih */}
-            {selectedAccountInfo && (
-              <div className="p-3 bg-emerald-50/80 rounded-xl border border-emerald-200/80 flex items-center justify-between text-[11px]">
-                <div>
-                  <div className="font-bold text-[#003733]">{selectedAccountInfo.nama}</div>
-                  <div className="text-slate-600 text-[10px]">{selectedAccountInfo.jabatan}</div>
-                </div>
-                <span className="px-2.5 py-1 rounded-md bg-[#003733] text-emerald-200 font-bold text-[10px] uppercase tracking-wide">
-                  {selectedAccountInfo.dusun !== "all" ? `Dusun ${selectedAccountInfo.dusun}` : "Semua Wilayah"}
-                </span>
-              </div>
-            )}
-
+            {/* Input Email Resmi */}
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                 Email Resmi Aparatur (@kadurama.com)
               </label>
-              <input
-                type="email"
-                required
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                placeholder="nama@kadurama.com"
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#009388]"
-              />
-              <span className="text-[10px] text-slate-400 mt-1 block">
-                Contoh: master@kadurama.com, sekdes@kadurama.com, kadus.wage@kadurama.com
-              </span>
+              <div className="relative">
+                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="email"
+                  required
+                  autoFocus
+                  value={loginEmail}
+                  onChange={(e) => {
+                    setLoginEmail(e.target.value);
+                    setLoginError("");
+                  }}
+                  placeholder="contoh: kadus.wage@kadurama.com"
+                  className="w-full pl-10 pr-3.5 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[#009388] transition"
+                />
+              </div>
             </div>
 
+            {/* Input Kata Sandi */}
             <div>
               <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
                 Kata Sandi
               </label>
-              <input
-                type="password"
-                required
-                value={loginPassword}
-                onChange={(e) => setLoginPassword(e.target.value)}
-                className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#009388]"
-              />
+              <div className="relative">
+                <Key className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={loginPassword}
+                  onChange={(e) => {
+                    setLoginPassword(e.target.value);
+                    setLoginError("");
+                  }}
+                  placeholder="Masukkan kata sandi..."
+                  className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-slate-300 bg-white text-slate-900 font-mono text-xs focus:outline-none focus:ring-2 focus:ring-[#009388] transition"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="p-1.5 text-slate-400 hover:text-slate-600 absolute right-2.5 top-1/2 -translate-y-1/2 transition"
+                  title={showPassword ? "Sembunyikan sandi" : "Tampilkan sandi"}
+                >
+                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
 
-            <div className="p-3 bg-[#e6f7f5] rounded-xl border border-[#009388]/20 flex items-start gap-2.5 text-[11px] text-[#005851]">
-              <ShieldCheck className="w-4 h-4 text-[#009388] flex-shrink-0 mt-0.5" />
-              <span>
-                Akun default <strong>master@kadurama.com</strong> disiapkan dengan hak akses penuh (*Super Admin*) untuk kemudahan demonstrasi dan pengujian sistem.
-              </span>
-            </div>
-
-            <div className="pt-3 flex items-center justify-between gap-3">
-              <Link
-                href="/"
-                className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold text-xs transition"
+            {/* Remember Me & Help Note */}
+            <div className="flex items-center justify-between text-[11px] pt-1 text-slate-600">
+              <label className="flex items-center gap-2 cursor-pointer select-none">
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="rounded border-slate-300 text-[#009388] focus:ring-[#009388]"
+                />
+                <span>Ingat email di perangkat ini</span>
+              </label>
+              <button
+                type="button"
+                onClick={() => setShowAccountGuide(!showAccountGuide)}
+                className="text-[#009388] hover:text-[#007b71] font-semibold underline underline-offset-2 flex items-center gap-1"
               >
-                Kembali ke Beranda
-              </Link>
+                <Info className="w-3.5 h-3.5" />
+                <span>{showAccountGuide ? "Tutup Panduan" : "Daftar Akun Pamong"}</span>
+              </button>
+            </div>
+
+            {/* Expandable Account Guide */}
+            {showAccountGuide && (
+              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 animate-in fade-in duration-150">
+                <div className="flex items-center justify-between text-[11px] font-bold text-slate-800 border-b pb-1.5 border-slate-200">
+                  <span>8 Akun Terdaftar di Database Supabase:</span>
+                  <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px]">
+                    Sandi Awal: kadurama2026
+                  </span>
+                </div>
+                <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
+                  {APARATUR_ACCOUNTS.map((acc) => (
+                    <div
+                      key={acc.email}
+                      className="p-2 rounded-xl bg-white border border-slate-200 flex items-center justify-between gap-2 hover:border-[#009388] transition"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="font-bold text-slate-900 truncate">{acc.nama}</div>
+                        <div className="text-[10px] text-slate-500 font-mono truncate">{acc.email}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setLoginEmail(acc.email);
+                          setLoginError("");
+                        }}
+                        className="px-2.5 py-1 bg-slate-100 hover:bg-[#009388] hover:text-white text-slate-700 rounded-lg text-[10px] font-semibold transition shrink-0"
+                      >
+                        Gunakan
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tombol Aksi */}
+            <div className="pt-3 flex items-center justify-between gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  localStorage.removeItem("kadurama_admin_session");
+                  router.push("/");
+                }}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-bold text-xs transition flex items-center gap-1.5"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                <span>Portal Depan</span>
+              </button>
               <button
                 type="submit"
                 disabled={isSubmittingLogin}
-                className="flex-1 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2"
+                className="flex-1 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] disabled:bg-slate-300 disabled:cursor-not-allowed text-white font-bold text-xs shadow-md transition flex items-center justify-center gap-2"
               >
                 {isSubmittingLogin ? (
                   <>
                     <RefreshCw className="w-4 h-4 animate-spin" />
-                    <span>Memverifikasi...</span>
+                    <span>Memverifikasi Kredensial...</span>
                   </>
                 ) : (
                   <>
@@ -1164,6 +1335,23 @@ export default function MasterPanelPage() {
             </div>
           </div>
 
+          {/* Tombol Kembali ke Portal Depan (Logout Sesi) */}
+          <div className="p-3 border-b border-[#005851]">
+            <button
+              onClick={handleLogout}
+              title="Kembali ke Portal Publik Warga (Otomatis Logout)"
+              className="w-full py-2 px-3 rounded-xl bg-[#002825] hover:bg-[#001f1c] text-emerald-200 hover:text-white text-xs font-semibold flex items-center justify-between border border-[#004741] transition group shadow-2xs"
+            >
+              <span className="flex items-center gap-2">
+                <ArrowLeft className="w-3.5 h-3.5 text-emerald-400 group-hover:-translate-x-0.5 transition-transform" />
+                <span>Ke Portal Publik</span>
+              </span>
+              <span className="text-[9px] uppercase font-bold text-amber-400/90 bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-700/40">
+                Logout
+              </span>
+            </button>
+          </div>
+
           {/* Menu Navigasi 5 Tab */}
           <div className="p-3 space-y-1">
             <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-200/70 px-3 py-2">
@@ -1200,20 +1388,7 @@ export default function MasterPanelPage() {
               Transparansi & Fiskal
             </div>
 
-            {/* TAB 3: MANAJEMEN KABAR DESA */}
-            <button
-              onClick={() => setActiveTab("berita")}
-              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition ${
-                activeTab === "berita"
-                  ? "bg-[#009388] text-white shadow-sm"
-                  : "text-emerald-100 hover:bg-[#005851]"
-              }`}
-            >
-              <Newspaper className="w-4 h-4" />
-              <span>Manajemen Kabar Desa</span>
-            </button>
-
-            {/* TAB 4: KELOLA APBDES 2026 */}
+            {/* TAB 3: APBDES & ANGGARAN */}
             <button
               onClick={() => setActiveTab("apbdes")}
               className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition ${
@@ -1222,8 +1397,21 @@ export default function MasterPanelPage() {
                   : "text-emerald-100 hover:bg-[#005851]"
               }`}
             >
-              <PieChart className="w-4 h-4" />
-              <span>Kelola APBDes 2026</span>
+              <PieChart className="w-4 h-4 text-emerald-300" />
+              <span>Transparansi APBDes</span>
+            </button>
+
+            {/* TAB 4: BERITA & ARTIKEL DESA */}
+            <button
+              onClick={() => setActiveTab("berita")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition ${
+                activeTab === "berita"
+                  ? "bg-[#009388] text-white shadow-sm"
+                  : "text-emerald-100 hover:bg-[#005851]"
+              }`}
+            >
+              <Newspaper className="w-4 h-4 text-emerald-300" />
+              <span>Publikasi Kabar Desa</span>
             </button>
 
             <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-200/70 px-3 pt-4 pb-2">
@@ -1264,13 +1452,33 @@ export default function MasterPanelPage() {
             </strong>
           </div>
 
-          <button
-            onClick={handleLogout}
-            className="mt-3 w-full py-2 rounded-xl bg-[#005851] hover:bg-[#004741] text-emerald-100 hover:text-white text-[11px] font-bold transition flex items-center justify-center gap-2 shadow-2xs"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Keluar / Logout</span>
-          </button>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <button
+              onClick={() => {
+                setPasswordForm({
+                  oldPassword: "",
+                  newPassword: "",
+                  confirmPassword: "",
+                  error: "",
+                  isSubmitting: false,
+                });
+                setIsPasswordModalOpen(true);
+              }}
+              className="py-2 px-2 rounded-xl bg-[#004741] hover:bg-[#005851] text-emerald-100 hover:text-white text-[10px] font-bold transition flex items-center justify-center gap-1.5 shadow-2xs"
+              title="Ganti Kata Sandi Akun Anda"
+            >
+              <Key className="w-3 h-3" />
+              <span>Ganti Sandi</span>
+            </button>
+            <button
+              onClick={handleLogout}
+              className="py-2 px-2 rounded-xl bg-red-950/50 hover:bg-red-900/60 text-red-200 hover:text-white text-[10px] font-bold transition flex items-center justify-center gap-1.5 border border-red-900/40"
+              title="Keluar dari sesi data center & kembali ke portal publik"
+            >
+              <LogOut className="w-3 h-3" />
+              <span>Logout</span>
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -2687,6 +2895,117 @@ export default function MasterPanelPage() {
                 </button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL UBAH KATA SANDI RESMI                                         */}
+      {/* =================================================================== */}
+      {isPasswordModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200 shrink-0">
+                  <Key className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-950">Ganti Kata Sandi Akun</h3>
+                  <p className="text-xs text-slate-500">{currentUser?.nama}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsPasswordModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleChangePassword} className="mt-4 space-y-3.5 text-xs">
+              {passwordForm.error && (
+                <div className="p-3 bg-red-50 text-red-700 rounded-xl border border-red-200 flex items-center gap-2">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <span>{passwordForm.error}</span>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Kata Sandi Saat Ini
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={passwordForm.oldPassword}
+                  onChange={(e) =>
+                    setPasswordForm({ ...passwordForm, oldPassword: e.target.value, error: "" })
+                  }
+                  placeholder="Masukkan kata sandi lama..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-mono text-xs focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Kata Sandi Baru (Min. 6 Karakter)
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={passwordForm.newPassword}
+                  onChange={(e) =>
+                    setPasswordForm({ ...passwordForm, newPassword: e.target.value, error: "" })
+                  }
+                  placeholder="Masukkan kata sandi baru..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-mono text-xs focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
+                  Ulangi Kata Sandi Baru
+                </label>
+                <input
+                  type="password"
+                  required
+                  value={passwordForm.confirmPassword}
+                  onChange={(e) =>
+                    setPasswordForm({ ...passwordForm, confirmPassword: e.target.value, error: "" })
+                  }
+                  placeholder="Ulangi kata sandi baru..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-white font-mono text-xs focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsPasswordModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={passwordForm.isSubmitting}
+                  className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] disabled:bg-slate-300 text-white font-bold text-xs shadow-md transition flex items-center gap-2"
+                >
+                  {passwordForm.isSubmitting ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Simpan Sandi Baru</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

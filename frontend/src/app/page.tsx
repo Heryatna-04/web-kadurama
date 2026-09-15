@@ -6,7 +6,6 @@ import Link from "next/link";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
 import { useRouter } from "next/navigation";
-import { APARATUR_ACCOUNTS } from "@/data/masterData";
 import { createClient } from "@/lib/supabase/client";
 import { recordAuditLog } from "@/lib/supabase/audit";
 import dynamic from "next/dynamic";
@@ -1550,7 +1549,6 @@ export default function Home() {
   const router = useRouter();
   // Navigation & View States
   const [view, setView] = useState<"public" | "admin">("public");
-  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeMobileSubmenu, setActiveMobileSubmenu] = useState<string | null>(null);
@@ -1867,98 +1865,7 @@ export default function Home() {
     };
   }, []);
 
-  // Auto trigger otorisasi modal bila URL memiliki query parameter ?admin=open
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      if (params.get("admin") === "open") {
-        setIsLoginModalOpen(true);
-      }
-    }
-  }, []);
-
-  // Login Form States (Connected to aparatur_users in Supabase Database)
-  const [selectedRoleEmail, setSelectedRoleEmail] = useState("master@kadurama.com");
-  const [loginEmail, setLoginEmail] = useState("master@kadurama.com");
-  const [loginPassword, setLoginPassword] = useState("kadurama2026");
-  const [loginError, setLoginError] = useState("");
-  const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
-
-  const handleSelectRole = (email: string) => {
-    setSelectedRoleEmail(email);
-    setLoginEmail(email);
-    setLoginError("");
-  };
-
-  const selectedAccountInfo =
-    APARATUR_ACCOUNTS.find((a) => a.email === selectedRoleEmail) || APARATUR_ACCOUNTS[0];
-
-  // Handler Login Submisi -> Otentikasi Supabase & Redirect ke /master
-  const handleLoginSubmit = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    setLoginError("");
-    setIsSubmittingLogin(true);
-
-    try {
-      const supabase = createClient();
-      const { data, error } = await supabase
-        .from("aparatur_users")
-        .select("*")
-        .eq("email", loginEmail.trim().toLowerCase())
-        .eq("is_active", true)
-        .single();
-
-      let matchedUser = data;
-      if (error || !matchedUser) {
-        matchedUser = APARATUR_ACCOUNTS.find(
-          (a) => a.email.toLowerCase() === loginEmail.trim().toLowerCase()
-        ) as any;
-      }
-
-      if (!matchedUser) {
-        setLoginError("Email akun tidak terdaftar di database aparatur desa.");
-        return;
-      }
-
-      if (
-        matchedUser.password_hash &&
-        matchedUser.password_hash !== loginPassword &&
-        loginPassword !== "kadurama2026"
-      ) {
-        setLoginError("Kata sandi yang Anda masukkan salah.");
-        return;
-      }
-
-      const sessionObj = {
-        id: matchedUser.id || "local-id",
-        email: matchedUser.email,
-        nama: matchedUser.nama,
-        role: matchedUser.role,
-        jabatan: matchedUser.jabatan,
-        dusun: matchedUser.dusun,
-      };
-
-      localStorage.setItem("kadurama_admin_session", JSON.stringify(sessionObj));
-
-      // Catat log audit login
-      recordAuditLog({
-        actor_email: sessionObj.email,
-        actor_name: sessionObj.nama,
-        actor_role: sessionObj.role,
-        action: "LOGIN",
-        entity_type: "aparatur_users",
-        entity_id: sessionObj.email,
-        description: `${sessionObj.nama} (${sessionObj.jabatan}) login via modal portal beranda`,
-      });
-
-      setIsLoginModalOpen(false);
-      router.push("/master");
-    } catch (err: any) {
-      setLoginError("Terjadi kendala koneksi otentikasi.");
-    } finally {
-      setIsSubmittingLogin(false);
-    }
-  };
+  
 
   // Handlers Residents
   const filteredResidents = residentsList.filter((res) => {
@@ -2366,143 +2273,6 @@ export default function Home() {
       {/* =================================================================== */}
       <CivicNavbar />
 
-      {/* =================================================================== */}
-      {/* MODAL LOGIN APARATUR DESA (DESKTOP ONLY)                           */}
-      {/* =================================================================== */}
-      {isLoginModalOpen && (
-        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 sm:p-7 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
-            <div className="flex items-center justify-between pb-4 border-b border-slate-100">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-2xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center border border-[#009388]/30">
-                  <Lock className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="font-extrabold text-base text-slate-900 leading-tight">
-                    Otorisasi Aparatur Pemdes
-                  </h3>
-                  <p className="text-[11px] text-slate-500 mt-0.5">
-                    Data Center Kependudukan & Sensus Warga
-                  </p>
-                </div>
-              </div>
-              <button
-                onClick={() => setIsLoginModalOpen(false)}
-                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form onSubmit={handleLoginSubmit} className="mt-4 space-y-3.5 text-xs">
-              {loginError && (
-                <div className="p-3 bg-red-50 text-red-700 rounded-xl border border-red-200 flex items-center gap-2">
-                  <AlertTriangle className="w-4 h-4 flex-shrink-0" />
-                  <span>{loginError}</span>
-                </div>
-              )}
-
-              {/* 1. Pilih Akun / Role Pamong dari Database */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Pilih Akun / Peran Pamong (Database)
-                </label>
-                <select
-                  value={selectedRoleEmail}
-                  onChange={(e) => handleSelectRole(e.target.value)}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-semibold focus:outline-none focus:ring-2 focus:ring-[#009388]"
-                >
-                  <option value="master@kadurama.com">Super Admin • Developer & Master Admin (Semua Hak Akses)</option>
-                  <option value="sekdes@kadurama.com">Sekretaris Desa • Dadang Kurnia (Verifikasi & Koordinasi)</option>
-                  <option value="kadus.manis@kadurama.com">Kepala Dusun I Manis • Ahmad Dahlan</option>
-                  <option value="kadus.pahing@kadurama.com">Kepala Dusun II Pahing • Rohmat Hidayat</option>
-                  <option value="kadus.wage@kadurama.com">Kepala Dusun III Wage • Agus Setiawan</option>
-                  <option value="keuangan@kadurama.com">Kaur Keuangan • Ismail Saleh, S.E (APBDes & Realisasi)</option>
-                  <option value="kesra@kadurama.com">Kasi Kesra • Iskandar Zulkarnaen (Desil & Bansos)</option>
-                  <option value="operator@kadurama.com">Operator Balai Desa • Staf Pelayanan Warga</option>
-                </select>
-              </div>
-
-              {/* Kartu Ringkasan Profil Akun Database */}
-              {selectedAccountInfo && (
-                <div className="p-3 bg-emerald-50/80 rounded-xl border border-emerald-200/80 flex items-center justify-between text-[11px]">
-                  <div>
-                    <div className="font-bold text-[#003733]">{selectedAccountInfo.nama}</div>
-                    <div className="text-slate-600 text-[10px]">{selectedAccountInfo.jabatan}</div>
-                  </div>
-                  <span className="px-2 py-0.5 rounded-md bg-[#003733] text-emerald-200 font-bold text-[10px] uppercase tracking-wide">
-                    {selectedAccountInfo.dusun !== "all" ? `Dusun ${selectedAccountInfo.dusun}` : "Semua Wilayah"}
-                  </span>
-                </div>
-              )}
-
-              {/* 2. Input Email Akun */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Email Akun Resmi (@kadurama.com)
-                </label>
-                <input
-                  type="email"
-                  required
-                  value={loginEmail}
-                  onChange={(e) => setLoginEmail(e.target.value)}
-                  placeholder="nama@kadurama.com"
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#009388]"
-                />
-              </div>
-
-              {/* 3. Input Password */}
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 uppercase tracking-wider mb-1">
-                  Kata Sandi
-                </label>
-                <input
-                  type="password"
-                  required
-                  value={loginPassword}
-                  onChange={(e) => setLoginPassword(e.target.value)}
-                  placeholder="Masukkan kata sandi..."
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 bg-slate-50 text-slate-900 font-mono focus:outline-none focus:ring-2 focus:ring-[#009388]"
-                />
-              </div>
-
-              <div className="p-2.5 bg-[#e6f7f5] rounded-xl border border-[#009388]/20 flex items-start gap-2.5 text-[11px] text-[#005851]">
-                <ShieldCheck className="w-4 h-4 text-[#009388] flex-shrink-0 mt-0.5" />
-                <span>
-                  Otentikasi terhubung langsung dengan tabel <code>aparatur_users</code> PostgreSQL Supabase dan mencatat log audit secara otomatis.
-                </span>
-              </div>
-
-              <div className="mt-5 pt-2 flex items-center justify-end gap-2.5">
-                <button
-                  type="button"
-                  onClick={() => setIsLoginModalOpen(false)}
-                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  disabled={isSubmittingLogin}
-                  className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-md transition flex items-center gap-2"
-                >
-                  {isSubmittingLogin ? (
-                    <>
-                      <RefreshCw className="w-4 h-4 animate-spin" />
-                      <span>Memverifikasi...</span>
-                    </>
-                  ) : (
-                    <>
-                      <span>Masuk ke Panel Data Center</span>
-                      <ArrowRight className="w-4 h-4" />
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
 
 
       {/* =================================================================== */}

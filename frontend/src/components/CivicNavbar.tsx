@@ -114,21 +114,16 @@ export default function CivicNavbar({ onOpenAdminLogin }: CivicNavbarProps) {
             </div>
 
             {/* Tombol Akses Aparatur: HANYA ICON GEMBOK */}
+            {/* Tombol Akses Aparatur: Direct Link ke /master */}
             <div className="hidden md:flex items-center">
-              <button
-                onClick={() => {
-                  if (onOpenAdminLogin) {
-                    onOpenAdminLogin();
-                  } else {
-                    window.location.href = "/?admin=open";
-                  }
-                }}
-                title="Otorisasi Akses Panel Aparatur Desa"
+              <Link
+                href="/master"
+                title="Masuk ke Panel Master Aparatur Desa"
                 className="p-2.5 rounded-xl border border-slate-200 bg-slate-50 hover:bg-[#e6f7f5] text-[#003733] hover:text-[#009388] hover:border-[#009388]/40 transition shadow-2xs group flex items-center justify-center"
-                aria-label="Otorisasi Panel Aparatur"
+                aria-label="Panel Master Aparatur"
               >
                 <Lock className="w-4 h-4 text-[#009388] group-hover:scale-110 transition-transform" />
-              </button>
+              </Link>
             </div>
 
             {/* Hamburger Menu untuk Mobile */}
