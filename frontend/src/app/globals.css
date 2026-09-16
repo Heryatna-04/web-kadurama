@@ -23,6 +23,26 @@ html {
   }
 }
 
+/* GPU Composite Optimization: Eliminates frame drops during anchor scroll past blurs */
+.backdrop-blur-md,
+.backdrop-blur-sm,
+.backdrop-blur-xs {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+
+/* Content-Visibility optimization for offscreen sections: cuts initial DOM paint workload */
+#profil-dusun,
+#geografis,
+#layanan-warga,
+#perangkat-desa,
+#apbdes,
+#berita,
+#lokasi-kantor {
+  content-visibility: auto;
+  contain-intrinsic-size: 1px 750px;
+}
+
 /* Print Setup for Village Administration (A4 and F4 Support) */
 @media print {
   @page {

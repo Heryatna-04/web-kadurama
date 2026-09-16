@@ -1785,125 +1785,83 @@ export default function Home() {
   const [isEditBidangModalOpen, setIsEditBidangModalOpen] = useState(false);
   const [isEditTotalsModalOpen, setIsEditTotalsModalOpen] = useState(false);
 
-  // Zero-Overhead Animation Effect (Native Hardware-Accelerated, Zero Scroll Listeners)
+  // Lazy mount for Leaflet Map to eliminate all initial bootup JS & tile downloads
+  const [isMapMounted, setIsMapMounted] = useState(false);
+  const mapSectionRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
-    let ctx: any;
-    let observer: IntersectionObserver | null = null;
-
-    const initAnimations = async () => {
-      try {
-        // Cek preferensi accessibility reduced-motion
-        if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-          return;
+    if (!mapSectionRef.current || isMapMounted) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting) {
+          setIsMapMounted(true);
+          observer.disconnect();
         }
+      },
+      { rootMargin: "350px" }
+    );
+    observer.observe(mapSectionRef.current);
+    return () => observer.disconnect();
+  }, [isMapMounted]);
 
-        const { gsap } = await import("gsap");
+  // Zero-Overhead APBDes Number Counter (Native requestAnimationFrame, 0 external bundle, 0 scroll lag)
+  useEffect(() => {
+    const apbdesEl = document.getElementById("apbdes");
+    if (!apbdesEl || typeof window === "undefined" || !("IntersectionObserver" in window)) return;
 
-        // 1. Hero Entrance Timeline (Hanya berjalan sekali saat halaman dibuka, 0 scroll overhead)
-        ctx = gsap.context(() => {
-          const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
-          tl.fromTo(
-            "#hero-badge",
-            { opacity: 0, y: -12 },
-            { opacity: 1, y: 0, duration: 0.5 }
-          )
-            .fromTo(
-              "#hero-title",
-              { opacity: 0, y: 16 },
-              { opacity: 1, y: 0, duration: 0.6 },
-              "-=0.2"
-            )
-            .fromTo(
-              "#hero-desc",
-              { opacity: 0, y: 12 },
-              { opacity: 1, y: 0, duration: 0.5 },
-              "-=0.3"
-            )
-            .fromTo(
-              "#hero-actions",
-              { opacity: 0, y: 12 },
-              { opacity: 1, y: 0, duration: 0.5 },
-              "-=0.3"
-            )
-            .fromTo(
-              "#hero-gate-card",
-              { opacity: 0, scale: 0.98, y: 16 },
-              { opacity: 1, scale: 1, y: 0, duration: 0.6 },
-              "-=0.4"
-            );
-        });
+    let hasAnimated = false;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const entry = entries[0];
+        if (entry.isIntersecting && !hasAnimated) {
+          hasAnimated = true;
+          observer.disconnect();
 
-        // 2. APBDes One-Shot Native Observer (Tidak memakai listener scroll JS sama sekali!)
-        const apbdesEl = document.getElementById("apbdes");
-        if (apbdesEl && "IntersectionObserver" in window) {
-          observer = new IntersectionObserver(
-            (entries) => {
-              const entry = entries[0];
-              if (entry.isIntersecting) {
-                // Begitu terlihat sekali, langsung disconnect agar 0 memori & 0 CPU saat scroll
-                observer?.disconnect();
-                observer = null;
+          // Animate progress bar via hardware-accelerated CSS transition
+          const barEl = document.getElementById("apbdes-progress-bar");
+          if (barEl) {
+            barEl.style.transition = "width 1.2s cubic-bezier(0.16, 1, 0.3, 1)";
+            barEl.style.width = "95.4%";
+          }
 
-                // Animate progress bar (Belanja 856.4M / Pendapatan 898.1M = 95.4%)
-                gsap.fromTo(
-                  "#apbdes-progress-bar",
-                  { width: "0%" },
-                  { width: "95.4%", duration: 1.2, ease: "power2.out" }
-                );
-
-                // Animate numbers resmi APBDes 2026
-                const pObj = { val: 0 };
-                gsap.to(pObj, {
-                  val: 898152227,
-                  duration: 1.5,
-                  ease: "power2.out",
-                  onUpdate: () => {
-                    const el = document.getElementById("apbdes-pendapatan-val");
-                    if (el) el.innerText = "Rp " + Math.floor(pObj.val).toLocaleString("id-ID");
-                  },
-                });
-
-                const bObj = { val: 0 };
-                gsap.to(bObj, {
-                  val: 856452227,
-                  duration: 1.5,
-                  ease: "power2.out",
-                  onUpdate: () => {
-                    const el = document.getElementById("apbdes-belanja-val");
-                    if (el) el.innerText = "Rp " + Math.floor(bObj.val).toLocaleString("id-ID");
-                  },
-                });
-
-                const sObj = { val: 0 };
-                gsap.to(sObj, {
-                  val: 95.4,
-                  duration: 1.5,
-                  ease: "power2.out",
-                  onUpdate: () => {
-                    const el = document.getElementById("apbdes-serapan-val");
-                    if (el) el.innerText = sObj.val.toFixed(1) + "%";
-                  },
-                });
+          const animateCounter = (
+            elId: string,
+            start: number,
+            end: number,
+            duration: number,
+            formatFn: (v: number) => string
+          ) => {
+            const el = document.getElementById(elId);
+            if (!el) return;
+            const startTime = performance.now();
+            const step = (now: number) => {
+              const elapsed = now - startTime;
+              const progress = Math.min(elapsed / duration, 1);
+              // Ease-out cubic: 1 - (1 - t)^3
+              const ease = 1 - Math.pow(1 - progress, 3);
+              const current = start + (end - start) * ease;
+              el.innerText = formatFn(current);
+              if (progress < 1) {
+                requestAnimationFrame(step);
               }
-            },
-            { threshold: 0.15 }
-          );
-          observer.observe(apbdesEl);
+            };
+            requestAnimationFrame(step);
+          };
+
+          // Animate APBDes values smoothly
+          animateCounter("apbdes-pendapatan-val", 0, 898152227, 1200, (v) => "Rp " + Math.floor(v).toLocaleString("id-ID"));
+          animateCounter("apbdes-belanja-val", 0, 856452227, 1200, (v) => "Rp " + Math.floor(v).toLocaleString("id-ID"));
+          animateCounter("apbdes-serapan-val", 0, 95.4, 1200, (v) => v.toFixed(1) + "%");
         }
-      } catch (err) {
-        console.error("Animation init error:", err);
-      }
-    };
+      },
+      { threshold: 0.15 }
+    );
 
-    initAnimations();
-
-    return () => {
-      if (ctx) ctx.revert();
-      if (observer) observer.disconnect();
-    };
+    observer.observe(apbdesEl);
+    return () => observer.disconnect();
   }, []);
 
-  // Fetch dynamic News, APBDes & Demografi from Supabase
+  // Fetch dynamic News & APBDes from Supabase (Lean & Fast, 0 Redundant Counts)
   useEffect(() => {
     const fetchLandingData = async () => {
       try {
@@ -1912,20 +1870,13 @@ export default function Home() {
           { data: newsData },
           { data: summaryData },
           { data: sectorsData },
-          { count: countPahingJiwa },
-          { count: countPahingKK },
-          { count: countWageJiwa },
-          { count: countWageKK },
-          { count: countManisJiwa },
-          { count: countManisKK },
-          { count: countTotalJiwa },
-          { count: countTotalKK },
         ] = await Promise.all([
           supabase
             .from("news_articles")
             .select("*")
             .eq("is_deleted", false)
-            .order("created_at", { ascending: false }),
+            .order("created_at", { ascending: false })
+            .limit(6),
           supabase
             .from("apbdes_summary")
             .select("*")
@@ -1937,34 +1888,7 @@ export default function Home() {
             .eq("tahun", 2026)
             .eq("is_deleted", false)
             .order("id", { ascending: true }),
-          supabase.from("residents").select("*", { count: "exact", head: true }).ilike("dusun", "%pahing%"),
-          supabase.from("sensus_kk").select("*", { count: "exact", head: true }).ilike("dusun", "%pahing%"),
-          supabase.from("residents").select("*", { count: "exact", head: true }).ilike("dusun", "%wage%"),
-          supabase.from("sensus_kk").select("*", { count: "exact", head: true }).ilike("dusun", "%wage%"),
-          supabase.from("residents").select("*", { count: "exact", head: true }).ilike("dusun", "%manis%"),
-          supabase.from("sensus_kk").select("*", { count: "exact", head: true }).ilike("dusun", "%manis%"),
-          supabase.from("residents").select("*", { count: "exact", head: true }),
-          supabase.from("sensus_kk").select("*", { count: "exact", head: true }),
         ]);
-
-        if (countTotalJiwa !== null && countTotalJiwa > 0) {
-          setDemografiStats({
-            totalJiwa: countTotalJiwa,
-            totalKK: countTotalKK || 810,
-            pahing: {
-              jiwa: countPahingJiwa ?? 826,
-              kk: countPahingKK ?? 260,
-            },
-            wage: {
-              jiwa: countWageJiwa ?? 822,
-              kk: countWageKK ?? 260,
-            },
-            manis: {
-              jiwa: countManisJiwa ?? 833,
-              kk: countManisKK ?? 288,
-            },
-          });
-        }
 
         if (newsData && newsData.length > 0) {
           setNewsList(
@@ -2545,6 +2469,7 @@ export default function Home() {
                     </span>
                     <a
                       href="#geografis"
+                      onClick={() => setIsMapMounted(true)}
                       className="text-[#eda50c] hover:text-amber-300 font-bold flex items-center gap-1 transition-colors"
                     >
                       <span>Lihat Peta Wilayah</span>
@@ -2666,8 +2591,10 @@ export default function Home() {
                 {/* ========================================================= */}
                 <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
                   <img
-                    src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1600&q=85"
+                    src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=960&q=75"
                     alt="Panorama Dusun Manis Kadurama"
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
@@ -2737,6 +2664,7 @@ export default function Home() {
                         <a
                           href="#geografis"
                           onClick={() => {
+                            setIsMapMounted(true);
                             setActiveFacilityId(1);
                             setGisSelectedDusun("manis");
                             setGisSelectedPoiId(null);
@@ -2755,8 +2683,10 @@ export default function Home() {
                 {/* ========================================================= */}
                 <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
                   <img
-                    src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1600&q=85"
+                    src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=960&q=75"
                     alt="Panorama Dusun Pahing Kadurama"
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
@@ -2826,6 +2756,7 @@ export default function Home() {
                         <a
                           href="#geografis"
                           onClick={() => {
+                            setIsMapMounted(true);
                             setActiveFacilityId(4);
                             setGisSelectedDusun("pahing");
                             setGisSelectedPoiId(null);
@@ -2844,8 +2775,10 @@ export default function Home() {
                 {/* ========================================================= */}
                 <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
                   <img
-                    src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85"
+                    src="https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=960&q=75"
                     alt="Panorama Dusun Wage Kadurama"
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
@@ -2915,6 +2848,7 @@ export default function Home() {
                         <a
                           href="#geografis"
                           onClick={() => {
+                            setIsMapMounted(true);
                             setActiveFacilityId(7);
                             setGisSelectedDusun("wage");
                             setGisSelectedPoiId(null);
@@ -2933,8 +2867,10 @@ export default function Home() {
                 {/* ========================================================= */}
                 <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
                   <img
-                    src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1600&q=85"
+                    src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=960&q=75"
                     alt="Panorama Dusun Manis Kadurama"
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
@@ -3004,6 +2940,7 @@ export default function Home() {
                         <a
                           href="#geografis"
                           onClick={() => {
+                            setIsMapMounted(true);
                             setActiveFacilityId(1);
                             setGisSelectedDusun("manis");
                             setGisSelectedPoiId(null);
@@ -3022,8 +2959,10 @@ export default function Home() {
                 {/* ========================================================= */}
                 <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
                   <img
-                    src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1600&q=85"
+                    src="https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=960&q=75"
                     alt="Panorama Dusun Pahing Kadurama"
+                    loading="lazy"
+                    decoding="async"
                     className="absolute inset-0 w-full h-full object-cover filter brightness-[0.88] contrast-105"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-[#011715] via-[#011715]/75 to-black/30 lg:bg-gradient-to-r lg:from-[#011715]/95 lg:via-[#011715]/80 lg:to-transparent z-0" />
@@ -3093,6 +3032,7 @@ export default function Home() {
                         <a
                           href="#geografis"
                           onClick={() => {
+                            setIsMapMounted(true);
                             setActiveFacilityId(4);
                             setGisSelectedDusun("pahing");
                             setGisSelectedPoiId(null);
@@ -3276,21 +3216,29 @@ export default function Home() {
               <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[520px]">
 
                 {/* LEFT 8 COLS: LEAFLET MAP WORKSPACE */}
-                <div className="lg:col-span-8 relative border-b lg:border-b-0 lg:border-r border-slate-200 h-[480px] lg:h-auto min-h-[480px]">
-                  <CivicGisMap
-                    selectedDusun={gisSelectedDusun}
-                    selectedPoiId={gisSelectedPoiId}
-                    onSelectDusun={(d) => {
-                      setGisSelectedDusun(d);
-                      setGisSelectedPoiId(null);
-                    }}
-                    onSelectPoi={(p) => {
-                      setGisSelectedPoiId(p.id);
-                    }}
-                    showOuterBoundary={gisShowOuter}
-                    showDusunBoundaries={gisShowDusuns}
-                    showWaterways={gisShowWater}
-                  />
+                <div ref={mapSectionRef} className="lg:col-span-8 relative border-b lg:border-b-0 lg:border-r border-slate-200 h-[480px] lg:h-auto min-h-[480px]">
+                  {isMapMounted ? (
+                    <CivicGisMap
+                      selectedDusun={gisSelectedDusun}
+                      selectedPoiId={gisSelectedPoiId}
+                      onSelectDusun={(d) => {
+                        setGisSelectedDusun(d);
+                        setGisSelectedPoiId(null);
+                      }}
+                      onSelectPoi={(p) => {
+                        setGisSelectedPoiId(p.id);
+                      }}
+                      showOuterBoundary={gisShowOuter}
+                      showDusunBoundaries={gisShowDusuns}
+                      showWaterways={gisShowWater}
+                    />
+                  ) : (
+                    <div className="w-full h-full min-h-[480px] bg-slate-900 flex flex-col items-center justify-center text-slate-300 text-xs p-6 text-center">
+                      <div className="w-7 h-7 border-2 border-[#009388] border-t-transparent rounded-full animate-spin mb-2" />
+                      <span className="font-semibold text-slate-200">Citra Satelit & Peta GIS Kadurama</span>
+                      <span className="text-[11px] text-slate-400 mt-1">Memuat saat mendekati area peta...</span>
+                    </div>
+                  )}
                 </div>
 
                 {/* RIGHT 4 COLS: OFFICIAL MONOGRAPHY REGISTRY SHEET */}
@@ -3627,6 +3575,8 @@ export default function Home() {
                   <img
                     src="/default-avatar.svg"
                     alt="Kepala Desa Kadurama"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
@@ -3671,16 +3621,16 @@ export default function Home() {
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4 border-t border-white/15 text-xs text-emerald-100">
                   <div>
-                    <span className="text-emerald-300 block text-[11px]">Tupoksi</span>
-                    <span className="font-semibold text-white">Penyelenggaraan Pemdes</span>
+                    <div className="text-[10px] text-emerald-300">Periode Jabatan:</div>
+                    <div className="font-bold text-white font-mono">2021 – 2029</div>
                   </div>
                   <div>
-                    <span className="text-emerald-300 block text-[11px]">Lokasi Kerja</span>
-                    <span className="font-semibold text-white">Kantor Balai Desa</span>
+                    <div className="text-[10px] text-emerald-300">Status Pamong:</div>
+                    <div className="font-bold text-white">Kepala Desa Definitif</div>
                   </div>
                   <div>
-                    <span className="text-emerald-300 block text-[11px]">Wilayah Koordinasi</span>
-                    <span className="font-semibold text-[#eda50c]">3 Dusun (8 RT & 3 RW)</span>
+                    <div className="text-[10px] text-emerald-300">Wilayah Kerja:</div>
+                    <div className="font-bold text-white">3 Dusun / 8 RT / 3 RW</div>
                   </div>
                 </div>
               </div>
@@ -3694,6 +3644,8 @@ export default function Home() {
                   <img
                     src="/default-avatar.svg"
                     alt="Sekretaris Desa"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
@@ -3718,6 +3670,8 @@ export default function Home() {
                   <img
                     src="/default-avatar.svg"
                     alt="Kadus Pahing"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
@@ -3746,6 +3700,8 @@ export default function Home() {
                   <img
                     src="/default-avatar.svg"
                     alt="Kadus Wage"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
@@ -3774,6 +3730,8 @@ export default function Home() {
                   <img
                     src="/default-avatar.svg"
                     alt="Kadus Manis"
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent"></div>
@@ -4032,6 +3990,8 @@ export default function Home() {
                         <img
                           src={featured.imageUrl}
                           alt={featured.title}
+                          loading="lazy"
+                          decoding="async"
                           className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         />
                         <div
@@ -4078,6 +4038,8 @@ export default function Home() {
                             <img
                               src={mediumItem.imageUrl}
                               alt={mediumItem.title}
+                              loading="lazy"
+                              decoding="async"
                               className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                             />
                           </div>
