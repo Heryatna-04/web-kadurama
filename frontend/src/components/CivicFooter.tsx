@@ -15,7 +15,7 @@ export default function CivicFooter() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 relative flex-shrink-0 flex items-center justify-center bg-white/10 rounded-xl p-1 border border-white/20">
                 <Image
-                  src="/kuningan-logo.png"
+                  src="/logo-kuningan.png"
                   alt="Logo Kabupaten Kuningan"
                   width={32}
                   height={32}

@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import { useParams, notFound } from "next/navigation";
 import { DUSUN_DETAILS } from "@/data/dusunData";
+import { createClient } from "@/lib/supabase/client";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
 import {
@@ -66,6 +67,33 @@ export default function DusunDetailPage() {
   const prevDusun = DUSUN_DETAILS[prevSlug];
   const nextDusun = DUSUN_DETAILS[nextSlug];
 
+  // Dynamic Resident & KK State with Supabase Sync
+  const [liveStats, setLiveStats] = useState({
+    residentCount: dusun.residentCount,
+    kkCount: dusun.kkCount,
+  });
+
+  useEffect(() => {
+    const fetchDusunLive = async () => {
+      try {
+        const supabase = createClient();
+        const [{ count: rCount }, { count: kCount }] = await Promise.all([
+          supabase.from("residents").select("*", { count: "exact", head: true }).ilike("dusun", `%${slug}%`),
+          supabase.from("sensus_kk").select("*", { count: "exact", head: true }).ilike("dusun", `%${slug}%`),
+        ]);
+        if (rCount !== null && rCount > 0) {
+          setLiveStats({
+            residentCount: rCount,
+            kkCount: kCount ?? dusun.kkCount,
+          });
+        }
+      } catch (err) {
+        console.warn("Gagal memuat live dusun counts:", err);
+      }
+    };
+    fetchDusunLive();
+  }, [slug, dusun.residentCount, dusun.kkCount]);
+
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
       
@@ -100,7 +128,7 @@ export default function DusunDetailPage() {
               <span className="px-3 py-1 rounded-full bg-[#eda50c] text-slate-950 text-xs font-bold uppercase tracking-wider">
                 {dusun.number}
               </span>
-              {slug !== "wage" && (
+              {liveStats.residentCount === 0 && (
                 <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold">
                   Data Belum Lengkap
                 </span>
@@ -134,7 +162,7 @@ export default function DusunDetailPage() {
                   <Users className="w-4 h-4" />
                 </div>
                 <div>
-                  <div className="text-xl sm:text-2xl font-black text-white">{dusun.kkCount} KK</div>
+                  <div className="text-xl sm:text-2xl font-black text-white">{liveStats.kkCount} KK</div>
                   <div className="text-[11px] font-sans text-slate-300">Kepala Keluarga</div>
                 </div>
               </div>
@@ -144,7 +172,7 @@ export default function DusunDetailPage() {
                   <span className="font-bold text-sm">JIWA</span>
                 </div>
                 <div>
-                  <div className="text-xl sm:text-2xl font-black text-[#eda50c]">{dusun.residentCount}</div>
+                  <div className="text-xl sm:text-2xl font-black text-[#eda50c]">{liveStats.residentCount.toLocaleString("id-ID")}</div>
                   <div className="text-[11px] font-sans text-slate-300">Total Warga Terdata</div>
                 </div>
               </div>

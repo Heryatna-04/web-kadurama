@@ -1711,7 +1711,7 @@ export default function MasterPanelPage() {
           {/* Logo & Brand Header */}
           <div className="p-5 border-b border-[#005851] flex items-center gap-3">
             <Image
-              src="/kuningan-logo.png"
+              src="/logo-kuningan.png"
               alt="Logo Kuningan"
               width={34}
               height={34}

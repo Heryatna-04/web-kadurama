@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   title: "Pemerintah Desa Kadurama - Kabupaten Kuningan",
   description: "Portal Resmi Informasi Publik & Pelayanan Administrasi Desa Kadurama, Kec. Ciawigebang, Kab. Kuningan, Jawa Barat.",
   icons: {
-    icon: "/kuningan-logo.png",
+    icon: "/logo-kuningan.png",
   }
 };
 
