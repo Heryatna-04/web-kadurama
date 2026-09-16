@@ -188,11 +188,6 @@ export default function DusunDetailPage() {
                 </p>
               </div>
 
-              {/* Kutipan Komitmen Kadus */}
-              <blockquote className="p-5 rounded-2xl bg-emerald-50/80 border-l-4 border-[#009388] text-slate-700 italic text-xs sm:text-sm leading-relaxed">
-                &quot;{dusun.quote}&quot;
-              </blockquote>
-
               {/* Ringkasan Potensi Strategis */}
               <div className="space-y-3 pt-2">
                 <div className="text-xs font-bold uppercase tracking-wider text-slate-700">
@@ -251,11 +246,6 @@ export default function DusunDetailPage() {
                   <div className="text-xs font-semibold text-[#009388] mt-0.5">
                     Kepala {dusun.name}
                   </div>
-                  {dusun.kadusNip && (
-                    <div className="text-[11px] font-mono text-slate-400 mt-1">
-                      NIP. {dusun.kadusNip}
-                    </div>
-                  )}
                   <div className="text-xs text-slate-500 mt-1">
                     Wilayah Kerja: {dusun.rtRwInfo}
                   </div>
@@ -268,8 +258,15 @@ export default function DusunDetailPage() {
                   <span className="font-semibold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">Aktif Siaga</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Kontak Pelayanan:</span>
-                  <span className="font-mono font-bold text-slate-900">{dusun.kadusPhone}</span>
+                  <span className="text-slate-400">Kontak Pelayanan (WhatsApp):</span>
+                  <a
+                    href={`https://wa.me/${dusun.kadusPhone.replace(/^0/, "62")}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="font-mono font-bold text-[#009388] hover:underline"
+                  >
+                    {dusun.kadusPhone}
+                  </a>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-slate-400">Titik Koordinat Pusat:</span>
@@ -279,7 +276,7 @@ export default function DusunDetailPage() {
 
               <div className="pt-3">
                 <a
-                  href={`https://wa.me/6282111223341?text=Halo%20Kepala%20${encodeURIComponent(dusun.name)},%20saya%20warga%20Kadurama`}
+                  href={`https://wa.me/${dusun.kadusPhone.replace(/^0/, "62")}?text=Halo%20Kepala%20${encodeURIComponent(dusun.name)},%20saya%20warga%20Kadurama`}
                   target="_blank"
                   rel="noreferrer"
                   className="w-full py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-xs"

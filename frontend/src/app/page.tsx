@@ -3590,10 +3590,6 @@ export default function Home() {
                   <p className="text-xs font-mono text-emerald-200 mt-0.5">Kepala Desa (Kuwu) Kadurama</p>
                 </div>
 
-                <blockquote className="text-sm sm:text-base text-emerald-100 italic border-l-2 border-[#eda50c] pl-4 py-1 leading-relaxed">
-                  "Kami berkomitmen melayani warga Kadurama dengan tulus, transparan dalam pengelolaan dana APBDes, dan memastikan akurasi data sensus keluarga agar setiap program bantuan pemerintah tepat sasaran."
-                </blockquote>
-
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4 border-t border-white/15 text-xs text-emerald-100">
                   <div>
                     <span className="text-emerald-300 block text-[11px]">Tupoksi</span>
@@ -3658,6 +3654,10 @@ export default function Home() {
                   <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
                     Penanggung jawab ketenteraman wilayah Dusun I Pahing (3 RT / 1 RW), pengelola sarana olahraga Gelora Kadurama, serta pengawasan fasilitas pendidikan SD & TK.
                   </p>
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">Kontak WA:</span>
+                    <a href="https://wa.me/6283861181402" target="_blank" rel="noreferrer" className="font-mono font-bold text-[#009388] hover:underline">083861181402</a>
+                  </div>
                 </div>
               </div>
 
@@ -3682,6 +3682,10 @@ export default function Home() {
                   <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
                     Pengawal kelestarian mata air alami Cikaduran, pembina kerukunan religi pondok pesantren, masjid, mushola, serta pengayom Dusun II Wage (2 RT / 1 RW).
                   </p>
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">Kontak WA:</span>
+                    <a href="https://wa.me/6289667736184" target="_blank" rel="noreferrer" className="font-mono font-bold text-[#009388] hover:underline">089667736184</a>
+                  </div>
                 </div>
               </div>
 
@@ -3706,6 +3710,10 @@ export default function Home() {
                   <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
                     Penanggung jawab ketenteraman wilayah gerbang desa Dusun III Manis (3 RT / 1 RW), koordinasi pelayanan publik di Balai Desa, KUA, serta pembinaan lembaga sosial.
                   </p>
+                  <div className="mt-3 pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px]">
+                    <span className="text-slate-400">Kontak WA:</span>
+                    <a href="https://wa.me/628314407775" target="_blank" rel="noreferrer" className="font-mono font-bold text-[#009388] hover:underline">08314407775</a>
+                  </div>
                 </div>
               </div>
             </div>

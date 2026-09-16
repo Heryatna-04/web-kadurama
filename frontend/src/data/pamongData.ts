@@ -102,7 +102,7 @@ export const PAMONG_LIST: PamongItem[] = [
     workArea: "Dusun Pahing (3 RT / 1 RW)",
     bio: "Penanggung jawab ketenteraman wilayah Dusun I Pahing (27 Ha), koordinator lumbung ketahanan pangan, pengelola sarana olahraga lapangan sepakbola, serta pengawasan sekolah SD & TK.",
     imageUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=600&q=80",
-    contact: "kadus.pahing@kadurama.desa.id"
+    contact: "083861181402"
   },
   {
     id: "PAMONG-010",
@@ -113,7 +113,7 @@ export const PAMONG_LIST: PamongItem[] = [
     workArea: "Dusun Wage (2 RT / 1 RW)",
     bio: "Pengawal kelestarian mata air alami pegunungan Dusun II Wage (23 Ha), pembina kerukunan religi jamaah masjid, mushola, pondok pesantren, sarana PAUD, serta posyandu lingkungan.",
     imageUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=600&q=80",
-    contact: "kadus.wage@kadurama.desa.id"
+    contact: "089667736184"
   },
   {
     id: "PAMONG-011",
@@ -124,7 +124,7 @@ export const PAMONG_LIST: PamongItem[] = [
     workArea: "Dusun Manis (3 RT / 1 RW)",
     bio: "Penanggung jawab ketenteraman wilayah Dusun III Manis (39 Ha), koordinasi pelayanan warga di gerbang utama desa, instansi Kantor KUA, kompleks pendidikan SD, dan pembinaan 4 mushola & pesantren.",
     imageUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=600&q=80",
-    contact: "kadus.manis@kadurama.desa.id"
+    contact: "08314407775"
   },
 
   // 5. BADAN PERMUSYAWARATAN DESA (BPD)

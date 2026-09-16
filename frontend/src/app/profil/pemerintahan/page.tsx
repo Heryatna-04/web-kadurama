@@ -96,14 +96,8 @@ export default function PemerintahanPage() {
                   <h3 className="text-2xl sm:text-4xl font-extrabold text-white mt-1 uppercase">
                     {kuwu.name}
                   </h3>
-                  {kuwu.nip && (
-                    <p className="text-xs font-mono text-emerald-200 mt-0.5">NIP. {kuwu.nip}</p>
-                  )}
+                  <p className="text-xs text-emerald-200 mt-0.5">Kepala Desa (Kuwu) Kadurama</p>
                 </div>
-
-                <blockquote className="text-sm sm:text-base text-emerald-100 italic border-l-2 border-[#eda50c] pl-4 py-1 leading-relaxed">
-                  "{kuwu.bio}"
-                </blockquote>
 
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4 border-t border-white/15 text-xs text-emerald-100">
                   <div>
@@ -305,12 +299,22 @@ export default function PemerintahanPage() {
                   </div>
                   <div className="p-5 pt-0">
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                      {item.contact && (
+                        <a
+                          href={`https://wa.me/${item.contact.replace(/^0/, "62")}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="font-mono font-bold text-slate-700 hover:text-[#009388] transition"
+                        >
+                          WA: {item.contact}
+                        </a>
+                      )}
                       {item.dusun && (
                         <Link
                           href={`/dusun/${item.dusun.toLowerCase()}`}
                           className="font-bold text-[#009388] hover:underline"
                         >
-                          Halaman Dusun {item.dusun} &rarr;
+                          Halaman Dusun &rarr;
                         </Link>
                       )}
                     </div>

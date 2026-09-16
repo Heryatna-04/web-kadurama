@@ -16,7 +16,7 @@ export interface DusunDetail {
   photoUrl: string;
   kadusPhotoUrl: string;
   description: string;
-  quote: string;
+  quote?: string;
   coordinates: string;
   potentials: {
     title: string;
@@ -47,14 +47,11 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
     villageShare: "30.3%",
     rtRwInfo: "3 RT / 1 RW",
     kadusName: "Trida Sentosa",
-    kadusNip: "19850912 201002 1 004",
-    kadusPhone: "+62 821-1122-3342",
+    kadusPhone: "083861181402",
     photoUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1600&q=85",
     kadusPhotoUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=500&q=80",
     description:
       "Dusun Pahing merupakan dusun pertama di Desa Kadurama dengan luas wilayah kurang lebih 27 hektar. Memiliki 3 RT dan 1 RW, wilayah ini menaungi lumbung pangan padi sawah desa, lapangan sepakbola kebanggaan warga (Gelora Kadurama), sarana ibadah 2 mushola, institusi pendidikan Sekolah Dasar (SD) dan Taman Kanak-Kanak (TK), serta Posyandu.",
-    quote:
-      "Kami menjaga kelestarian sawah irigasi dan memajukan sarana kepemudaan serta pendidikan anak di Dusun Pahing.",
     coordinates: "-6.9785, 108.6020",
     potentials: [
       {
@@ -131,14 +128,11 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
     villageShare: "25.8%",
     rtRwInfo: "2 RT / 1 RW",
     kadusName: "Andri Rukmana",
-    kadusNip: "19880320 201203 1 006",
-    kadusPhone: "+62 821-1122-3343",
+    kadusPhone: "089667736184",
     photoUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85",
     kadusPhotoUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=500&q=80",
     description:
       "Dusun Wage merupakan dusun kedua di Desa Kadurama dengan luas wilayah kurang lebih 23 hektar. Terdiri dari 2 RT dan 1 RW di kontur sejuk lereng timur Gunung Ciremai. Wilayah ini memiliki sarana ibadah 1 masjid dan 1 mushola, institusi pendidikan keagamaan Pondok Pesantren, gedung PAUD, layanan Posyandu, serta sumber daya alam abadi Mata Air Alami Cikaduran berdebit 45 liter per detik.",
-    quote:
-      "Menjaga kejernihan mata air Cikaduran dan merawat kerukunan warga serta pembinaan santri adalah amanah utama Dusun Wage.",
     coordinates: "-6.9825, 108.5955",
     potentials: [
       {
@@ -215,14 +209,11 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
     villageShare: "43.8%",
     rtRwInfo: "3 RT / 1 RW",
     kadusName: "Jamaludin",
-    kadusNip: "19820514 200801 1 007",
-    kadusPhone: "+62 821-1122-3341",
+    kadusPhone: "08314407775",
     photoUrl: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1600&q=85",
     kadusPhotoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80",
     description:
       "Dusun Manis merupakan dusun ketiga di Desa Kadurama dengan wilayah terluas yaitu kurang lebih 39 hektar. Terdiri dari 3 RT dan 1 RW, dusun ini menjadi sentra pelayanan publik dan institusi penting: Kantor Urusan Agama (KUA), Kantor Balai Desa, gedung Sekolah Dasar (SD), 1 Pondok Pesantren, 4 unit mushola peribadatan, serta Posyandu.",
-    quote:
-      "Pelayanan administrasi warga dan fasilitas umum Dusun Manis senantiasa kami hadirkan tertib, ramah, dan prima.",
     coordinates: "-6.9755, 108.5980",
     potentials: [
       {
