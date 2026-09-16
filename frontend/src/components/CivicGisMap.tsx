@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import type { Map as LeafletMap, LayerGroup, TileLayer, Polygon } from "leaflet";
 import {
   KADURAMA_OFFICIAL_BOUNDARY,
@@ -106,10 +106,45 @@ export default function CivicGisMap({
     }
   };
 
+  const handleFitVillageBounds = useCallback(() => {
+    if (!mapRef.current) return;
+    mapRef.current.stop(); // Stop any pending animation to prevent _leaflet_pos error
+    if (boundaryLayerRef.current) {
+      try {
+        mapRef.current.fitBounds(boundaryLayerRef.current.getBounds(), {
+          padding: [32, 32],
+          animate: true,
+          duration: 0.6,
+        });
+      } catch {
+        mapRef.current.setView([BALAI_DESA_LOCATION.lat, BALAI_DESA_LOCATION.lng], 15);
+      }
+    } else {
+      mapRef.current.setView([BALAI_DESA_LOCATION.lat, BALAI_DESA_LOCATION.lng], 15);
+    }
+    if (onSelectDusun) onSelectDusun("all");
+  }, [onSelectDusun]);
+
+  const handleFocusBalaiDesa = useCallback(() => {
+    if (!mapRef.current) return;
+    mapRef.current.stop();
+    mapRef.current.flyTo(
+      [BALAI_DESA_LOCATION.lat, BALAI_DESA_LOCATION.lng],
+      17,
+      { animate: true, duration: 0.6 }
+    );
+    if (onSelectPoi) onSelectPoi(OFFICIAL_POINTS[0]);
+  }, [onSelectPoi]);
+
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
     let isMounted = true;
+
+    // Clean up any stale leaflet ID to prevent container reuse error
+    if ((containerRef.current as unknown as { _leaflet_id?: number })._leaflet_id) {
+      delete (containerRef.current as unknown as { _leaflet_id?: number })._leaflet_id;
+    }
 
     // Dynamically import Leaflet for SSR safety in Next.js
     import("leaflet").then((L) => {
@@ -120,10 +155,13 @@ export default function CivicGisMap({
         zoom: 15,
         minZoom: 13,
         maxZoom: 19,
-        zoomControl: true,
+        zoomControl: false, // Custom placed zoom control below
         scrollWheelZoom: false,
         attributionControl: false,
       });
+
+      // Add zoom control at bottom-right
+      L.control.zoom({ position: "bottomright" }).addTo(map);
 
       // Default Basemap: High-Res Satellite
       const initialLayerUrl =
@@ -152,20 +190,40 @@ export default function CivicGisMap({
         `<div class="p-1 text-center font-sans">
           <div class="font-bold text-xs text-slate-900">Batas Wilayah Desa Kadurama</div>
           <div class="text-[10px] text-[#009388] font-medium">GIS Dukcapil Kemendagri • Ref: 32.08.10.2002</div>
+          <div class="text-[9px] text-slate-500 mt-0.5">125 Titik Koordinat Presisi</div>
         </div>`,
         { sticky: true }
       );
+
+      // Hover feedback
+      boundary.on("mouseover", () => {
+        boundary.setStyle({
+          weight: 3.5,
+          fillOpacity: 0.22,
+          color: "#00bba7",
+        });
+      });
+      boundary.on("mouseout", () => {
+        boundary.setStyle({
+          weight: 2.5,
+          fillOpacity: 0.12,
+          color: "#009388",
+        });
+      });
 
       if (isBoundaryVisible) {
         boundary.addTo(map);
       }
       boundaryLayerRef.current = boundary;
 
-      // Fit map view to exact official boundary bounds on initial mount
+      // Fit map view initially without breaking animation frames
       try {
-        map.fitBounds(boundary.getBounds(), { padding: [28, 28] });
+        map.fitBounds(boundary.getBounds(), {
+          padding: [28, 28],
+          animate: false, // animate: false prevents _leaflet_pos race on initial mount
+        });
       } catch (err) {
-        console.warn("Could not fit bounds:", err);
+        console.warn("fitBounds failed:", err);
       }
 
       // Group for Official Verified Markers (Kantor Balai Desa)
@@ -176,7 +234,7 @@ export default function CivicGisMap({
         const pinHtml = `
           <div class="relative flex items-center justify-center cursor-pointer group">
             <div class="absolute w-9 h-9 rounded-full bg-[#eda50c]/40 animate-ping"></div>
-            <div class="relative w-8 h-8 rounded-full bg-[#009388] border-2 border-white shadow-xl flex items-center justify-center text-white">
+            <div class="relative w-8 h-8 rounded-full bg-[#009388] border-2 border-white shadow-xl flex items-center justify-center text-white transition-transform transform group-hover:scale-110">
               <svg class="w-4 h-4 text-[#eda50c]" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2L2 9l2 1v10h6v-6h4v6h6V10l2-1-10-7zm0 3.2L18 9v9h-2v-6H8v6H6V9l6-3.8z"/>
               </svg>
@@ -230,7 +288,13 @@ export default function CivicGisMap({
     return () => {
       isMounted = false;
       if (mapRef.current) {
-        mapRef.current.remove();
+        try {
+          mapRef.current.stop(); // CRUCIAL: Stop any pending animation to prevent _leaflet_pos error
+          mapRef.current.off();  // Remove all event handlers
+          mapRef.current.remove(); // Safely teardown leaflet instance
+        } catch (e) {
+          console.warn("Leaflet cleanup notice:", e);
+        }
         mapRef.current = null;
       }
     };
@@ -274,47 +338,70 @@ export default function CivicGisMap({
     }
   }, [isBoundaryVisible]);
 
-  // Pan / Fit Bounds on selection changes
+  // Pan / Fit Bounds safely on selection changes
   useEffect(() => {
     if (!mapRef.current) return;
+
+    // Stop previous animation first to avoid _leaflet_pos collisions
+    mapRef.current.stop();
 
     if (selectedDusun === "all" && !selectedPoiId && boundaryLayerRef.current) {
       try {
         mapRef.current.fitBounds(boundaryLayerRef.current.getBounds(), {
           padding: [28, 28],
           animate: true,
-          duration: 0.8,
+          duration: 0.6,
         });
       } catch {
-        mapRef.current.flyTo(
+        mapRef.current.setView(
           [BALAI_DESA_LOCATION.lat, BALAI_DESA_LOCATION.lng],
-          15,
-          { animate: true, duration: 0.8 }
+          15
         );
       }
+    } else if (selectedPoiId === "balai-desa") {
+      mapRef.current.flyTo(
+        [BALAI_DESA_LOCATION.lat, BALAI_DESA_LOCATION.lng],
+        17,
+        { animate: true, duration: 0.6 }
+      );
     }
   }, [selectedDusun, selectedPoiId]);
 
-  // Pan to selected POI (Balai Desa)
-  useEffect(() => {
-    if (!mapRef.current || !selectedPoiId) return;
-    const poi = OFFICIAL_POINTS.find((p) => p.id === selectedPoiId);
-    if (poi) {
-      mapRef.current.flyTo([poi.lat, poi.lng], 17, { animate: true, duration: 0.8 });
-    }
-  }, [selectedPoiId]);
-
   return (
-    <div className="relative w-full h-full min-h-[460px]">
+    <div className="relative w-full h-full min-h-[460px] bg-slate-900 select-none">
       <div ref={containerRef} className="w-full h-full min-h-[460px] z-10" />
 
-      {/* Floating Controls Top-Right: Basemap + Boundary Switcher */}
-      <div className="absolute top-3 right-3 z-[1000] flex flex-wrap items-center justify-end gap-2 pointer-events-auto">
+      {/* Modern Floating Header Bar (Top-Right) */}
+      <div className="absolute top-3 right-3 z-[1000] flex flex-wrap items-center justify-end gap-1.5 pointer-events-auto">
+        {/* Fit Bounds Button */}
+        <button
+          type="button"
+          onClick={handleFitVillageBounds}
+          className="px-2.5 py-1.5 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-slate-900 text-xs font-semibold shadow-md border border-slate-200/80 backdrop-blur-md transition flex items-center gap-1.5"
+          title="Tampilkan Seluruh Wilayah Desa Kadurama"
+        >
+          <svg className="w-3.5 h-3.5 text-[#009388]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+          </svg>
+          <span className="hidden sm:inline">Fit Wilayah</span>
+        </button>
+
+        {/* Fokus Balai Desa */}
+        <button
+          type="button"
+          onClick={handleFocusBalaiDesa}
+          className="px-2.5 py-1.5 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-slate-900 text-xs font-semibold shadow-md border border-slate-200/80 backdrop-blur-md transition flex items-center gap-1.5"
+          title="Fokus ke Kantor Balai Desa"
+        >
+          <span className="w-2 h-2 rounded-full bg-[#eda50c]" />
+          <span className="hidden sm:inline">Balai Desa</span>
+        </button>
+
         {/* Toggle Batas Resmi */}
         <button
           type="button"
           onClick={handleBoundaryToggle}
-          className={`px-3 py-1.5 rounded-xl border shadow-sm text-xs font-bold transition flex items-center gap-1.5 ${
+          className={`px-3 py-1.5 rounded-xl border shadow-md text-xs font-semibold backdrop-blur-md transition flex items-center gap-1.5 ${
             isBoundaryVisible
               ? "bg-[#009388] text-white border-[#009388]"
               : "bg-white/95 text-slate-600 border-slate-200 hover:text-slate-900"
@@ -326,7 +413,7 @@ export default function CivicGisMap({
               isBoundaryVisible ? "bg-white" : "bg-slate-400"
             }`}
           />
-          <span>Batas Resmi (125 Titik)</span>
+          <span>Batas Wilayah</span>
         </button>
 
         {/* Basemap Switcher */}
@@ -334,47 +421,46 @@ export default function CivicGisMap({
           <button
             type="button"
             onClick={() => handleBasemapChange("satellite")}
-            className={`px-3 py-1.5 rounded-lg transition ${
+            className={`px-2.5 py-1 rounded-lg transition ${
               activeBasemap === "satellite"
-                ? "bg-[#009388] text-white font-bold shadow-xs"
+                ? "bg-[#009388] text-white font-bold shadow-2xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Citra Satelit
+            Satelit
           </button>
           <button
             type="button"
             onClick={() => handleBasemapChange("streets")}
-            className={`px-3 py-1.5 rounded-lg transition ${
+            className={`px-2.5 py-1 rounded-lg transition ${
               activeBasemap === "streets"
-                ? "bg-[#009388] text-white font-bold shadow-xs"
+                ? "bg-[#009388] text-white font-bold shadow-2xs"
                 : "text-slate-600 hover:text-slate-900"
             }`}
           >
-            Peta Jalan (OSM)
+            Peta Jalan
           </button>
         </div>
       </div>
 
       {/* Floating Info Badge Top-Left */}
-      <div className="absolute top-3 left-12 z-[1000] pointer-events-none hidden sm:flex items-center gap-2">
-        <div className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-lg border border-slate-200/80 shadow-xs flex items-center gap-2 text-[11px] font-semibold text-slate-700">
-          <span className="w-2 h-2 rounded-full bg-[#009388]"></span>
-          <span>Desa Kadurama • Dukcapil Kemendagri & Google Maps</span>
+      <div className="absolute top-3 left-3 z-[1000] pointer-events-none hidden sm:flex items-center gap-2">
+        <div className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-md flex items-center gap-2 text-[11px] font-semibold text-slate-800">
+          <span className="w-2 h-2 rounded-full bg-[#009388] animate-pulse"></span>
+          <span>Desa Kadurama • GIS Dukcapil Kemendagri</span>
         </div>
       </div>
 
       {/* Floating Coordinates Status Bar Bottom */}
-      <div className="absolute bottom-3 inset-x-3 z-[1000] flex items-center justify-between px-3 py-1.5 rounded-lg bg-slate-950/85 text-white text-[11px] pointer-events-none backdrop-blur-xs">
+      <div className="absolute bottom-3 left-3 right-14 z-[1000] flex items-center justify-between px-3.5 py-1.5 rounded-xl bg-slate-950/85 text-white text-[11px] pointer-events-none backdrop-blur-md border border-white/10 shadow-lg">
         <div className="flex items-center gap-3">
           <span className="text-slate-400">
-            Koordinat Kursor:{" "}
+            Koordinat:{" "}
             <span className="font-mono text-emerald-400 font-semibold">{cursorCoords}</span>
           </span>
-          <span className="text-slate-600">|</span>
-          <span className="text-slate-400">
-            Basis Data:{" "}
-            <span className="font-mono text-amber-300 font-semibold">GIS Kemendagri (WGS 84)</span>
+          <span className="text-slate-600 hidden sm:inline">|</span>
+          <span className="text-slate-400 hidden sm:inline">
+            Datum: <span className="font-mono text-amber-300 font-semibold">WGS 84</span>
           </span>
         </div>
         <span className="text-slate-400 font-mono text-[10px]">Ref: 32.08.10.2002</span>
