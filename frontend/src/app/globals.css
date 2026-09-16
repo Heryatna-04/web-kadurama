@@ -11,6 +11,18 @@
   --color-kuningan-gold-light: #fef6e6;
 }
 
+/* Native Hardware-Accelerated Smooth Scroll & Anchor Navbar Offset */
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}
+
 /* Print Setup for Village Administration (A4 and F4 Support) */
 @media print {
   @page {

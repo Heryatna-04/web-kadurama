@@ -16,3 +16,4 @@ map
 .codegraph/
 *.xlsx
 localhost_*.json
+www.*.json

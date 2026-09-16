@@ -231,8 +231,12 @@ export default function CivicGisMap({
         poiGroup.addLayer(marker);
       });
 
-      // Real-time coordinates & elevation tracking on mousemove
+      // Throttled real-time coordinates & elevation tracking to prevent re-render lag
+      let lastMoveTime = 0;
       map.on("mousemove", (e) => {
+        const now = Date.now();
+        if (now - lastMoveTime < 120) return; // Throttle ke ~8 FPS untuk info HUD saja
+        lastMoveTime = now;
         const lat = e.latlng.lat.toFixed(4);
         const lng = e.latlng.lng.toFixed(4);
         setCursorCoords(`${lat}, ${lng}`);

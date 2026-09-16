@@ -1785,10 +1785,12 @@ export default function Home() {
   const [isEditBidangModalOpen, setIsEditBidangModalOpen] = useState(false);
   const [isEditTotalsModalOpen, setIsEditTotalsModalOpen] = useState(false);
 
-  // GSAP Animations Effect (Desktop & Tablet Optimized)
+  // Zero-Overhead Animation Effect (Native Hardware-Accelerated, Zero Scroll Listeners)
   useEffect(() => {
     let ctx: any;
-    const initGsap = async () => {
+    let observer: IntersectionObserver | null = null;
+
+    const initAnimations = async () => {
       try {
         // Cek preferensi accessibility reduced-motion
         if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
@@ -1796,148 +1798,108 @@ export default function Home() {
         }
 
         const { gsap } = await import("gsap");
-        const { ScrollTrigger } = await import("gsap/ScrollTrigger");
-        gsap.registerPlugin(ScrollTrigger);
 
+        // 1. Hero Entrance Timeline (Hanya berjalan sekali saat halaman dibuka, 0 scroll overhead)
         ctx = gsap.context(() => {
-          // 1. Hero Entrance Timeline
-          const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+          const tl = gsap.timeline({ defaults: { ease: "power2.out" } });
           tl.fromTo(
             "#hero-badge",
-            { opacity: 0, y: -16 },
-            { opacity: 1, y: 0, duration: 0.6 }
+            { opacity: 0, y: -12 },
+            { opacity: 1, y: 0, duration: 0.5 }
           )
             .fromTo(
               "#hero-title",
-              { opacity: 0, y: 24 },
-              { opacity: 1, y: 0, duration: 0.7 },
-              "-=0.3"
+              { opacity: 0, y: 16 },
+              { opacity: 1, y: 0, duration: 0.6 },
+              "-=0.2"
             )
             .fromTo(
               "#hero-desc",
-              { opacity: 0, y: 16 },
-              { opacity: 1, y: 0, duration: 0.6 },
-              "-=0.4"
+              { opacity: 0, y: 12 },
+              { opacity: 1, y: 0, duration: 0.5 },
+              "-=0.3"
             )
             .fromTo(
               "#hero-actions",
-              { opacity: 0, y: 16 },
-              { opacity: 1, y: 0, duration: 0.6 },
-              "-=0.4"
+              { opacity: 0, y: 12 },
+              { opacity: 1, y: 0, duration: 0.5 },
+              "-=0.3"
             )
             .fromTo(
               "#hero-gate-card",
-              { opacity: 0, scale: 0.96, y: 20 },
-              { opacity: 1, scale: 1, y: 0, duration: 0.8 },
-              "-=0.5"
+              { opacity: 0, scale: 0.98, y: 16 },
+              { opacity: 1, scale: 1, y: 0, duration: 0.6 },
+              "-=0.4"
             );
-
-          // Hanya aktifkan ScrollTrigger pada layar Tablet & Desktop (>= 768px)
-          // Menjaga skor Lighthouse mobile tetap tinggi tanpa overhead main-thread
-          if (window.innerWidth >= 768) {
-            // 2. APBDes ScrollTrigger Animation
-            const apbdesEl = document.getElementById("apbdes");
-            if (apbdesEl) {
-              ScrollTrigger.create({
-                trigger: apbdesEl,
-                start: "top 75%",
-                once: true,
-                onEnter: () => {
-                  // Animate progress bar (Belanja 856.4M / Pendapatan 898.1M = 95.4%)
-                  gsap.fromTo(
-                    "#apbdes-progress-bar",
-                    { width: "0%" },
-                    { width: "95.4%", duration: 1.4, ease: "power2.out" }
-                  );
-
-                  // Animate numbers resmi APBDes 2026
-                  const pObj = { val: 0 };
-                  gsap.to(pObj, {
-                    val: 898152227,
-                    duration: 1.8,
-                    ease: "power2.out",
-                    onUpdate: () => {
-                      const el = document.getElementById("apbdes-pendapatan-val");
-                      if (el) el.innerText = "Rp " + Math.floor(pObj.val).toLocaleString("id-ID");
-                    },
-                  });
-
-                  const bObj = { val: 0 };
-                  gsap.to(bObj, {
-                    val: 856452227,
-                    duration: 1.8,
-                    ease: "power2.out",
-                    onUpdate: () => {
-                      const el = document.getElementById("apbdes-belanja-val");
-                      if (el) el.innerText = "Rp " + Math.floor(bObj.val).toLocaleString("id-ID");
-                    },
-                  });
-
-                  const sObj = { val: 0 };
-                  gsap.to(sObj, {
-                    val: 95.4,
-                    duration: 1.8,
-                    ease: "power2.out",
-                    onUpdate: () => {
-                      const el = document.getElementById("apbdes-serapan-val");
-                      if (el) el.innerText = sObj.val.toFixed(1) + "%";
-                    },
-                  });
-
-                  // Animate 5 bidang cards
-                  gsap.fromTo(
-                    ".apbdes-bidang-card",
-                    { opacity: 0, y: 20 },
-                    { opacity: 1, y: 0, stagger: 0.08, duration: 0.6, ease: "power2.out" }
-                  );
-                },
-              });
-            }
-
-            // 3. Layanan Warga Reveal
-            const layananEl = document.getElementById("layanan-warga");
-            if (layananEl) {
-              ScrollTrigger.create({
-                trigger: layananEl,
-                start: "top 75%",
-                once: true,
-                onEnter: () => {
-                  gsap.fromTo(
-                    ".civic-service-card",
-                    { opacity: 0, y: 20 },
-                    { opacity: 1, y: 0, stagger: 0.08, duration: 0.6, ease: "power2.out" }
-                  );
-                },
-              });
-            }
-
-            // 4. Warta Berita Reveal
-            const beritaEl = document.getElementById("berita");
-            if (beritaEl) {
-              ScrollTrigger.create({
-                trigger: beritaEl,
-                start: "top 75%",
-                once: true,
-                onEnter: () => {
-                  gsap.fromTo(
-                    ".warta-news-card",
-                    { opacity: 0, y: 20 },
-                    { opacity: 1, y: 0, stagger: 0.1, duration: 0.6, ease: "power2.out" }
-                  );
-                },
-              });
-            }
-          }
         });
+
+        // 2. APBDes One-Shot Native Observer (Tidak memakai listener scroll JS sama sekali!)
+        const apbdesEl = document.getElementById("apbdes");
+        if (apbdesEl && "IntersectionObserver" in window) {
+          observer = new IntersectionObserver(
+            (entries) => {
+              const entry = entries[0];
+              if (entry.isIntersecting) {
+                // Begitu terlihat sekali, langsung disconnect agar 0 memori & 0 CPU saat scroll
+                observer?.disconnect();
+                observer = null;
+
+                // Animate progress bar (Belanja 856.4M / Pendapatan 898.1M = 95.4%)
+                gsap.fromTo(
+                  "#apbdes-progress-bar",
+                  { width: "0%" },
+                  { width: "95.4%", duration: 1.2, ease: "power2.out" }
+                );
+
+                // Animate numbers resmi APBDes 2026
+                const pObj = { val: 0 };
+                gsap.to(pObj, {
+                  val: 898152227,
+                  duration: 1.5,
+                  ease: "power2.out",
+                  onUpdate: () => {
+                    const el = document.getElementById("apbdes-pendapatan-val");
+                    if (el) el.innerText = "Rp " + Math.floor(pObj.val).toLocaleString("id-ID");
+                  },
+                });
+
+                const bObj = { val: 0 };
+                gsap.to(bObj, {
+                  val: 856452227,
+                  duration: 1.5,
+                  ease: "power2.out",
+                  onUpdate: () => {
+                    const el = document.getElementById("apbdes-belanja-val");
+                    if (el) el.innerText = "Rp " + Math.floor(bObj.val).toLocaleString("id-ID");
+                  },
+                });
+
+                const sObj = { val: 0 };
+                gsap.to(sObj, {
+                  val: 95.4,
+                  duration: 1.5,
+                  ease: "power2.out",
+                  onUpdate: () => {
+                    const el = document.getElementById("apbdes-serapan-val");
+                    if (el) el.innerText = sObj.val.toFixed(1) + "%";
+                  },
+                });
+              }
+            },
+            { threshold: 0.15 }
+          );
+          observer.observe(apbdesEl);
+        }
       } catch (err) {
-        console.error("GSAP load error:", err);
+        console.error("Animation init error:", err);
       }
     };
 
-    initGsap();
+    initAnimations();
 
     return () => {
       if (ctx) ctx.revert();
+      if (observer) observer.disconnect();
     };
   }, []);
 
