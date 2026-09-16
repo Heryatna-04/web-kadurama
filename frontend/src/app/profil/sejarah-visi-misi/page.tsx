@@ -287,8 +287,8 @@ export default function SejarahVisiMisiPage() {
                     <div
                       key={idx}
                       className={`w-[290px] sm:w-[320px] flex-shrink-0 rounded-2xl p-5 border transition-all flex flex-col justify-between relative ${isCurrent
-                          ? "bg-gradient-to-br from-[#003733] to-[#002825] text-white border-[#009388] shadow-lg ring-2 ring-[#009388]/40"
-                          : "bg-white text-slate-900 border-slate-200 hover:border-[#009388]/50 hover:shadow-md"
+                        ? "bg-gradient-to-br from-[#003733] to-[#002825] text-white border-[#009388] shadow-lg ring-2 ring-[#009388]/40"
+                        : "bg-white text-slate-900 border-slate-200 hover:border-[#009388]/50 hover:shadow-md"
                         }`}
                     >
                       {/* Top Meta Line: Era Badge & Sequence Number */}
@@ -302,8 +302,8 @@ export default function SejarahVisiMisiPage() {
                           </span>
                           <span
                             className={`font-mono text-xs font-black px-2 py-0.5 rounded-md ${isCurrent
-                                ? "bg-white/10 text-emerald-300"
-                                : "bg-slate-100 text-slate-500"
+                              ? "bg-white/10 text-emerald-300"
+                              : "bg-slate-100 text-slate-500"
                               }`}
                           >
                             #{kuwu.originalOrder}
@@ -343,8 +343,8 @@ export default function SejarahVisiMisiPage() {
                       {/* Bottom Footer Item Status */}
                       <div
                         className={`mt-6 pt-3 border-t text-[11px] font-medium flex items-center justify-between ${isCurrent
-                            ? "border-white/15 text-emerald-300"
-                            : "border-slate-100 text-slate-400"
+                          ? "border-white/15 text-emerald-300"
+                          : "border-slate-100 text-slate-400"
                           }`}
                       >
                         <span>{isCurrent ? "Kuwu Petahana ke-15" : `Pemimpin ke-${kuwu.originalOrder}`}</span>
@@ -438,22 +438,22 @@ export default function SejarahVisiMisiPage() {
                         </p>
                       </div>
 
-                      {/* Poin Misi dengan Nomor 1, 2, 3 dan Warna Dark Kontras */}
-                      <div className="space-y-2.5 pt-2">
+                      {/* Poin Misi: Baris Bersih dengan Pembungkus Angka Dark Accent */}
+                      <div className="divide-y divide-slate-100 pt-1">
                         {pilar.items.map((misi) => (
                           <div
                             key={misi.nomor}
-                            className="p-3.5 rounded-xl bg-slate-900 text-white border border-slate-800 shadow-xs space-y-1.5 transition-all hover:bg-slate-950 hover:border-slate-700 group/point"
+                            className="py-3 first:pt-2 last:pb-0 space-y-1"
                           >
                             <div className="flex items-center gap-2.5">
-                              <span className="w-6 h-6 rounded-md bg-[#009388] text-white font-mono font-black text-xs flex items-center justify-center shrink-0 shadow-2xs group-hover/point:bg-[#eda50c] group-hover/point:text-slate-950 transition-colors">
+                              <span className="w-6 h-6 rounded-md bg-slate-900 text-white font-mono font-black text-xs flex items-center justify-center shrink-0 shadow-2xs border border-slate-800">
                                 {misi.nomor}
                               </span>
-                              <h5 className="text-xs sm:text-[13px] font-extrabold text-slate-100 leading-tight">
+                              <h5 className="text-xs sm:text-[13px] font-extrabold text-slate-900 leading-tight">
                                 {misi.title}
                               </h5>
                             </div>
-                            <p className="text-xs text-slate-300/90 leading-relaxed pl-[34px]">
+                            <p className="text-xs text-slate-600 leading-relaxed pl-[34px]">
                               {misi.desc}
                             </p>
                           </div>
