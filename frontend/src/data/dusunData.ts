@@ -41,10 +41,10 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
     titleTag: "Sentra Pemerintahan & Pelayanan Publik",
     tagline: "Pusat Koordinasi Administrasi Balai Desa, Layanan Medis Siaga & Sentra Olahan Pangan",
     elevation: "285 mdpl",
-    areaHa: "38.5 Ha",
+    areaHa: "24.5 Ha",
     kkCount: 184,
     residentCount: 620,
-    villageShare: "37.4%",
+    villageShare: "27.5%",
     rtRwInfo: "8 RT / 2 RW",
     kadusName: "Ahmad Dahlan",
     kadusNip: "19820514 200801 1 007",
@@ -111,12 +111,12 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
     number: "Dusun II",
     name: "Dusun Pahing",
     titleTag: "Lumbung Ketahanan Pangan & Olahraga",
-    tagline: "Hamparan 64 Hektar Sawah Padi Organik, Irigasi Cisanggarung & Stadion Gelora Kadurama",
+    tagline: "Hamparan Sawah Padi Beririgasi Teknis, Saluran Irigasi Cisanggarung & Stadion Gelora Kadurama",
     elevation: "310 mdpl",
-    areaHa: "64.0 Ha",
+    areaHa: "42.0 Ha",
     kkCount: 172,
     residentCount: 598,
-    villageShare: "36.0%",
+    villageShare: "47.2%",
     rtRwInfo: "7 RT / 2 RW",
     kadusName: "Rohmat Hidayat",
     kadusNip: "19850912 201002 1 004",
@@ -124,7 +124,7 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
     photoUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1600&q=85",
     kadusPhotoUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=500&q=80",
     description:
-      "Dusun Pahing adalah benteng ketahanan pangan Desa Kadurama dengan hamparan 64 hektar sawah produktif. Menggunakan sistem irigasi teknis teratur dan pemupukan organik, kawasan ini mampu menghasilkan panen gabah berkualitas tinggi hingga 3 kali setahun. Dusun Pahing juga menjadi pusat pembinaan kepemudaan dengan adanya Lapangan Sepakbola Gelora Kadurama.",
+      "Dusun Pahing adalah benteng ketahanan pangan Desa Kadurama yang menaungi lumbung persawahan padi produktif desa seluas 42 hektar. Menggunakan sistem irigasi teknis teratur dan pemupukan terpadu, kawasan ini mampu menghasilkan panen gabah berkualitas tinggi secara berkelanjutan. Dusun Pahing juga menjadi pusat pembinaan kepemudaan dengan adanya Lapangan Sepakbola Gelora Kadurama.",
     quote:
       "Kami menjaga kelestarian sawah irigasi Dusun Pahing agar tetap menjadi lumbung pangan kebanggaan warga Kadurama.",
     coordinates: "-6.9785, 108.6020",
@@ -133,8 +133,8 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
         title: "Lumbung Padi Organik Terpadu",
         category: "Pertanian Berkelanjutan",
         desc: "Sawah produktif dengan varietas unggul lokal dan metode pertanian ramah lingkungan tanpa pestisida kimia.",
-        metric: "64 Hektar",
-        metricLabel: "Luas Hamparan Tani",
+        metric: "42 Hektar",
+        metricLabel: "Luas Hamparan Tani Sawah",
       },
       {
         title: "Saluran Irigasi Teknis Dusun Pahing",
@@ -179,10 +179,10 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
     titleTag: "Zona Konservasi Air & Agrobisnis",
     tagline: "Sumber Mata Air Purba Cikaduran 45 L/dtk, Perkebunan Ubi Jalar Manis & Sapi Perah",
     elevation: "340 mdpl",
-    areaHa: "40.3 Ha",
+    areaHa: "22.5 Ha",
     kkCount: 136,
     residentCount: 442,
-    villageShare: "26.6%",
+    villageShare: "25.3%",
     rtRwInfo: "6 RT / 2 RW",
     kadusName: "Agus Setiawan",
     kadusNip: "19880320 201203 1 006",
@@ -238,4 +238,94 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
       },
     ],
   },
+};
+
+export interface LandAllocationItem {
+  kategori: string;
+  nama: string;
+  areaHa: number;
+  formattedHa: string;
+  keterangan: string;
+  tipe: "tkd" | "hak_milik";
+}
+
+export interface KeadaanWilayahDesa {
+  totalLuasHa: number;
+  catatanTotal: string;
+  jenisTanah: {
+    jenis: string;
+    luasHa: number;
+    persen: string;
+    deskripsi: string;
+  }[];
+  peruntukanTanah: LandAllocationItem[];
+}
+
+export const KEADAAN_WILAYAH_KADURAMA: KeadaanWilayahDesa = {
+  totalLuasHa: 89.0,
+  catatanTotal: "Termasuk tanah perhutani",
+  jenisTanah: [
+    {
+      jenis: "Tanah Sawah",
+      luasHa: 42.0,
+      persen: "47.2%",
+      deskripsi: "Sawah irigasi teknis, setengah teknis & tadah hujan produktif",
+    },
+    {
+      jenis: "Tanah Darat",
+      luasHa: 47.0,
+      persen: "52.8%",
+      deskripsi: "Permukiman hunian, tegalan, pekarangan warga & fasilitas umum desa",
+    },
+  ],
+  peruntukanTanah: [
+    {
+      kategori: "Tanah Kas Desa (TKD)",
+      nama: "Luas Tanah Ex Bengkok",
+      areaHa: 11.076,
+      formattedHa: "11,076 Ha",
+      keterangan: "Tanah kas desa eks-bengkok pamong desa",
+      tipe: "tkd",
+    },
+    {
+      kategori: "Tanah Kas Desa (TKD)",
+      nama: "Luas Tanah Kuburan",
+      areaHa: 1.0,
+      formattedHa: "1,000 Ha",
+      keterangan: "Tempat pemakaman umum (TPU) warga desa",
+      tipe: "tkd",
+    },
+    {
+      kategori: "Tanah Kas Desa (TKD)",
+      nama: "Luas TKD Lainnya",
+      areaHa: 0.96,
+      formattedHa: "0,960 Ha",
+      keterangan: "Digunakan untuk gedung balai desa, gedung sekolah, lapang olahraga, dan gedung/fasilitas umum lainnya",
+      tipe: "tkd",
+    },
+    {
+      kategori: "Tanah Hak Milik Warga",
+      nama: "Tanah Sawah Hak Milik",
+      areaHa: 10.5,
+      formattedHa: "10,500 Ha",
+      keterangan: "Sawah produktif bersertifikat hak milik warga desa",
+      tipe: "hak_milik",
+    },
+    {
+      kategori: "Tanah Hak Milik Warga",
+      nama: "Tanah Darat / Tegalan Hak Milik",
+      areaHa: 23.0,
+      formattedHa: "23,000 Ha",
+      keterangan: "Lahan tegalan, kebun produktif & palawija milik warga",
+      tipe: "hak_milik",
+    },
+    {
+      kategori: "Tanah Hak Milik Warga",
+      nama: "Tanah Permukiman / Pekarangan",
+      areaHa: 45.0,
+      formattedHa: "45,000 Ha",
+      keterangan: "Area tapak permukiman perumahan dan pekarangan tempat tinggal warga",
+      tipe: "hak_milik",
+    },
+  ],
 };

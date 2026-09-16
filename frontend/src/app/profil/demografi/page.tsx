@@ -5,6 +5,7 @@ import Link from "next/link";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
 import { createClient } from "@/lib/supabase/client";
+import { KEADAAN_WILAYAH_KADURAMA } from "@/data/dusunData";
 import {
   Users,
   ChevronRight,
@@ -15,6 +16,11 @@ import {
   ShieldCheck,
   RefreshCw,
   Info,
+  Layers,
+  MapPin,
+  Landmark,
+  Trees,
+  CheckCircle2,
 } from "lucide-react";
 
 interface Resident {
@@ -252,6 +258,206 @@ export default function DemografiPage() {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+
+          {/* Keadaan Wilayah & Luas Tanah Berdasarkan Peruntukan */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-8">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="px-3 py-1 rounded-full bg-emerald-50 text-[#009388] text-xs font-bold uppercase tracking-wider border border-emerald-200/60 flex items-center gap-1.5">
+                  <Layers className="w-3.5 h-3.5" />
+                  Monografi Wilayah Resmi
+                </span>
+                <span className="text-xs text-slate-400 font-mono">KODE DESA: 32.08.10.2002</span>
+              </div>
+              <h3 className="text-2xl font-extrabold text-slate-900 mt-2 tracking-tight">
+                Keadaan Wilayah & Luas Tanah Berdasarkan Peruntukan
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 max-w-3xl leading-relaxed">
+                Rincian autentik keadaan wilayah Desa Kadurama seluas 89 Ha (termasuk tanah perhutani), pembagian tanah sawah dan tanah darat, serta peruntukan hak kepemilikan tanah kas desa dan tanah hak milik warga.
+              </p>
+            </div>
+
+            {/* 3 Core Spatial Metrics */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-5 rounded-2xl bg-gradient-to-br from-emerald-900 to-slate-900 text-white relative overflow-hidden">
+                <div className="text-[10px] font-bold text-emerald-300 uppercase tracking-wider">
+                  Total Luas Desa
+                </div>
+                <div className="text-3xl font-black font-mono mt-1 text-white">
+                  89 <span className="text-lg font-sans font-medium text-emerald-200">Ha</span>
+                </div>
+                <div className="text-xs text-emerald-100/80 mt-1">
+                  Termasuk Tanah Perhutani
+                </div>
+                <div className="mt-3 pt-3 border-t border-white/10 text-[11px] text-slate-300">
+                  Cakupan teritorial definitif batas desa
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                  Luas Tanah Sawah
+                </div>
+                <div className="text-3xl font-black font-mono mt-1 text-slate-900">
+                  42 <span className="text-lg font-sans font-medium text-slate-500">Ha</span>
+                </div>
+                <div className="text-xs text-[#009388] font-bold mt-1">
+                  47,2% Porsi Total Wilayah
+                </div>
+                <div className="mt-3 pt-3 border-t border-slate-200/80 text-[11px] text-slate-500">
+                  Lahan pertanian basah, sawah irigasi teknis & tadah hujan
+                </div>
+              </div>
+
+              <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="text-[10px] font-bold text-slate-500 uppercase tracking-wider">
+                  Luas Tanah Darat
+                </div>
+                <div className="text-3xl font-black font-mono mt-1 text-slate-900">
+                  47 <span className="text-lg font-sans font-medium text-slate-500">Ha</span>
+                </div>
+                <div className="text-xs text-amber-600 font-bold mt-1">
+                  52,8% Porsi Total Wilayah
+                </div>
+                <div className="mt-3 pt-3 border-t border-slate-200/80 text-[11px] text-slate-500">
+                  Permukiman warga, pekarangan, tegalan & fasilitas umum desa
+                </div>
+              </div>
+            </div>
+
+            {/* Rincian Luas Tanah Berdasarkan Peruntukan */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-base font-extrabold text-slate-900">
+                    Rincian Peruntukan Tanah Desa Kadurama
+                  </h4>
+                  <p className="text-xs text-slate-500">
+                    Klasifikasi legalitas kepemilikan dan penggunaan fungsi tanah desa.
+                  </p>
+                </div>
+                <span className="hidden sm:inline-flex text-xs font-mono text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                  Standar Pencatatan Buku Monografi Desa
+                </span>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Bagian 1: Tanah Kas Desa (TKD) */}
+                <div className="rounded-2xl border border-slate-200 p-5 bg-slate-50/50 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <span className="text-xs font-bold text-[#009388] uppercase tracking-wider flex items-center gap-1.5">
+                      <Landmark className="w-3.5 h-3.5" />
+                      Tanah Kas Desa (TKD) & Fasilitas Umum
+                    </span>
+                    <span className="text-xs font-mono font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200">
+                      3 Objek Aset
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">Luas Tanah Ex Bengkok</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            Tanah kas desa eks-bengkok pamong desa
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono font-extrabold text-sm text-[#009388]">11,076 Ha</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">Luas Tanah Kuburan</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            Area tempat pemakaman umum (TPU) warga desa
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono font-extrabold text-sm text-[#009388]">1 Ha</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">Luas TKD Lainnya (Fasum)</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            Gedung balai desa, gedung sekolah, lapang olahraga & gedung/fasum lainnya
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono font-extrabold text-sm text-[#009388]">0,96 Ha</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bagian 2: Tanah Hak Milik Warga */}
+                <div className="rounded-2xl border border-slate-200 p-5 bg-slate-50/50 space-y-3">
+                  <div className="flex items-center justify-between pb-2 border-b border-slate-200">
+                    <span className="text-xs font-bold text-amber-700 uppercase tracking-wider flex items-center gap-1.5">
+                      <Home className="w-3.5 h-3.5" />
+                      Luas Tanah Hak Milik Warga
+                    </span>
+                    <span className="text-xs font-mono font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200">
+                      3 Kategori Hak Milik
+                    </span>
+                  </div>
+
+                  <div className="space-y-2.5">
+                    <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">Tanah Sawah Hak Milik</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            Sawah produktif bersertifikat hak milik warga
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono font-extrabold text-sm text-amber-700">10,5 Ha</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">Tanah Darat / Tegalan Hak Milik</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            Lahan tegalan, kebun produktif & palawija milik warga
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono font-extrabold text-sm text-amber-700">23 Ha</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="p-3.5 rounded-xl bg-white border border-slate-200 shadow-2xs">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <div className="text-xs font-bold text-slate-900">Tanah Permukiman / Pekarangan</div>
+                          <div className="text-[11px] text-slate-500 mt-0.5">
+                            Kawasan tapak permukiman perumahan & pekarangan warga 3 dusun
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <span className="font-mono font-extrabold text-sm text-amber-700">45 Ha</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

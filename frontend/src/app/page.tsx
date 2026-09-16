@@ -1150,14 +1150,14 @@ export const DUSUN_REGISTRY_DATA: Record<
     sub: "Kecamatan Ciawigebang, Kabupaten Kuningan",
     lead: "Suhendra, S.Sos",
     leadRole: "Kepala Desa Kadurama",
-    area: "142.8 Hektar",
+    area: "89.0 Hektar",
     kk: "492 KK",
     pop: "1.720 Jiwa",
     coords: "-6.9782, 108.5982",
-    desc: "Kawasan pedesaan agraris mandiri di lereng timur Gunung Ciremai. Memiliki 64 hektar lumbung padi organik terpadu dan sumber mata air alami Cikaduran dengan debit lestari 45 liter/detik.",
+    desc: "Kawasan pedesaan agraris mandiri di lereng timur Gunung Ciremai seluas 89 Ha (termasuk tanah perhutani: 42 Ha Sawah & 47 Ha Darat). Memiliki sumber mata air alami Cikaduran dengan debit lestari 45 liter/detik.",
     facilities: [
       { name: "Kantor Balai Desa Kadurama", dusun: "Dusun Manis" },
-      { name: "Lumbung Padi Organik 64 Ha", dusun: "Dusun Pahing" },
+      { name: "Lumbung Padi Organik 42 Ha", dusun: "Dusun Pahing" },
       { name: "Mata Air Purba Cikaduran 45 L/s", dusun: "Dusun Wage" },
     ],
   },
@@ -1167,7 +1167,7 @@ export const DUSUN_REGISTRY_DATA: Record<
     sub: "Pusat Pelayanan Publik & Pemukiman",
     lead: "Ahmad Dahlan",
     leadRole: "Kepala Dusun Manis",
-    area: "38.5 Hektar",
+    area: "24.5 Hektar",
     kk: "194 KK",
     pop: "680 Jiwa",
     coords: "-6.9755, 108.5980",
@@ -1184,13 +1184,13 @@ export const DUSUN_REGISTRY_DATA: Record<
     sub: "Lumbung Pertanian Padi Organik",
     lead: "Rohmat Hidayat",
     leadRole: "Kepala Dusun Pahing",
-    area: "64.0 Hektar",
+    area: "42.0 Hektar",
     kk: "172 KK",
     pop: "598 Jiwa",
     coords: "-6.9785, 108.6020",
-    desc: "Kawasan lumbung pangan berkelanjutan dengan hamparan 64 hektar sawah padi organik, saluran irigasi mandiri, dan gelanggang pemuda Gelora Kadurama.",
+    desc: "Kawasan lumbung pangan berkelanjutan dengan hamparan 42 hektar sawah padi beririgasi teknis, saluran irigasi mandiri, dan gelanggang pemuda Gelora Kadurama.",
     facilities: [
-      { name: "Lumbung Padi Organik 64 Ha", dusun: "Dusun Pahing" },
+      { name: "Lumbung Padi Organik 42 Ha", dusun: "Dusun Pahing" },
       { name: "Gelora Kadurama (Stadion Mini)", dusun: "Dusun Pahing" },
       { name: "Saluran Irigasi Tersier Pahing", dusun: "Dusun Pahing" },
     ],
@@ -1201,7 +1201,7 @@ export const DUSUN_REGISTRY_DATA: Record<
     sub: "Lereng Bukit & Sumber Daya Air",
     lead: "Agus Setiawan",
     leadRole: "Kepala Dusun Wage",
-    area: "40.3 Hektar",
+    area: "22.5 Hektar",
     kk: "136 KK",
     pop: "442 Jiwa",
     coords: "-6.9825, 108.5955",
@@ -2550,7 +2550,7 @@ export default function Home() {
                     <Wheat className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-xs sm:text-sm font-bold text-white">64 Ha Padi Organik</div>
+                    <div className="text-xs sm:text-sm font-bold text-white">42 Ha Lahan Sawah</div>
                     <div className="text-[10px] text-emerald-100/80">Lumbung Pangan Dusun Pahing</div>
                   </div>
                 </div>
@@ -2838,7 +2838,7 @@ export default function Home() {
                         Dusun Pahing
                       </h3>
                       <div className="text-sm sm:text-base font-semibold text-[#eda50c]">
-                        Hamparan 64 Hektar Sawah Beririgasi Teknis & Lumbung Padi Organik
+                        Hamparan 42 Hektar Sawah Beririgasi Teknis & Lumbung Padi Desa
                       </div>
                       <p className="text-xs sm:text-sm text-slate-200/95 leading-relaxed font-normal max-w-xl">
                         Lumbung kedaulatan pangan utama Desa Kadurama dengan hamparan sawah produktif beririgasi teknis teratur, dikelola kelompok tani Sri Rejeki dengan sarana rice milling mandiri serta kompleks olahraga Gelora Kadurama.
@@ -2846,7 +2846,7 @@ export default function Home() {
                       <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
                         <div><div className="text-2xl sm:text-3xl font-black text-white">162</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
                         <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">548</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
-                        <div><div className="text-2xl sm:text-3xl font-black text-emerald-300">64 Ha</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Lahan Sawah</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-emerald-300">42 Ha</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Lahan Sawah</div></div>
                         <div><div className="text-2xl sm:text-3xl font-black text-white">7 / 2</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
                       </div>
                       <div className="space-y-2">
@@ -3144,7 +3144,7 @@ export default function Home() {
                   Peta Batas Wilayah & Tata Ruang 3 Dusun
                 </h2>
                 <p className="text-sm text-slate-600 mt-2 leading-relaxed">
-                  Pemetaan batas definitif Desa Kadurama seluas 142.8 hektar di lereng Gunung Ciremai berbasis citra satelit resolusi tinggi. Memuat zonasi Dusun Manis, Dusun Pahing, Dusun Wage, serta infrastruktur pelayanan masyarakat.
+                  Pemetaan batas definitif Desa Kadurama seluas 89 hektar (termasuk tanah perhutani) di lereng Gunung Ciremai berbasis citra satelit resolusi tinggi. Terdiri dari 42 Ha tanah sawah dan 47 Ha tanah darat.
                 </p>
               </div>
 
@@ -3152,8 +3152,8 @@ export default function Home() {
               <div className="flex items-center gap-6 divide-x divide-slate-200 self-start lg:self-auto text-left">
                 <div className="pr-2">
                   <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Luas Wilayah</div>
-                  <div className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">142.8 <span className="text-xs font-sans font-normal text-slate-500">Ha</span></div>
-                  <div className="text-[11px] text-[#009388] font-medium mt-0.5">Batas Resmi Terpetakan</div>
+                  <div className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">89.0 <span className="text-xs font-sans font-normal text-slate-500">Ha</span></div>
+                  <div className="text-[11px] text-[#009388] font-medium mt-0.5">Sawah 42 Ha • Darat 47 Ha</div>
                 </div>
                 <div className="pl-6 pr-2">
                   <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Topografi</div>
