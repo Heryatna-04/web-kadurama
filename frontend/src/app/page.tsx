@@ -3150,40 +3150,14 @@ export default function Home() {
 
               {/* CONSOLE TOP TOOLBAR */}
               <div className="px-5 py-3.5 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
-
-                {/* Focus Location Controller */}
-                <div className="flex flex-wrap items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGisSelectedDusun("all");
-                      setGisSelectedPoiId(null);
-                    }}
-                    className={`px-3.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 ${
-                      gisSelectedPoiId === null
-                        ? "bg-[#009388] text-white font-bold shadow-2xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    <Layers className="w-3.5 h-3.5" />
-                    <span>Batas Desa (Seluruh Wilayah)</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setGisSelectedDusun("all");
-                      setGisSelectedPoiId("balai-desa");
-                    }}
-                    className={`px-3.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 ${
-                      gisSelectedPoiId === "balai-desa"
-                        ? "bg-[#009388] text-white font-bold shadow-2xs"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    <Building2 className="w-3.5 h-3.5" />
-                    <span>Kantor Balai Desa</span>
-                  </button>
+                <div className="flex items-center gap-2.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#009388] animate-pulse" />
+                  <span className="font-bold text-slate-800 text-xs">
+                    Peta Batas Wilayah & Titik Sentral Desa Kadurama
+                  </span>
+                  <span className="text-slate-400 text-[11px] hidden sm:inline">
+                    • 125 Titik Poligon Kemendagri
+                  </span>
                 </div>
 
                 {/* Official Verification Indicator */}
@@ -3193,7 +3167,6 @@ export default function Home() {
                     <span>Dukcapil Kemendagri & Google Maps Terverifikasi</span>
                   </span>
                 </div>
-
               </div>
 
               {/* MAIN SPLIT WORKSPACE: MAP (COL 8) + MONOGRAPHY REGISTRY (COL 4) */}

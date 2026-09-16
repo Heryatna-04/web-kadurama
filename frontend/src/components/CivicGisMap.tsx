@@ -371,49 +371,19 @@ export default function CivicGisMap({
     <div className="relative w-full h-full min-h-[460px] bg-slate-900 select-none">
       <div ref={containerRef} className="w-full h-full min-h-[460px] z-10" />
 
-      {/* Modern Floating Header Bar (Top-Right) */}
+      {/* Modern Floating Header Bar (Top-Right): Fit Wilayah + Basemap Switcher */}
       <div className="absolute top-3 right-3 z-[1000] flex flex-wrap items-center justify-end gap-1.5 pointer-events-auto">
         {/* Fit Bounds Button */}
         <button
           type="button"
           onClick={handleFitVillageBounds}
-          className="px-2.5 py-1.5 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-slate-900 text-xs font-semibold shadow-md border border-slate-200/80 backdrop-blur-md transition flex items-center gap-1.5"
+          className="px-3 py-1.5 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-slate-900 text-xs font-semibold shadow-md border border-slate-200/80 backdrop-blur-md transition flex items-center gap-1.5"
           title="Tampilkan Seluruh Wilayah Desa Kadurama"
         >
           <svg className="w-3.5 h-3.5 text-[#009388]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
           </svg>
-          <span className="hidden sm:inline">Fit Wilayah</span>
-        </button>
-
-        {/* Fokus Balai Desa */}
-        <button
-          type="button"
-          onClick={handleFocusBalaiDesa}
-          className="px-2.5 py-1.5 rounded-xl bg-white/95 hover:bg-white text-slate-700 hover:text-slate-900 text-xs font-semibold shadow-md border border-slate-200/80 backdrop-blur-md transition flex items-center gap-1.5"
-          title="Fokus ke Kantor Balai Desa"
-        >
-          <span className="w-2 h-2 rounded-full bg-[#eda50c]" />
-          <span className="hidden sm:inline">Balai Desa</span>
-        </button>
-
-        {/* Toggle Batas Resmi */}
-        <button
-          type="button"
-          onClick={handleBoundaryToggle}
-          className={`px-3 py-1.5 rounded-xl border shadow-md text-xs font-semibold backdrop-blur-md transition flex items-center gap-1.5 ${
-            isBoundaryVisible
-              ? "bg-[#009388] text-white border-[#009388]"
-              : "bg-white/95 text-slate-600 border-slate-200 hover:text-slate-900"
-          }`}
-          title="Tampilkan / Sembunyikan Poligon Batas Desa Kemendagri"
-        >
-          <span
-            className={`w-2 h-2 rounded-full ${
-              isBoundaryVisible ? "bg-white" : "bg-slate-400"
-            }`}
-          />
-          <span>Batas Wilayah</span>
+          <span>Fit Wilayah</span>
         </button>
 
         {/* Basemap Switcher */}
