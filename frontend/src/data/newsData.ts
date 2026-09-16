@@ -58,7 +58,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
       "Dokumen rancangan RKPDes 2027 yang telah disepakati ini selanjutnya akan diverifikasi oleh tim asistensi Kecamatan Ciawigebang dan Dinas Pemberdayaan Masyarakat dan Desa (DPMD) Kabupaten Kuningan sebelum disahkan menjadi Peraturan Desa (Perdes)."
     ],
     status: "Terbit",
-    imageUrl: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1200&q=85",
+    imageUrl: "/dusun-manis.jpg",
     tags: ["RKPDes", "Musyawarah", "BPD", "Infrastruktur", "Dusun Pahing"]
   },
   {

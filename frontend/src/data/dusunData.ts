@@ -210,7 +210,7 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
     rtRwInfo: "3 RT / 1 RW",
     kadusName: "Jamaludin",
     kadusPhone: "08314407775",
-    photoUrl: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1600&q=85",
+    photoUrl: "/dusun-manis.jpg",
     kadusPhotoUrl: "/default-avatar.svg",
     description:
       "Dusun Manis merupakan dusun ketiga di Desa Kadurama dengan wilayah terluas yaitu kurang lebih 39 hektar. Terdiri dari 3 RT dan 1 RW, dusun ini menjadi sentra pelayanan publik dan institusi penting: Kantor Urusan Agama (KUA), Kantor Balai Desa, gedung Sekolah Dasar (SD), 1 Pondok Pesantren, 4 unit mushola peribadatan, serta Posyandu.",

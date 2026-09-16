@@ -67,7 +67,6 @@ export default function MasterPanelPage() {
   const [loginPassword, setLoginPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
-  const [showAccountGuide, setShowAccountGuide] = useState(false);
   const [loginError, setLoginError] = useState("");
   const [isSubmittingLogin, setIsSubmittingLogin] = useState(false);
 
@@ -1198,7 +1197,7 @@ export default function MasterPanelPage() {
       summary: "",
       content: "",
       status: "Terbit",
-      image_url: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
+      image_url: "/dusun-manis.jpg",
       tags: "Kadurama, Berita",
     });
     setIsNewsModalOpen(true);
@@ -1616,50 +1615,7 @@ export default function MasterPanelPage() {
                 />
                 <span>Ingat email di perangkat ini</span>
               </label>
-              <button
-                type="button"
-                onClick={() => setShowAccountGuide(!showAccountGuide)}
-                className="text-[#009388] hover:text-[#007b71] font-semibold underline underline-offset-2 flex items-center gap-1"
-              >
-                <Info className="w-3.5 h-3.5" />
-                <span>{showAccountGuide ? "Tutup Panduan" : "Daftar Akun Pamong"}</span>
-              </button>
             </div>
-
-            {/* Expandable Account Guide */}
-            {showAccountGuide && (
-              <div className="p-3.5 bg-slate-50 rounded-2xl border border-slate-200 space-y-2 animate-in fade-in duration-150">
-                <div className="flex items-center justify-between text-[11px] font-bold text-slate-800 border-b pb-1.5 border-slate-200">
-                  <span>8 Akun Terdaftar di Database Supabase:</span>
-                  <span className="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px]">
-                    Sandi Awal: kadurama2026
-                  </span>
-                </div>
-                <div className="max-h-44 overflow-y-auto space-y-1.5 pr-1">
-                  {APARATUR_ACCOUNTS.map((acc) => (
-                    <div
-                      key={acc.email}
-                      className="p-2 rounded-xl bg-white border border-slate-200 flex items-center justify-between gap-2 hover:border-[#009388] transition"
-                    >
-                      <div className="min-w-0 flex-1">
-                        <div className="font-bold text-slate-900 truncate">{acc.nama}</div>
-                        <div className="text-[10px] text-slate-500 font-mono truncate">{acc.email}</div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLoginEmail(acc.email);
-                          setLoginError("");
-                        }}
-                        className="px-2.5 py-1 bg-slate-100 hover:bg-[#009388] hover:text-white text-slate-700 rounded-lg text-[10px] font-semibold transition shrink-0"
-                      >
-                        Gunakan
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
 
             {/* Tombol Aksi */}
             <div className="pt-3 flex items-center justify-between gap-3">

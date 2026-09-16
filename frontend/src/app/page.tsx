@@ -1363,7 +1363,7 @@ const INITIAL_NEWS: NewsItem[] = [
     author: "Sekretaris Desa",
     summary: "Kepala Desa bersama BPD dan 3 Kepala Dusun menyepakati prioritas pembangunan jalan usaha tani dan penuntasan RTLH untuk tahun depan.",
     status: "Terbit",
-    imageUrl: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
+    imageUrl: "/dusun-manis.jpg",
   },
   {
     id: "NEWS-002",
@@ -1903,7 +1903,7 @@ export default function Home() {
               status: item.status,
               imageUrl:
                 item.image_url ||
-                "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
+                "/dusun-manis.jpg",
             }))
           );
         }
@@ -2252,7 +2252,7 @@ export default function Home() {
       author: "Kasi Pelayanan",
       summary: "",
       status: "Terbit",
-      imageUrl: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
+      imageUrl: "/dusun-manis.jpg",
     });
     setIsNewsModalOpen(true);
   };
@@ -2591,7 +2591,7 @@ export default function Home() {
                 {/* ========================================================= */}
                 <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
                   <img
-                    src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=960&q=75"
+                    src="/dusun-manis.jpg"
                     alt="Panorama Dusun Manis Kadurama"
                     loading="lazy"
                     decoding="async"
@@ -2867,7 +2867,7 @@ export default function Home() {
                 {/* ========================================================= */}
                 <div className="w-full flex-shrink-0 relative min-h-[540px] sm:min-h-[580px] lg:min-h-[620px] flex flex-col justify-between overflow-hidden">
                   <img
-                    src="https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=960&q=75"
+                    src="/dusun-manis.jpg"
                     alt="Panorama Dusun Manis Kadurama"
                     loading="lazy"
                     decoding="async"

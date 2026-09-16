@@ -51,26 +51,22 @@ interface CivicGisMapProps {
   selectedPoiId?: number | string | null;
   onSelectDusun?: (dusun: "all" | "manis" | "pahing" | "wage") => void;
   onSelectPoi?: (poi: CivicPoint) => void;
-  // Basemap switcher support
   basemapMode?: "satellite" | "streets";
   onToggleBasemap?: (mode: "satellite" | "streets") => void;
-  // Boundary polygon toggle support
   showOuterBoundary?: boolean;
   onToggleOuterBoundary?: (show: boolean) => void;
-  // Legacy props
   showDusunBoundaries?: boolean;
   showWaterways?: boolean;
 }
 
 export default function CivicGisMap({
   selectedDusun = "all",
-  selectedPoiId,
+  selectedPoiId = null,
   onSelectDusun,
   onSelectPoi,
   basemapMode: externalBasemapMode,
   onToggleBasemap,
-  showOuterBoundary: externalShowOuterBoundary,
-  onToggleOuterBoundary,
+  showOuterBoundary = true,
 }: CivicGisMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
@@ -78,14 +74,16 @@ export default function CivicGisMap({
   const poiGroupRef = useRef<LayerGroup | null>(null);
   const boundaryLayerRef = useRef<Polygon | null>(null);
 
+  // Stable callback refs to prevent map re-initialization on parent re-renders
+  const onSelectDusunRef = useRef(onSelectDusun);
+  onSelectDusunRef.current = onSelectDusun;
+  const onSelectPoiRef = useRef(onSelectPoi);
+  onSelectPoiRef.current = onSelectPoi;
+  const onToggleBasemapRef = useRef(onToggleBasemap);
+  onToggleBasemapRef.current = onToggleBasemap;
+
   const [internalBasemap, setInternalBasemap] = useState<"satellite" | "streets">("satellite");
   const activeBasemap = externalBasemapMode || internalBasemap;
-
-  const [internalBoundaryVisible, setInternalBoundaryVisible] = useState<boolean>(true);
-  const isBoundaryVisible =
-    externalShowOuterBoundary !== undefined
-      ? externalShowOuterBoundary
-      : internalBoundaryVisible;
 
   const [cursorCoords, setCursorCoords] = useState<string>(
     `${BALAI_DESA_LOCATION.lat.toFixed(5)}, ${BALAI_DESA_LOCATION.lng.toFixed(5)}`
@@ -93,22 +91,14 @@ export default function CivicGisMap({
 
   const handleBasemapChange = (mode: "satellite" | "streets") => {
     setInternalBasemap(mode);
-    if (onToggleBasemap) {
-      onToggleBasemap(mode);
-    }
-  };
-
-  const handleBoundaryToggle = () => {
-    const nextState = !isBoundaryVisible;
-    setInternalBoundaryVisible(nextState);
-    if (onToggleOuterBoundary) {
-      onToggleOuterBoundary(nextState);
+    if (onToggleBasemapRef.current) {
+      onToggleBasemapRef.current(mode);
     }
   };
 
   const handleFitVillageBounds = useCallback(() => {
     if (!mapRef.current) return;
-    mapRef.current.stop(); // Stop any pending animation to prevent _leaflet_pos error
+    mapRef.current.stop();
     if (boundaryLayerRef.current) {
       try {
         mapRef.current.fitBounds(boundaryLayerRef.current.getBounds(), {
@@ -122,20 +112,12 @@ export default function CivicGisMap({
     } else {
       mapRef.current.setView([BALAI_DESA_LOCATION.lat, BALAI_DESA_LOCATION.lng], 15);
     }
-    if (onSelectDusun) onSelectDusun("all");
-  }, [onSelectDusun]);
+    if (onSelectDusunRef.current) onSelectDusunRef.current("all");
+  }, []);
 
-  const handleFocusBalaiDesa = useCallback(() => {
-    if (!mapRef.current) return;
-    mapRef.current.stop();
-    mapRef.current.flyTo(
-      [BALAI_DESA_LOCATION.lat, BALAI_DESA_LOCATION.lng],
-      17,
-      { animate: true, duration: 0.6 }
-    );
-    if (onSelectPoi) onSelectPoi(OFFICIAL_POINTS[0]);
-  }, [onSelectPoi]);
-
+  // --------------------------------------------------------------------------
+  // INITIALIZE MAP ONCE ON MOUNT (Zero Re-initialization / Zero Flickering)
+  // --------------------------------------------------------------------------
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
 
@@ -146,7 +128,6 @@ export default function CivicGisMap({
       delete (containerRef.current as unknown as { _leaflet_id?: number })._leaflet_id;
     }
 
-    // Dynamically import Leaflet for SSR safety in Next.js
     import("leaflet").then((L) => {
       if (!isMounted || !containerRef.current || mapRef.current) return;
 
@@ -155,19 +136,17 @@ export default function CivicGisMap({
         zoom: 15,
         minZoom: 13,
         maxZoom: 19,
-        zoomControl: false, // Custom placed zoom control below
+        zoomControl: false,
         scrollWheelZoom: false,
         attributionControl: false,
       });
 
-      // Add zoom control at bottom-right
+      // Zoom Control (Bottom Right)
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
-      // Default Basemap: High-Res Satellite
+      // Initial Basemap (Satellite)
       const initialLayerUrl =
-        activeBasemap === "satellite"
-          ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          : "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 
       const tileLayer = L.tileLayer(initialLayerUrl, {
         maxZoom: 19,
@@ -176,7 +155,7 @@ export default function CivicGisMap({
 
       tileLayerRef.current = tileLayer;
 
-      // Render Official Kemendagri Boundary Polygon (125 points)
+      // 100% Official Kemendagri Boundary Polygon (125 points)
       const boundary = L.polygon(KADURAMA_OFFICIAL_BOUNDARY, {
         color: "#009388",
         weight: 2.5,
@@ -195,7 +174,6 @@ export default function CivicGisMap({
         { sticky: true }
       );
 
-      // Hover feedback
       boundary.on("mouseover", () => {
         boundary.setStyle({
           weight: 3.5,
@@ -211,22 +189,20 @@ export default function CivicGisMap({
         });
       });
 
-      if (isBoundaryVisible) {
-        boundary.addTo(map);
-      }
+      boundary.addTo(map);
       boundaryLayerRef.current = boundary;
 
-      // Fit map view initially without breaking animation frames
+      // Fit bounds strictly without animation to avoid initial race
       try {
         map.fitBounds(boundary.getBounds(), {
           padding: [28, 28],
-          animate: false, // animate: false prevents _leaflet_pos race on initial mount
+          animate: false,
         });
       } catch (err) {
-        console.warn("fitBounds failed:", err);
+        console.warn("fitBounds initial:", err);
       }
 
-      // Group for Official Verified Markers (Kantor Balai Desa)
+      // Group for Official Verified Marker (Kantor Balai Desa)
       const poiGroup = L.layerGroup().addTo(map);
       poiGroupRef.current = poiGroup;
 
@@ -256,7 +232,7 @@ export default function CivicGisMap({
         });
 
         marker.on("click", () => {
-          if (onSelectPoi) onSelectPoi(poi);
+          if (onSelectPoiRef.current) onSelectPoiRef.current(poi);
         });
 
         marker.bindTooltip(
@@ -271,7 +247,7 @@ export default function CivicGisMap({
         poiGroup.addLayer(marker);
       });
 
-      // Throttled real-time coordinates tracking (~8 FPS)
+      // Throttled real-time coordinates tracking
       let lastMoveTime = 0;
       map.on("mousemove", (e) => {
         const now = Date.now();
@@ -289,16 +265,16 @@ export default function CivicGisMap({
       isMounted = false;
       if (mapRef.current) {
         try {
-          mapRef.current.stop(); // CRUCIAL: Stop any pending animation to prevent _leaflet_pos error
-          mapRef.current.off();  // Remove all event handlers
-          mapRef.current.remove(); // Safely teardown leaflet instance
+          mapRef.current.stop();
+          mapRef.current.off();
+          mapRef.current.remove();
         } catch (e) {
           console.warn("Leaflet cleanup notice:", e);
         }
         mapRef.current = null;
       }
     };
-  }, [onSelectDusun, onSelectPoi]);
+  }, []); // Run ONLY once on mount! Never destroy/recreate on parent re-renders!
 
   // Update Basemap Layer when mode changes
   useEffect(() => {
@@ -323,26 +299,22 @@ export default function CivicGisMap({
     });
   }, [activeBasemap]);
 
-  // Toggle boundary visibility on map
-  useEffect(() => {
-    if (!mapRef.current || !boundaryLayerRef.current) return;
+  // Keep track of previous selection to prevent accidental reset zooms
+  const prevSelectionRef = useRef<{ dusun: string; poiId: string | number | null }>({
+    dusun: selectedDusun,
+    poiId: selectedPoiId,
+  });
 
-    if (isBoundaryVisible) {
-      if (!mapRef.current.hasLayer(boundaryLayerRef.current)) {
-        mapRef.current.addLayer(boundaryLayerRef.current);
-      }
-    } else {
-      if (mapRef.current.hasLayer(boundaryLayerRef.current)) {
-        mapRef.current.removeLayer(boundaryLayerRef.current);
-      }
-    }
-  }, [isBoundaryVisible]);
-
-  // Pan / Fit Bounds safely on selection changes
+  // Pan / Fit Bounds ONLY when selectedDusun or selectedPoiId genuinely change
   useEffect(() => {
     if (!mapRef.current) return;
 
-    // Stop previous animation first to avoid _leaflet_pos collisions
+    const prev = prevSelectionRef.current;
+    if (prev.dusun === selectedDusun && prev.poiId === selectedPoiId) {
+      return; // No change in selection, do not trigger fitBounds or zoom jump!
+    }
+    prevSelectionRef.current = { dusun: selectedDusun, poiId: selectedPoiId };
+
     mapRef.current.stop();
 
     if (selectedDusun === "all" && !selectedPoiId && boundaryLayerRef.current) {

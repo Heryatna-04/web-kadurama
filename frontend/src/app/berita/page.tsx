@@ -51,7 +51,7 @@ export default function BeritaPage() {
             status: item.status,
             imageUrl:
               item.image_url ||
-              "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=600&q=80",
+              "/dusun-manis.jpg",
             tags: Array.isArray(item.tags) ? item.tags : ["Kadurama"],
           }));
           setArticles(mapped);
