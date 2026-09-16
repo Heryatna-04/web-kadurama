@@ -59,7 +59,7 @@ export default function DusunDetailPage() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
 
-  const dusunOrder: ("manis" | "pahing" | "wage")[] = ["manis", "pahing", "wage"];
+  const dusunOrder: ("pahing" | "wage" | "manis")[] = ["pahing", "wage", "manis"];
   const currentIndex = dusunOrder.indexOf(slug);
   const prevSlug = dusunOrder[(currentIndex - 1 + dusunOrder.length) % dusunOrder.length];
   const nextSlug = dusunOrder[(currentIndex + 1) % dusunOrder.length];

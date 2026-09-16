@@ -78,22 +78,28 @@ export default function DemografiPage() {
 
   const dusunDefs = [
     {
-      key: "manis",
-      name: "Dusun I Manis",
-      slug: "manis",
-      role: "Pusat Pemerintahan, Pelayanan Publik & Sentra Olahan Pangan",
-    },
-    {
       key: "pahing",
-      name: "Dusun II Pahing",
+      name: "Dusun I Pahing",
       slug: "pahing",
-      role: "Lumbung Padi Organik 28 Ha, Olahraga Gelora & Konservasi Terbuka",
+      area: "± 27 Ha",
+      rtRw: "3 RT / 1 RW",
+      role: "Luas wilayah ± 27 Ha (3 RT / 1 RW). Memiliki fasilitas lapangan sepakbola, 2 mushola, SD, TK, dan Posyandu.",
     },
     {
       key: "wage",
-      name: "Dusun III Wage",
+      name: "Dusun II Wage",
       slug: "wage",
-      role: "Mata Air Cikaduran 45 L/s, Agrowisata Ubi Jalar & Kawasan Hijau Lereng",
+      area: "± 23 Ha",
+      rtRw: "2 RT / 1 RW",
+      role: "Luas wilayah ± 23 Ha (2 RT / 1 RW). Memiliki fasilitas 1 masjid, 1 mushola, pondok pesantren, PAUD, dan Posyandu.",
+    },
+    {
+      key: "manis",
+      name: "Dusun III Manis",
+      slug: "manis",
+      area: "± 39 Ha",
+      rtRw: "3 RT / 1 RW",
+      role: "Luas wilayah ± 39 Ha (3 RT / 1 RW). Memiliki fasilitas KUA, gedung SD, 4 mushola, 1 pesantren, dan Posyandu.",
     },
   ];
 
@@ -233,14 +239,19 @@ export default function DemografiPage() {
                   className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3 flex flex-col justify-between"
                 >
                   <div>
-                    <span className="text-xs font-bold text-[#009388] uppercase tracking-wider">
-                      {dsn.name}
-                    </span>
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-[#009388] uppercase tracking-wider">
+                        {dsn.name}
+                      </span>
+                      <span className="text-[11px] font-mono font-bold text-slate-700 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                        {dsn.area}
+                      </span>
+                    </div>
                     <div className="text-2xl font-black text-slate-900 mt-1">
                       {loading ? "..." : dsn.jiwa} <span className="text-xs font-normal text-slate-500">Jiwa</span>
                     </div>
                     <div className="text-xs text-slate-600 font-mono mt-0.5">
-                      {loading ? "..." : dsn.kk} Kepala Keluarga • Porsi {dsn.porsi}
+                      {loading ? "..." : dsn.kk} KK • {dsn.rtRw} • Porsi {dsn.porsi}
                     </div>
                     <p className="text-xs text-slate-600 mt-2 leading-relaxed">
                       {dsn.role}
