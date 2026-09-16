@@ -43,8 +43,7 @@ export default function DemografiPage() {
   const [loading, setLoading] = useState(true);
   const [residents, setResidents] = useState<Resident[]>([]);
   const [kkList, setKkList] = useState<SensusKK[]>([]);
-  const [jobFilter, setJobFilter] = useState<"top10" | "all" | "produktif" | "domestik">("top10");
-  const [hoveredJob, setHoveredJob] = useState<{ bidang: string; count: number; persen: number } | null>(null);
+  const [hoveredJob, setHoveredJob] = useState<{ bidang: string; count: number; persen: number; deskripsi?: string } | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -158,117 +157,211 @@ export default function DemografiPage() {
     };
   });
 
-  // Normalisasi & Analisis Pekerjaan
-  const normalizeJobTitle = (raw?: string | null): string => {
-    if (!raw || !raw.trim()) return "Belum / Tidak Bekerja";
+  // Penggolongan Resmi Profesi Warga ke dalam 8 Golongan Utama
+  const categorizeJob = (raw?: string | null) => {
+    if (!raw || !raw.trim()) {
+      return {
+        golongan: "Belum / Tidak Bekerja",
+        deskripsi: "Balita, anak usia dini & belum bekerja",
+        cakupan: "Balita, anak usia prasekolah & pencari kerja",
+        color: "#64748b", // Slate
+        isProduktif: false,
+      };
+    }
     const s = raw.trim().toLowerCase();
-    if (s.includes("belum/tidak bekerja / pelajar") || s.includes("belum / tidak bekerja / pelajar")) return "Belum Bekerja / Pelajar";
-    if (s.includes("belum") && s.includes("bekerja")) return "Belum / Tidak Bekerja";
-    if (s.includes("pelajar") || s.includes("mahasiswa")) return "Pelajar / Mahasiswa";
-    if (s.includes("mengurus rumah tangga") || s.includes("irt")) return "Mengurus Rumah Tangga";
-    if (s.includes("buruh harian") || s.includes("buruh lepas")) return "Buruh Harian Lepas";
-    if (s.includes("buruh tani") || s.includes("buruh perkebunan")) return "Buruh Tani / Perkebunan";
-    if (s.includes("petani") || s.includes("pekebun")) return "Petani / Pekebun";
-    if (s.includes("karyawanswasta") || s.includes("karyawan swasta")) return "Karyawan Swasta";
-    if (s.includes("karyawan bumn") || s.includes("bumn")) return "Karyawan BUMN";
-    if (s.includes("karyawan honorer") || s.includes("honorer")) return "Tenaga Honorer";
-    if (s.includes("wiraswasta") || s.includes("wirausaha")) return "Wiraswasta";
-    if (s.includes("pedagang") || s.includes("perdagangan")) return "Pedagang";
-    if (s.includes("pns") || s.includes("pegawai negeri")) return "Pegawai Negeri Sipil (PNS)";
-    if (s.includes("guru") || s.includes("dosen")) return "Guru / Tenaga Pendidik";
-    if (s.includes("pensiunan")) return "Pensiunan";
-    if (s.includes("sopir") || s.includes("supir")) return "Sopir / Pengemudi";
-    if (s.includes("perangkat desa")) return "Perangkat Desa";
-    if (s.includes("tni") || s.includes("polri") || s.includes("polisi")) return "TNI / Polri";
-    if (s.includes("tukang")) return "Tukang Bangunan / Kayu";
-    return raw.trim().replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+
+    // 1. Mengurus Rumah Tangga (Domestik)
+    if (s.includes("rumah tangga") || s === "irt") {
+      return {
+        golongan: "Mengurus Rumah Tangga (IRT)",
+        deskripsi: "Ibu rumah tangga & pengelola domestik keluarga",
+        cakupan: "Ibu Rumah Tangga (IRT) & pengelolaan keluarga",
+        color: "#f43f5e", // Rose
+        isProduktif: false,
+      };
+    }
+
+    // 2. Pelajar & Mahasiswa
+    if (s === "pelajar/mahasiswa" || (s.includes("pelajar") && !s.includes("belum")) || s.includes("mahasiswa")) {
+      return {
+        golongan: "Pelajar & Mahasiswa",
+        deskripsi: "Pendidikan dasar, menengah s/d perguruan tinggi",
+        cakupan: "Siswa SD, SMP, SMA/SMK & Mahasiswa",
+        color: "#3b82f6", // Blue
+        isProduktif: false,
+      };
+    }
+
+    // 3. Belum / Tidak Bekerja & Anak
+    if (s.includes("belum") || s.includes("tidak bekerja") || s === "kawin") {
+      return {
+        golongan: "Belum / Tidak Bekerja",
+        deskripsi: "Balita, anak usia dini & warga non-pekerja",
+        cakupan: "Balita, anak usia dini & belum bekerja",
+        color: "#94a3b8", // Slate light
+        isProduktif: false,
+      };
+    }
+
+    // 4. Buruh Harian, Tukang & Transportasi
+    if (
+      s.includes("buruh harian") ||
+      s.includes("buruh lepas") ||
+      s === "buruh" ||
+      s.includes("tukang") ||
+      s.includes("mekanik") ||
+      s.includes("sopir") ||
+      s.includes("supir") ||
+      s.includes("transportasi")
+    ) {
+      return {
+        golongan: "Buruh, Tukang & Transportasi",
+        deskripsi: "Pekerja harian lepas, pertukangan & pengemudi",
+        cakupan: "Buruh lepas, tukang batu, montir & sopir",
+        color: "#009388", // Teal Primary Kuningan
+        isProduktif: true,
+      };
+    }
+
+    // 5. Perdagangan & Kewirausahaan
+    if (s.includes("pedagang") || s.includes("wiraswasta") || s.includes("wirausaha") || s.includes("toko")) {
+      return {
+        golongan: "Perdagangan & Wiraswasta",
+        deskripsi: "Pelaku UMKM, warung niaga & wirausaha mandiri",
+        cakupan: "Pedagang pasar, toko kelontong & pelaku UMKM",
+        color: "#eda50c", // Gold / Amber
+        isProduktif: true,
+      };
+    }
+
+    // 6. Karyawan Swasta & BUMD
+    if (s.includes("swasta") || s.includes("bumd") || s.includes("bumn") || s === "karyawan") {
+      return {
+        golongan: "Karyawan Swasta & BUMD",
+        deskripsi: "Tenaga kerja industri, logistik & korporasi swasta",
+        cakupan: "Karyawan pabrik, staf logistik & korporasi",
+        color: "#8b5cf6", // Violet
+        isProduktif: true,
+      };
+    }
+
+    // 7. Pertanian, Perkebunan & Peternakan
+    if (
+      s.includes("petani") ||
+      s.includes("pekebun") ||
+      s.includes("peternak") ||
+      s.includes("tani") ||
+      s.includes("perkebunan")
+    ) {
+      return {
+        golongan: "Pertanian & Peternakan",
+        deskripsi: "Penggarap sawah, kebun palawija & peternak",
+        cakupan: "Petani sawah, peternak & buruh tani",
+        color: "#10b981", // Emerald
+        isProduktif: true,
+      };
+    }
+
+    // 8. Aparatur Sipil, Pendidikan & Medis
+    if (
+      s.includes("pns") ||
+      s.includes("pegawai negeri") ||
+      s.includes("perangkat desa") ||
+      s.includes("honorer") ||
+      s.includes("guru") ||
+      s.includes("dosen") ||
+      s.includes("perawat") ||
+      s.includes("pensiunan") ||
+      s.includes("masjid") ||
+      s.includes("ustadz") ||
+      s.includes("tni") ||
+      s.includes("polri")
+    ) {
+      return {
+        golongan: "Aparatur, Pendidikan & Medis",
+        deskripsi: "Aparatur pamong desa, guru sekolah & medis",
+        cakupan: "PNS, Pamong Desa, Guru, Nakes & Pensiunan",
+        color: "#06b6d4", // Cyan
+        isProduktif: true,
+      };
+    }
+
+    return {
+      golongan: "Sektor Jasa Lainnya",
+      deskripsi: "Berbagai bidang keahlian jasa lainnya",
+      cakupan: "Pekerja jasa dan keahlian profesi lainnya",
+      color: "#64748b",
+      isProduktif: true,
+    };
   };
 
-  const jobMap: Record<string, number> = {};
+  const jobCategoryMap: Record<
+    string,
+    { count: number; deskripsi: string; cakupan: string; color: string; isProduktif: boolean }
+  > = {};
+
   residents.forEach((r) => {
-    const job = normalizeJobTitle(r.pekerjaan);
-    jobMap[job] = (jobMap[job] || 0) + 1;
+    const meta = categorizeJob(r.pekerjaan);
+    if (!jobCategoryMap[meta.golongan]) {
+      jobCategoryMap[meta.golongan] = {
+        count: 0,
+        deskripsi: meta.deskripsi,
+        cakupan: meta.cakupan,
+        color: meta.color,
+        isProduktif: meta.isProduktif,
+      };
+    }
+    jobCategoryMap[meta.golongan].count += 1;
   });
 
-  const pekerjaanStats = Object.entries(jobMap)
-    .map(([bidang, count]) => ({
-      bidang,
-      count,
-      jumlah: `${count.toLocaleString("id-ID")} Jiwa`,
-      persen: totalPenduduk > 0 ? Number(((count / totalPenduduk) * 100).toFixed(1)) : 0,
+  const jobGolonganList = Object.entries(jobCategoryMap)
+    .map(([golongan, data]) => ({
+      golongan,
+      deskripsi: data.deskripsi,
+      cakupan: data.cakupan,
+      count: data.count,
+      color: data.color,
+      isProduktif: data.isProduktif,
+      persen: totalPenduduk > 0 ? Number(((data.count / totalPenduduk) * 100).toFixed(1)) : 0,
     }))
     .sort((a, b) => b.count - a.count);
 
-  // Sektor Produktif & Statistik Rata-rata Ketenagakerjaan
-  const totalKategoriPekerjaan = pekerjaanStats.length;
-  const nonProductiveKeys = ["Belum / Tidak Bekerja", "Belum Bekerja / Pelajar", "Pelajar / Mahasiswa", "Mengurus Rumah Tangga"];
-  const totalBekerja = pekerjaanStats
-    .filter((p) => !nonProductiveKeys.includes(p.bidang))
+  // 3 Metrik Sektor Ketenagakerjaan
+  const totalBekerja = jobGolonganList
+    .filter((g) => g.isProduktif)
     .reduce((acc, curr) => acc + curr.count, 0);
   const persenBekerja = totalPenduduk > 0 ? ((totalBekerja / totalPenduduk) * 100).toFixed(1) : "0";
 
-  const totalDomestikPelajar = pekerjaanStats
-    .filter((p) => ["Mengurus Rumah Tangga", "Pelajar / Mahasiswa", "Belum Bekerja / Pelajar"].includes(p.bidang))
+  const totalDomestikPendidikan = jobGolonganList
+    .filter((g) => ["Mengurus Rumah Tangga (IRT)", "Pelajar & Mahasiswa"].includes(g.golongan))
     .reduce((acc, curr) => acc + curr.count, 0);
-  const persenDomestikPelajar = totalPenduduk > 0 ? ((totalDomestikPelajar / totalPenduduk) * 100).toFixed(1) : "0";
+  const persenDomestikPendidikan = totalPenduduk > 0 ? ((totalDomestikPendidikan / totalPenduduk) * 100).toFixed(1) : "0";
 
-  const rataRataJiwaPerPekerjaan = totalKategoriPekerjaan > 0 ? Math.round(totalPenduduk / totalKategoriPekerjaan) : 0;
+  const totalBelumBekerja = jobGolonganList
+    .filter((g) => g.golongan === "Belum / Tidak Bekerja")
+    .reduce((acc, curr) => acc + curr.count, 0);
+  const persenBelumBekerja = totalPenduduk > 0 ? ((totalBelumBekerja / totalPenduduk) * 100).toFixed(1) : "0";
+
   const rasioGenderBps = totalPerempuan > 0 ? ((totalLaki / totalPerempuan) * 100).toFixed(1) : "100";
 
-  const displayedPekerjaan = React.useMemo(() => {
-    if (jobFilter === "top10") return pekerjaanStats.slice(0, 10);
-    if (jobFilter === "produktif") return pekerjaanStats.filter((p) => !nonProductiveKeys.includes(p.bidang));
-    if (jobFilter === "domestik") return pekerjaanStats.filter((p) => nonProductiveKeys.includes(p.bidang));
-    return pekerjaanStats;
-  }, [jobFilter, pekerjaanStats]);
-
-  // Segmentasi Donut Chart Pekerjaan (Top 7 Kategori + Lainnya)
+  // Segmentasi Donut Chart berdasarkan 8 Golongan Profesi
   const jobDonutSegments = React.useMemo(() => {
-    if (pekerjaanStats.length === 0 || totalPenduduk === 0) return [];
-    const top7 = pekerjaanStats.slice(0, 7);
-    const othersCount = pekerjaanStats.slice(7).reduce((acc, curr) => acc + curr.count, 0);
-    const othersPct = totalPenduduk > 0 ? Number(((othersCount / totalPenduduk) * 100).toFixed(1)) : 0;
-
-    const colors = [
-      "#009388", // Teal Primary
-      "#0891b2", // Cyan
-      "#10b981", // Emerald
-      "#eda50c", // Gold / Amber
-      "#6366f1", // Indigo
-      "#f43f5e", // Rose
-      "#8b5cf6", // Violet
-      "#64748b", // Slate for Lainnya
-    ];
-
-    const all = top7.map((item, idx) => ({
-      ...item,
-      color: colors[idx],
-    }));
-
-    if (othersCount > 0) {
-      all.push({
-        bidang: "Kategori Lainnya",
-        count: othersCount,
-        jumlah: `${othersCount.toLocaleString("id-ID")} Jiwa`,
-        persen: othersPct,
-        color: colors[7],
-      });
-    }
-
+    if (jobGolonganList.length === 0 || totalPenduduk === 0) return [];
     const circumference = 251.327;
     let accumulated = 0;
 
-    return all.map((seg) => {
+    return jobGolonganList.map((seg) => {
       const strokeLength = (seg.count / totalPenduduk) * circumference;
       const strokeOffset = -accumulated;
       accumulated += strokeLength;
       return {
         ...seg,
+        bidang: seg.golongan,
         strokeLength,
         strokeOffset,
       };
     });
-  }, [pekerjaanStats, totalPenduduk]);
+  }, [jobGolonganList, totalPenduduk]);
 
   const stats = [
     {
@@ -839,26 +932,27 @@ export default function DemografiPage() {
             </div>
           </div>
 
-          {/* Pekerjaan Stats & Dashboard Ketenagakerjaan */}
+          {/* Pekerjaan Stats & Dashboard Ketenagakerjaan Berbasis 8 Golongan Utama */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
                 <div className="text-xs font-bold text-[#009388] uppercase tracking-wider flex items-center gap-2">
                   <Briefcase className="w-3.5 h-3.5" />
-                  Struktur Mata Pencaharian & Ketenagakerjaan
+                  Klasifikasi Ketenagakerjaan & Mata Pencaharian
                 </div>
                 <h3 className="text-xl font-extrabold text-slate-900 mt-0.5">
-                  Statistik Distribusi Profesi Warga Desa Kadurama
+                  Distribusi 8 Golongan Utama Profesi Warga Desa Kadurama
                 </h3>
               </div>
-              <div className="text-xs text-slate-500 font-mono bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
-                Total: <strong className="text-slate-900">{totalKategoriPekerjaan}</strong> Klasifikasi Profesi
+              <div className="text-xs text-slate-500 font-mono bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                <span>100% Sensus Terpetakan ({jobGolonganList.length} Golongan)</span>
               </div>
             </div>
 
-            {/* 3 Metric Card Statistik Pekerjaan */}
+            {/* 3 Metric Card Proporsi Sektor */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+              <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200/80">
                 <div className="flex items-center justify-between">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
                     Sektor Produktif / Bekerja
@@ -866,65 +960,68 @@ export default function DemografiPage() {
                   <Briefcase className="w-4 h-4 text-[#009388]" />
                 </div>
                 <div className="text-2xl font-black text-emerald-950 mt-1">
-                  {loading ? "..." : totalBekerja.toLocaleString("id-ID")} <span className="text-xs font-normal text-emerald-700">Jiwa</span>
+                  {loading ? "..." : totalBekerja.toLocaleString("id-ID")}{" "}
+                  <span className="text-xs font-normal text-emerald-700">Jiwa</span>
                 </div>
                 <div className="text-[11px] text-emerald-700 mt-0.5 font-medium">
-                  {persenBekerja}% dari total populasi terdata (Buruh, Swasta, Wiraswasta, Petani, Pedagang, PNS)
+                  {persenBekerja}% populasi (Buruh, Wirausaha, Swasta, Petani & ASN)
                 </div>
               </div>
 
-              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200/80">
                 <div className="flex items-center justify-between">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
-                    Domestik & Pelajar
+                    Domestik & Pendidikan
                   </div>
                   <Home className="w-4 h-4 text-amber-700" />
                 </div>
                 <div className="text-2xl font-black text-amber-950 mt-1">
-                  {loading ? "..." : totalDomestikPelajar.toLocaleString("id-ID")} <span className="text-xs font-normal text-amber-700">Jiwa</span>
+                  {loading ? "..." : totalDomestikPendidikan.toLocaleString("id-ID")}{" "}
+                  <span className="text-xs font-normal text-amber-700">Jiwa</span>
                 </div>
                 <div className="text-[11px] text-amber-700 mt-0.5 font-medium">
-                  {persenDomestikPelajar}% porsi Ibu Rumah Tangga (IRT) dan Pelajar/Mahasiswa
+                  {persenDomestikPendidikan}% porsi Ibu Rumah Tangga (IRT) & Pelajar/Mahasiswa
                 </div>
               </div>
 
               <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
                 <div className="flex items-center justify-between">
                   <div className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
-                    Rata-Rata per Profesi
+                    Non-Angkatan Kerja / Belum Bekerja
                   </div>
                   <TrendingUp className="w-4 h-4 text-slate-500" />
                 </div>
                 <div className="text-2xl font-black text-slate-900 mt-1">
-                  ~{loading ? "..." : rataRataJiwaPerPekerjaan} <span className="text-xs font-normal text-slate-500">Jiwa / Bidang</span>
+                  {loading ? "..." : totalBelumBekerja.toLocaleString("id-ID")}{" "}
+                  <span className="text-xs font-normal text-slate-500">Jiwa</span>
                 </div>
                 <div className="text-[11px] text-slate-500 mt-0.5 font-medium">
-                  Rata-rata sebaran warga pada {totalKategoriPekerjaan} klasifikasi lapangan usaha
+                  {persenBelumBekerja}% porsi Balita, anak usia dini & warga non-pekerja
                 </div>
               </div>
             </div>
 
-            {/* Donut Chart Pekerjaan Interaktif (Bisa di-hover persentasenya) */}
+            {/* Donut Chart Golongan Profesi Interaktif (Panggung Utama Visual) */}
             {jobDonutSegments.length > 0 && (
-              <div className="p-6 rounded-3xl bg-slate-900 text-white space-y-5 border border-slate-800 shadow-md">
+              <div className="p-6 sm:p-7 rounded-3xl bg-slate-900 text-white space-y-6 border border-slate-800 shadow-md">
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
                     <span className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
                       <PieChart className="w-4 h-4" />
                     </span>
                     <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
-                      Grafik Lingkaran Struktur Mata Pencaharian (Interaktif)
+                      Diagram Lingkaran 8 Kluster Profesi (Interaktif)
                     </span>
                   </div>
                   <span className="text-[11px] text-slate-400 font-mono">
-                    Arahkan kursor ke lingkaran untuk melihat detail & persentase
+                    Arahkan kursor ke irisan atau daftar untuk sorotan rincian
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                   {/* Lingkaran Donut SVG Interaktif (5 Kolom) */}
                   <div className="lg:col-span-5 flex flex-col items-center justify-center">
-                    <div className="relative w-56 h-56 sm:w-60 sm:h-60 flex items-center justify-center">
+                    <div className="relative w-64 h-64 sm:w-72 sm:h-72 flex items-center justify-center">
                       <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
                         {/* Background Base Ring */}
                         <circle
@@ -933,11 +1030,11 @@ export default function DemografiPage() {
                           r="40"
                           fill="transparent"
                           stroke="#1e293b"
-                          strokeWidth="12"
+                          strokeWidth="11"
                         />
-                        {/* Slices */}
+                        {/* 8 Slices Donut */}
                         {jobDonutSegments.map((seg, idx) => {
-                          const isHovered = hoveredJob?.bidang === seg.bidang;
+                          const isHovered = hoveredJob?.bidang === seg.golongan;
                           return (
                             <circle
                               key={idx}
@@ -946,13 +1043,18 @@ export default function DemografiPage() {
                               r="40"
                               fill="transparent"
                               stroke={seg.color}
-                              strokeWidth={isHovered ? 15 : 12}
+                              strokeWidth={isHovered ? 15 : 11}
                               strokeDasharray={`${seg.strokeLength} 251.327`}
                               strokeDashoffset={seg.strokeOffset}
                               strokeLinecap="round"
-                              className="transition-all duration-300 cursor-pointer hover:opacity-90"
+                              className="transition-all duration-300 cursor-pointer hover:opacity-95"
                               onMouseEnter={() =>
-                                setHoveredJob({ bidang: seg.bidang, count: seg.count, persen: seg.persen })
+                                setHoveredJob({
+                                  bidang: seg.golongan,
+                                  count: seg.count,
+                                  persen: seg.persen,
+                                  deskripsi: seg.cakupan,
+                                })
                               }
                               onMouseLeave={() => setHoveredJob(null)}
                             />
@@ -960,29 +1062,34 @@ export default function DemografiPage() {
                         })}
                       </svg>
 
-                      {/* Center Hover Label Dynamic */}
-                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-3 pointer-events-none">
+                      {/* Center Hover Dynamic Badge */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 pointer-events-none">
                         {hoveredJob ? (
                           <>
-                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 font-sans truncate max-w-[130px]">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 font-sans line-clamp-1 max-w-[150px]">
                               {hoveredJob.bidang}
                             </span>
-                            <span className="text-3xl font-black text-white font-mono mt-0.5 leading-none">
+                            <span className="text-3xl sm:text-4xl font-black text-white font-mono mt-0.5 leading-none">
                               {hoveredJob.persen}%
                             </span>
-                            <span className="text-[11px] text-slate-300 font-mono mt-1">
+                            <span className="text-xs text-slate-200 font-mono mt-1 font-semibold">
                               {hoveredJob.count.toLocaleString("id-ID")} Jiwa
                             </span>
+                            {hoveredJob.deskripsi && (
+                              <span className="text-[9px] text-slate-400 max-w-[140px] line-clamp-1 mt-0.5">
+                                {hoveredJob.deskripsi}
+                              </span>
+                            )}
                           </>
                         ) : (
                           <>
                             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">
-                              Total Klasifikasi
+                              Struktur Profesi
                             </span>
-                            <span className="text-2xl font-black text-white font-mono mt-0.5">
-                              {totalKategoriPekerjaan} Profesi
+                            <span className="text-2xl sm:text-3xl font-black text-white font-mono mt-0.5">
+                              8 Golongan
                             </span>
-                            <span className="text-[10px] text-emerald-400 font-medium bg-emerald-500/20 px-2 py-0.5 rounded-full mt-1 border border-emerald-400/30">
+                            <span className="text-[10px] text-emerald-400 font-semibold bg-emerald-500/20 px-2.5 py-0.5 rounded-full mt-1 border border-emerald-400/30">
                               Hover Lingkaran
                             </span>
                           </>
@@ -991,40 +1098,53 @@ export default function DemografiPage() {
                     </div>
                   </div>
 
-                  {/* Legenda & Ranking Sektor (7 Kolom) */}
-                  <div className="lg:col-span-7 space-y-2.5">
+                  {/* Legenda & 8 Kartu Rincian Golongan (7 Kolom) */}
+                  <div className="lg:col-span-7 space-y-3">
                     <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                      Komposisi Persentase Sektor Pekerjaan Terbesar:
+                      Komposisi 8 Golongan Mata Pencaharian:
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {jobDonutSegments.map((seg, idx) => {
-                        const isHovered = hoveredJob?.bidang === seg.bidang;
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                      {jobGolonganList.map((seg, idx) => {
+                        const isHovered = hoveredJob?.bidang === seg.golongan;
                         return (
                           <div
                             key={idx}
                             onMouseEnter={() =>
-                              setHoveredJob({ bidang: seg.bidang, count: seg.count, persen: seg.persen })
+                              setHoveredJob({
+                                bidang: seg.golongan,
+                                count: seg.count,
+                                persen: seg.persen,
+                                deskripsi: seg.cakupan,
+                              })
                             }
                             onMouseLeave={() => setHoveredJob(null)}
-                            className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                            className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
                               isHovered
-                                ? "bg-slate-800 border-emerald-400 shadow-md ring-1 ring-emerald-400/30"
-                                : "bg-slate-800/60 border-slate-700/60 hover:bg-slate-800"
+                                ? "bg-slate-800 border-emerald-400 shadow-md ring-1 ring-emerald-400/40 translate-x-0.5"
+                                : "bg-slate-800/60 border-slate-700/60 hover:bg-slate-800 hover:border-slate-600"
                             }`}
                           >
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span
-                                className="w-3 h-3 rounded-full shrink-0"
-                                style={{ backgroundColor: seg.color }}
-                              />
-                              <span className="text-xs font-bold text-slate-200 truncate">
-                                {seg.bidang}
+                            <div className="flex items-start justify-between gap-2">
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span
+                                  className="w-3 h-3 rounded-full shrink-0 mt-0.5"
+                                  style={{ backgroundColor: seg.color }}
+                                />
+                                <span className="text-xs font-bold text-slate-100 truncate">
+                                  {seg.golongan}
+                                </span>
+                              </div>
+                              <span className="font-mono text-xs font-black text-white shrink-0">
+                                {seg.persen}%
                               </span>
                             </div>
-                            <div className="font-mono text-xs font-extrabold text-right shrink-0 pl-2">
-                              <span className="text-white">{seg.persen}%</span>
-                              <span className="text-[10px] text-slate-400 block font-normal">
-                                {seg.count} org
+
+                            <div className="mt-1.5 flex items-center justify-between text-[10px] text-slate-400 pl-5">
+                              <span className="truncate max-w-[160px] text-slate-400" title={seg.cakupan}>
+                                {seg.cakupan}
+                              </span>
+                              <span className="font-mono text-slate-300 shrink-0 font-medium">
+                                {seg.count.toLocaleString("id-ID")} org
                               </span>
                             </div>
                           </div>
@@ -1035,98 +1155,6 @@ export default function DemografiPage() {
                 </div>
               </div>
             )}
-
-            {/* Filter Tabs & List Distribusi Pekerjaan */}
-            <div className="space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
-                    <Filter className="w-3.5 h-3.5" />
-                    Filter:
-                  </span>
-                  <button
-                    onClick={() => setJobFilter("top10")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      jobFilter === "top10"
-                        ? "bg-[#009388] text-white shadow-xs"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    10 Besar Profesi
-                  </button>
-                  <button
-                    onClick={() => setJobFilter("produktif")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      jobFilter === "produktif"
-                        ? "bg-[#009388] text-white shadow-xs"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    Sektor Produktif ({pekerjaanStats.filter((p) => !nonProductiveKeys.includes(p.bidang)).length})
-                  </button>
-                  <button
-                    onClick={() => setJobFilter("domestik")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      jobFilter === "domestik"
-                        ? "bg-[#009388] text-white shadow-xs"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    Domestik & Pelajar ({pekerjaanStats.filter((p) => nonProductiveKeys.includes(p.bidang)).length})
-                  </button>
-                  <button
-                    onClick={() => setJobFilter("all")}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
-                      jobFilter === "all"
-                        ? "bg-[#009388] text-white shadow-xs"
-                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
-                    }`}
-                  >
-                    Semua ({totalKategoriPekerjaan})
-                  </button>
-                </div>
-
-                <div className="text-[11px] text-slate-400 font-mono text-right">
-                  Menampilkan <strong>{displayedPekerjaan.length}</strong> dari {totalKategoriPekerjaan} kategori
-                </div>
-              </div>
-
-              {displayedPekerjaan.length === 0 ? (
-                <p className="text-xs text-slate-400 italic p-4 bg-slate-50 rounded-xl border border-slate-200 text-center">
-                  Tidak ada data profesi pada kategori ini.
-                </p>
-              ) : (
-                <div className="space-y-3">
-                  {displayedPekerjaan.map((pek, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-100 hover:border-slate-300 transition-colors space-y-2"
-                    >
-                      <div className="flex justify-between items-center text-xs">
-                        <div className="flex items-center gap-2.5">
-                          <span className="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 font-mono text-[11px] font-bold flex items-center justify-center flex-shrink-0">
-                            #{idx + 1}
-                          </span>
-                          <span className="font-bold text-slate-800 text-sm">{pek.bidang}</span>
-                        </div>
-                        <div className="flex items-center gap-2 font-mono">
-                          <span className="font-extrabold text-slate-900">{pek.jumlah}</span>
-                          <span className="text-xs font-bold text-[#009388] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                            {pek.persen}%
-                          </span>
-                        </div>
-                      </div>
-                      <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-[#009388] to-emerald-500 h-full rounded-full transition-all duration-500"
-                          style={{ width: `${Math.max(pek.persen, 1.5)}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
           </div>
         </section>
       </main>
