@@ -77,7 +77,7 @@ export default function PemerintahanPage() {
                   <img
                     src={kuwu.imageUrl}
                     alt={kuwu.name}
-                    className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                   <div className="absolute bottom-4 left-4 right-4">
@@ -182,7 +182,7 @@ export default function PemerintahanPage() {
                       <img
                         src={item.imageUrl}
                         alt={item.name}
-                        className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                       <div className="absolute bottom-3 left-4">
@@ -232,7 +232,7 @@ export default function PemerintahanPage() {
                       <img
                         src={item.imageUrl}
                         alt={item.name}
-                        className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                       <div className="absolute bottom-3 left-4">
@@ -282,7 +282,7 @@ export default function PemerintahanPage() {
                       <img
                         src={item.imageUrl}
                         alt={item.name}
-                        className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
+                        className="w-full h-full object-cover group-hover:scale-105 transition-all duration-500"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/20 to-transparent" />
                       <div className="absolute bottom-3 left-4">

@@ -49,7 +49,7 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
     kadusName: "Trida Sentosa",
     kadusPhone: "083861181402",
     photoUrl: "https://images.unsplash.com/photo-1500937386664-56d1dfef3854?auto=format&fit=crop&w=1600&q=85",
-    kadusPhotoUrl: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=500&q=80",
+    kadusPhotoUrl: "/default-avatar.svg",
     description:
       "Dusun Pahing merupakan dusun pertama di Desa Kadurama dengan luas wilayah kurang lebih 27 hektar. Memiliki 3 RT dan 1 RW, wilayah ini menaungi lumbung pangan padi sawah desa, lapangan sepakbola kebanggaan warga (Gelora Kadurama), sarana ibadah 2 mushola, institusi pendidikan Sekolah Dasar (SD) dan Taman Kanak-Kanak (TK), serta Posyandu.",
     coordinates: "-6.9785, 108.6020",
@@ -130,7 +130,7 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
     kadusName: "Andri Rukmana",
     kadusPhone: "089667736184",
     photoUrl: "https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&w=1600&q=85",
-    kadusPhotoUrl: "https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=500&q=80",
+    kadusPhotoUrl: "/default-avatar.svg",
     description:
       "Dusun Wage merupakan dusun kedua di Desa Kadurama dengan luas wilayah kurang lebih 23 hektar. Terdiri dari 2 RT dan 1 RW di kontur sejuk lereng timur Gunung Ciremai. Wilayah ini memiliki sarana ibadah 1 masjid dan 1 mushola, institusi pendidikan keagamaan Pondok Pesantren, gedung PAUD, layanan Posyandu, serta sumber daya alam abadi Mata Air Alami Cikaduran berdebit 45 liter per detik.",
     coordinates: "-6.9825, 108.5955",
@@ -211,7 +211,7 @@ export const DUSUN_DETAILS: Record<"manis" | "pahing" | "wage", DusunDetail> = {
     kadusName: "Jamaludin",
     kadusPhone: "08314407775",
     photoUrl: "https://images.unsplash.com/photo-1541872703-74c5e44368f9?auto=format&fit=crop&w=1600&q=85",
-    kadusPhotoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=500&q=80",
+    kadusPhotoUrl: "/default-avatar.svg",
     description:
       "Dusun Manis merupakan dusun ketiga di Desa Kadurama dengan wilayah terluas yaitu kurang lebih 39 hektar. Terdiri dari 3 RT dan 1 RW, dusun ini menjadi sentra pelayanan publik dan institusi penting: Kantor Urusan Agama (KUA), Kantor Balai Desa, gedung Sekolah Dasar (SD), 1 Pondok Pesantren, 4 unit mushola peribadatan, serta Posyandu.",
     coordinates: "-6.9755, 108.5980",
