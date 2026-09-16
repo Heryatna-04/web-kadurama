@@ -234,9 +234,9 @@ export default function CivicGisMap({
         const pinHtml = `
           <div class="relative flex items-center justify-center cursor-pointer group">
             <div class="absolute w-9 h-9 rounded-full bg-[#eda50c]/40 animate-ping"></div>
-            <div class="relative w-8 h-8 rounded-full bg-[#009388] border-2 border-white shadow-xl flex items-center justify-center text-white transition-transform transform group-hover:scale-110">
-              <svg class="w-4 h-4 text-[#eda50c]" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2L2 9l2 1v10h6v-6h4v6h6V10l2-1-10-7zm0 3.2L18 9v9h-2v-6H8v6H6V9l6-3.8z"/>
+            <div class="relative w-8 h-8 rounded-full bg-[#eda50c] border-2 border-white shadow-xl flex items-center justify-center transition-transform transform group-hover:scale-110">
+              <svg class="w-4 h-4 text-[#005851]" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
               </svg>
             </div>
           </div>
