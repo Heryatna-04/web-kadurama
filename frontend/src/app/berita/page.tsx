@@ -22,7 +22,7 @@ import {
 export default function BeritaPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("Semua");
-  const [articles, setArticles] = useState<NewsArticle[]>(DEFAULT_ARTICLES);
+  const [articles, setArticles] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -55,9 +55,12 @@ export default function BeritaPage() {
             tags: Array.isArray(item.tags) ? item.tags : ["Kadurama"],
           }));
           setArticles(mapped);
+        } else {
+          setArticles([]);
         }
       } catch (err) {
-        console.warn("Gagal mengambil berita dari Supabase, pakai data bawaan:", err);
+        console.warn("Gagal mengambil berita dari Supabase:", err);
+        setArticles([]);
       } finally {
         setLoading(false);
       }
@@ -157,8 +160,21 @@ export default function BeritaPage() {
 
         {/* Content Section */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
-          {filteredArticles.length === 0 ? (
-            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 max-w-md mx-auto my-12">
+          {loading ? (
+            <div className="py-20 text-center">
+              <div className="w-8 h-8 border-3 border-[#009388] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-xs text-slate-500 font-medium">Memuat warta & publikasi desa...</p>
+            </div>
+          ) : articles.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 max-w-lg mx-auto my-12 shadow-xs">
+              <Newspaper className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <h3 className="font-extrabold text-slate-800 text-lg">Belum Ada Warta Diterbitkan</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                Pemerintah Desa Kadurama belum menerbitkan rilis berita atau dokumentasi kegiatan resmi. Warta terbaru akan tampil secara otomatis di sini saat diterbitkan.
+              </p>
+            </div>
+          ) : filteredArticles.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 max-w-md mx-auto my-12 shadow-xs">
               <Newspaper className="w-12 h-12 text-slate-300 mx-auto mb-3" />
               <h3 className="font-extrabold text-slate-800 text-lg">Tidak Ada Berita Ditemukan</h3>
               <p className="text-xs text-slate-500 mt-1">

@@ -1722,7 +1722,6 @@ export default function Home() {
   const [facilityCategoryFilter, setFacilityCategoryFilter] = useState<
     "all" | "pemerintahan" | "kesehatan" | "pendidikan" | "ekonomi" | "alam"
   >("all");
-  const [apbdesFilter, setApbdesFilter] = useState<"all" | "pendapatan" | "belanja">("all");
   const [activeServiceKey, setActiveServiceKey] = useState<string>("surat-sktm");
 
   // Public GIS Map State (Satellite-Only with Official Boundaries)
@@ -3827,8 +3826,8 @@ export default function Home() {
         <section id="apbdes" className="py-20 bg-slate-50 border-b border-slate-200 relative overflow-hidden">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
 
-            {/* Header Bersih Tanpa Eyebrow Repetitif */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+            {/* Header Bersih Sejajar dengan CTA Transparansi */}
+            <div className="flex flex-col sm:flex-row sm:items-end justify-between mb-10 gap-4">
               <div>
                 <h2 className="text-2xl sm:text-3xl font-extrabold text-slate-900 tracking-tight">
                   Akuntabilitas & Realisasi APBDes Tahun Anggaran 2026
@@ -3838,40 +3837,14 @@ export default function Home() {
                 </p>
               </div>
 
-              {/* Filter & CTA Transparansi */}
-              <div className="flex flex-wrap items-center gap-3 self-start md:self-auto">
-                <div className="flex items-center gap-1.5 p-1 bg-white border border-slate-200 rounded-xl shadow-2xs text-xs">
-                  <button
-                    onClick={() => setApbdesFilter("all")}
-                    className={`px-3.5 py-1.5 rounded-lg font-bold transition ${apbdesFilter === "all" ? "bg-[#009388] text-white" : "text-slate-600 hover:text-slate-900"
-                      }`}
-                  >
-                    Semua
-                  </button>
-                  <button
-                    onClick={() => setApbdesFilter("pendapatan")}
-                    className={`px-3.5 py-1.5 rounded-lg font-bold transition ${apbdesFilter === "pendapatan" ? "bg-[#009388] text-white" : "text-slate-600 hover:text-slate-900"
-                      }`}
-                  >
-                    Pendapatan
-                  </button>
-                  <button
-                    onClick={() => setApbdesFilter("belanja")}
-                    className={`px-3.5 py-1.5 rounded-lg font-bold transition ${apbdesFilter === "belanja" ? "bg-[#009388] text-white" : "text-slate-600 hover:text-slate-900"
-                      }`}
-                  >
-                    Belanja
-                  </button>
-                </div>
-
-                <Link
-                  href="/transparansi/apbdes"
-                  className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#003733] hover:bg-[#002825] text-white text-xs font-bold transition shadow-xs border border-[#005851] group"
-                >
-                  <span>Detail APBDes Lengkap</span>
-                  <ArrowRight className="w-3.5 h-3.5 text-[#eda50c] group-hover:translate-x-0.5 transition-transform" />
-                </Link>
-              </div>
+              {/* CTA Transparansi Sejajar */}
+              <Link
+                href="/transparansi/apbdes"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#003733] hover:bg-[#002825] text-white text-xs font-bold transition shadow-xs border border-[#005851] group shrink-0 self-start sm:self-auto"
+              >
+                <span>Detail APBDes Lengkap</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#eda50c] group-hover:translate-x-0.5 transition-transform" />
+              </Link>
             </div>
 
             {/* Bento Alokasi Anggaran: 2 Kolom Asimetris */}
@@ -3953,8 +3926,7 @@ export default function Home() {
 
               {/* Kolom Kanan (8 Cols): Daftar 5 Bidang & Unduh Salinan Perdes */}
               <div className="lg:col-span-8">
-                {(apbdesFilter === "all" || apbdesFilter === "belanja") && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {apbdesBidangList.map((bidang) => (
                       <div
                         key={bidang.id}
@@ -4010,7 +3982,6 @@ export default function Home() {
                       </div>
                     </div>
                   </div>
-                )}
               </div>
             </div>
           </div>
@@ -4048,7 +4019,17 @@ export default function Home() {
               const mediumItem = published[1];
               const smallItem = published[2];
 
-              if (!featured) return null;
+              if (!featured) {
+                return (
+                  <div className="bg-slate-50 border border-slate-200 rounded-3xl p-12 text-center max-w-lg mx-auto shadow-2xs">
+                    <Newspaper className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                    <h3 className="font-extrabold text-slate-800 text-base">Belum Ada Warta Diterbitkan</h3>
+                    <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                      Publikasi berita desa, agenda pembangunan, dan rilis kegiatan warga akan tampil di sini saat diterbitkan oleh aparatur desa.
+                    </p>
+                  </div>
+                );
+              }
 
               const getSlug = (id: string) => {
                 const found = newsList.find((n) => n.id === id);

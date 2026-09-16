@@ -223,28 +223,32 @@
      - Rekonstruksi topografi 3D lereng timur Gunung Ciremai dengan elevasi bertingkat (285 mdpl di Dusun Pahing hingga 340 mdpl di Dusun Puhun).
      - Menempatkan pin fasilitas 3D interaktif di lokasi nyata: Balai Desa Kadurama, SDN Kadurama, Lumbung Padi Organik 64 Ha, Gelora Kadurama, Mata Air Purba Cikaduran (45 L/dtk), dan Peternakan Sapi Perah.
      - Raycasting interaktif: klik pin 3D memunculkan floating HUD informasi fasilitas dengan link Google Maps, rotasi bebas 360°, dan 4 preset kamera (Isometrik, Satelit Atas, Punggung Ciremai, Hamparan Padi).
-   - Pembaruan berkas mockup visual: Siap diuji langsung di browser pada [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html).
+    - Pembaruan berkas mockup visual: Siap diuji langsung di browser pada [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html).
+
+20. Draft Rencana Pengembangan: Modul Export Data Transparansi APBDes (PDF & Excel/CSV):
+    - **Tujuan:** Memfasilitasi transparansi publik dan kebutuhan pelaporan formal internal aparatur desa / BPD dengan fitur ekspor data anggaran satu klik.
+    - **Format 1: Dokumen Resmi PDF (Laporan Realisasi APBDes):**
+      - Desain layout kertas A4 formal berstandar regulasi Kemendagri / Permendagri No. 20 Tahun 2018.
+      - Memuat Kop Surat Resmi Pemerintah Desa Kadurama, logo daerah Kabupaten Kuningan, nomor Perdes APBDes tahun berjalan, tabel neraca ringkas (Pendapatan, Belanja, Pembiayaan, dan SILPA), serta blok tanda tangan digital Kuwu dan Ketua BPD Kadurama.
+      - Pustaka engine: `@react-pdf/renderer` atau generator HTML-to-PDF berbasis canvas cetak browser yang ringan dan bebas ketergantungan server berat.
+    - **Format 2: Lembar Kerja Spreadsheet Excel (.xlsx / .csv):**
+      - Rekapitulasi tabular multi-sheet:
+        - Sheet 1: *Ringkasan APBDes* (Pendapatan Asli Desa, Transfer Dana Desa, Alokasi Dana Desa, Bagi Hasil Pajak/Retribusi).
+        - Sheet 2: *Rincian Belanja 5 Bidang* (Penyelenggaraan Pemerintahan, Pelaksanaan Pembangunan, Pembinaan Kemasyarakatan, Pemberdayaan Masyarakat, Penanggulangan Bencana/Darurat).
+        - Sheet 3: *Realisasi per Kegiatan & Output Fisik*.
+      - Pustaka engine: `xlsx` (SheetJS) yang sudah terpasang di dependensi repositori.
+    - **Integrasi Antarmuka:** Tombol aksi ekspor `"Unduh Laporan APBDes (PDF)"` dan `"Ekspor Data (Excel)"` akan ditempatkan di bagian atas halaman `/transparansi/apbdes` serta dapat diakses melalui portal administrasi master.
 
 ---
 
 ## 🎯 Status & Pekerjaan Selanjutnya (Next Action)
 - [x] Penghapusan modul cetak surat dan agenda persuratan dari navigasi publik dan backpanel.
-- [x] Standardisasi wilayah menjadi 3 dusun resmi: Dusun Manis, Dusun Pahing, Dusun Puhun.
+- [x] Standardisasi wilayah menjadi 3 dusun resmi: Dusun Manis, Dusun Pahing, Dusun Wage.
 - [x] Pembuatan Modul Sensus Kesejahteraan Keluarga (Per KK) dengan kalkulator auto-desil dan kriteria RTLH.
-- [x] Pembuatan fitur ekspor CSV dan lembar cetak PDF A4 berdesain terpersonalisasi.
+- [x] Draft arsitektur ekspor data APBDes (PDF & Excel/CSV) di DEVELOPMENT_LOG.md.
 - [x] Pembuatan section Profil 3 Dusun dan Peta Geografis Sebaran Fasilitas di portal publik.
 - [x] Redesign Hero Section & Profil 3 Dusun dengan standard taste frontend anti-slop.
-- [x] Implementasi Full-Photo Cinematic Carousel Profil 3 Dusun (Opsi 1: anti card-bertumpuk).
-- [x] Implementasi Infinite Seamless Loop (1, 2, 3, 1, 2, 3) & Auto-Slide 5s dengan navigasi panah di dalam gambar.
-- [x] Perbaikan Timer Auto-Slide (100% pause saat hover, dan instan reset timer saat klik panah/indikator).
-- [x] Restorasi palet warna Hero section kembali ke nuansa Kuningan Teal [index.html](file:///home/jrilym/Projects/Next/desa/index.html) (tidak pekat hitam).
-- [x] Restorasi Home Cockpit Card dengan aksen kotak kuning emas KD, jam buka, dan motto resmi Kuningan.
-- [x] Pembaruan strip data bawah Hero dengan 4 indikator vital (492 KK, 64 Ha Padi, 45 L/s Air, 3 Klaster Potensi).
-- [x] Penyesuaian dimensi Gerbang Kuningan: tinggi asli proporsional di tengah, flank kiri-kanan putih seamless 2400px tanpa blocking putih.
-- [x] Pembuatan mockup interaktif 3 opsi konsep section Geospasial di [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html).
-- [x] Penguncian zoom pada Opsi 1 (Leaflet GIS) di [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html).
-- [x] Implementasi Citra Satelit Nyata Desa Kadurama pada Model 3D Terrain Opsi 2 di [mockups/geospatial_options.html](file:///home/jrilym/Projects/Next/desa/mockups/geospatial_options.html).
-- [x] Verifikasi build Next.js 16 (Turbopack) sukses 100% tanpa error TypeScript/JSX.
-- [ ] Review dan pemilihan opsi geospasial akhir oleh stakeholder/user untuk integrasi ke portal utama `page.tsx`.
-- [ ] Persiapan skema migrasi tabel Supabase (`sensus_kk`, `fasilitas_desa`) jika data akan dipersistensikan ke backend PostgreSQL.
+- [x] Pembuatan Lembar Validasi Data & Inventarisasi Asumsi di VALIDASI_DATA.md.
+- [ ] Implementasi export APBDes PDF & Excel setelah dokumen Perdes fisik APBDes diinput oleh staf desa.
+
 

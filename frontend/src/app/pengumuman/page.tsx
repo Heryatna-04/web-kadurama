@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
-import { ANNOUNCEMENTS_LIST } from "@/data/newsData";
+import { createClient } from "@/lib/supabase/client";
 import {
   Bell,
   Calendar,
@@ -17,10 +17,67 @@ import {
   Search,
 } from "lucide-react";
 
+interface AnnouncementItem {
+  id: string;
+  title: string;
+  number: string;
+  date: string;
+  validUntil?: string;
+  summary: string;
+  content?: string;
+  category: string;
+  isUrgent?: boolean;
+  issuer?: string;
+  fileUrl?: string;
+  fileSize?: string;
+}
+
 export default function PengumumanPage() {
   const [searchQuery, setSearchQuery] = useState("");
+  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredAnnouncements = ANNOUNCEMENTS_LIST.filter(
+  useEffect(() => {
+    async function loadAnnouncements() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("announcements")
+          .select("*")
+          .eq("is_deleted", false)
+          .order("created_at", { ascending: false });
+
+        if (data && data.length > 0) {
+          const mapped: AnnouncementItem[] = data.map((item: any) => ({
+            id: item.id,
+            title: item.title,
+            number: item.number,
+            date: item.date,
+            validUntil: item.valid_until || item.date,
+            summary: item.summary,
+            content: item.content || item.summary,
+            category: item.category,
+            isUrgent: !!item.is_urgent,
+            issuer: item.issuer || "Pemerintah Desa Kadurama",
+            fileUrl: item.file_url,
+            fileSize: item.file_size || "PDF",
+          }));
+          setAnnouncements(mapped);
+        } else {
+          setAnnouncements([]);
+        }
+      } catch (err) {
+        console.warn("Gagal memuat pengumuman dari Supabase:", err);
+        setAnnouncements([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadAnnouncements();
+  }, []);
+
+  const filteredAnnouncements = announcements.filter(
     (item) =>
       item.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
       item.number.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -74,67 +131,96 @@ export default function PengumumanPage() {
 
         {/* Content Section */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
-          <div className="space-y-6">
-            {filteredAnnouncements.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs hover:shadow-md transition flex flex-col justify-between"
+          {loading ? (
+            <div className="py-20 text-center">
+              <div className="w-8 h-8 border-3 border-[#009388] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-xs text-slate-500 font-medium">Memuat pengumuman resmi desa...</p>
+            </div>
+          ) : announcements.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 max-w-lg mx-auto my-8 shadow-xs">
+              <Bell className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <h3 className="font-extrabold text-slate-800 text-lg">Belum Ada Pengumuman Resmi</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                Saat ini belum ada surat edaran, pemberitahuan pajak, ataupun pengumuman resmi yang diterbitkan oleh Pemerintah Desa Kadurama.
+              </p>
+            </div>
+          ) : filteredAnnouncements.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 max-w-md mx-auto my-8 shadow-xs">
+              <Bell className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <h3 className="font-extrabold text-slate-800 text-lg">Tidak Ada Pengumuman Cocok</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Silakan ubah kata kunci pencarian nomor surat atau judul edaran.
+              </p>
+              <button
+                onClick={() => setSearchQuery("")}
+                className="mt-4 px-4 py-2 rounded-xl bg-[#009388] text-white text-xs font-bold hover:bg-[#007b71] transition"
               >
-                <div>
-                  <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
-                    <div className="flex items-center gap-2.5">
-                      <span
-                        className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                          item.isUrgent
-                            ? "bg-amber-100 text-amber-900 border border-amber-300"
-                            : "bg-[#e6f7f5] text-[#003733] border border-[#009388]/30"
-                        }`}
-                      >
-                        {item.category}
-                      </span>
-                      <span className="text-xs font-mono font-semibold text-slate-500">
-                        No. {item.number}
-                      </span>
+                Reset Pencarian
+              </button>
+            </div>
+          ) : (
+            <div className="space-y-6">
+              {filteredAnnouncements.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs hover:shadow-md transition flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+                      <div className="flex items-center gap-2.5">
+                        <span
+                          className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                            item.isUrgent
+                              ? "bg-amber-100 text-amber-900 border border-amber-300"
+                              : "bg-[#e6f7f5] text-[#003733] border border-[#009388]/30"
+                          }`}
+                        >
+                          {item.category}
+                        </span>
+                        <span className="text-xs font-mono font-semibold text-slate-500">
+                          No. {item.number}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <Calendar className="w-3.5 h-3.5 text-[#009388]" />
+                        <span>Diterbitkan: {item.date}</span>
+                        <span className="text-slate-300">•</span>
+                        <span className="text-amber-700 font-semibold">Berlaku s.d: {item.validUntil}</span>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2 text-xs text-slate-500">
-                      <Calendar className="w-3.5 h-3.5 text-[#009388]" />
-                      <span>Diterbitkan: {item.date}</span>
-                      <span className="text-slate-300">•</span>
-                      <span className="text-amber-700 font-semibold">Berlaku s.d: {item.validUntil}</span>
+                    <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-snug">
+                      {item.title}
+                    </h3>
+
+                    <p className="text-xs sm:text-sm text-slate-600 mt-3 leading-relaxed">
+                      {item.summary}
+                    </p>
+
+                    <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed">
+                      {item.content}
                     </div>
                   </div>
 
-                  <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 leading-snug">
-                    {item.title}
-                  </h3>
+                  <div className="pt-6 mt-6 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
+                    <div className="flex items-center gap-2 text-slate-500">
+                      <ShieldCheck className="w-4 h-4 text-[#009388]" />
+                      <span>Dikeluarkan oleh: <strong className="text-slate-800">{item.issuer}</strong></span>
+                    </div>
 
-                  <p className="text-xs sm:text-sm text-slate-600 mt-3 leading-relaxed">
-                    {item.summary}
-                  </p>
-
-                  <div className="mt-4 p-4 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-700 leading-relaxed">
-                    {item.content}
+                    <button
+                      onClick={() => alert(`Mengunduh dokumen surat edaran No: ${item.number}`)}
+                      className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#003733] hover:bg-[#002825] text-white font-bold text-xs shadow-sm transition"
+                    >
+                      <Download className="w-3.5 h-3.5 text-[#eda50c]" />
+                      <span>Unduh Dokumen Salinan {item.fileSize && `(${item.fileSize})`}</span>
+                    </button>
                   </div>
                 </div>
-
-                <div className="pt-6 mt-6 border-t border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 text-xs">
-                  <div className="flex items-center gap-2 text-slate-500">
-                    <ShieldCheck className="w-4 h-4 text-[#009388]" />
-                    <span>Dikeluarkan oleh: <strong className="text-slate-800">{item.issuer}</strong></span>
-                  </div>
-
-                  <button
-                    onClick={() => alert(`Mengunduh dokumen surat edaran No: ${item.number}`)}
-                    className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-[#003733] hover:bg-[#005851] text-white font-bold text-xs shadow-sm transition"
-                  >
-                    <Download className="w-3.5 h-3.5 text-[#eda50c]" />
-                    <span>Unduh Dokumen Salinan {item.fileSize && `(${item.fileSize})`}</span>
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       </main>
 

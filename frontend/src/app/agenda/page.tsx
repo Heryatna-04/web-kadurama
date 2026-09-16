@@ -1,10 +1,10 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
-import { AGENDA_LIST } from "@/data/newsData";
+import { createClient } from "@/lib/supabase/client";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -15,10 +15,50 @@ import {
   CheckCircle2,
 } from "lucide-react";
 
+interface AgendaItem {
+  id: string;
+  title: string;
+  description: string;
+  date: string;
+  time: string;
+  location: string;
+  organizer: string;
+  dusun: string;
+  status: string;
+}
+
 export default function AgendaPage() {
   const [dusunFilter, setDusunFilter] = useState<string>("Semua");
+  const [agendaList, setAgendaList] = useState<AgendaItem[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const filteredAgenda = AGENDA_LIST.filter(
+  useEffect(() => {
+    async function loadAgenda() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("village_agenda")
+          .select("*")
+          .eq("is_deleted", false)
+          .order("created_at", { ascending: false });
+
+        if (data && data.length > 0) {
+          setAgendaList(data);
+        } else {
+          setAgendaList([]);
+        }
+      } catch (err) {
+        console.warn("Gagal memuat agenda kegiatan dari Supabase:", err);
+        setAgendaList([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadAgenda();
+  }, []);
+
+  const filteredAgenda = agendaList.filter(
     (item) => dusunFilter === "Semua" || item.dusun === dusunFilter
   );
 
@@ -72,63 +112,92 @@ export default function AgendaPage() {
 
         {/* Timeline Content */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredAgenda.map((item) => (
-              <div
-                key={item.id}
-                className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs hover:shadow-md transition flex flex-col justify-between group"
+          {loading ? (
+            <div className="py-20 text-center">
+              <div className="w-8 h-8 border-3 border-[#009388] border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+              <p className="text-xs text-slate-500 font-medium">Memuat agenda kegiatan desa...</p>
+            </div>
+          ) : agendaList.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 max-w-lg mx-auto my-8 shadow-xs">
+              <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <h3 className="font-extrabold text-slate-800 text-lg">Belum Ada Agenda Kegiatan Terjadwal</h3>
+              <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                Saat ini belum ada jadwal musyawarah desa, posyandu, ataupun kegiatan kemasyarakatan yang diagendakan oleh Pemerintah Desa Kadurama.
+              </p>
+            </div>
+          ) : filteredAgenda.length === 0 ? (
+            <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 max-w-md mx-auto my-8 shadow-xs">
+              <CalendarIcon className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+              <h3 className="font-extrabold text-slate-800 text-lg">Tidak Ada Agenda di {dusunFilter}</h3>
+              <p className="text-xs text-slate-500 mt-1">
+                Silakan pilih dusun lain atau tampilkan seluruh agenda.
+              </p>
+              <button
+                onClick={() => setDusunFilter("Semua")}
+                className="mt-4 px-4 py-2 rounded-xl bg-[#009388] text-white text-xs font-bold hover:bg-[#007b71] transition"
               >
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="px-3 py-1 rounded-full bg-[#e6f7f5] text-[#003733] border border-[#009388]/30 text-xs font-bold">
-                      {item.dusun}
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                      {item.status}
-                    </span>
+                Tampilkan Semua Agenda
+              </button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {filteredAgenda.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs hover:shadow-md transition flex flex-col justify-between group"
+                >
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <span className="px-3 py-1 rounded-full bg-[#e6f7f5] text-[#003733] border border-[#009388]/30 text-xs font-bold">
+                        {item.dusun}
+                      </span>
+                      <span className="inline-flex items-center gap-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-lg">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        {item.status}
+                      </span>
+                    </div>
+
+                    <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 group-hover:text-[#009388] transition leading-snug">
+                      {item.title}
+                    </h3>
+
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                      {item.description}
+                    </p>
+
+                    <div className="space-y-2 pt-3 border-t border-slate-100 text-xs text-slate-600">
+                      <div className="flex items-center gap-2.5">
+                        <CalendarIcon className="w-4 h-4 text-[#009388] flex-shrink-0" />
+                        <span className="font-semibold text-slate-800">{item.date}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Clock className="w-4 h-4 text-amber-500 flex-shrink-0" />
+                        <span>{item.time}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <MapPin className="w-4 h-4 text-rose-500 flex-shrink-0" />
+                        <span>{item.location}</span>
+                      </div>
+                      <div className="flex items-center gap-2.5">
+                        <Users className="w-4 h-4 text-indigo-500 flex-shrink-0" />
+                        <span>Penyelenggara: <strong className="text-slate-800">{item.organizer}</strong></span>
+                      </div>
+                    </div>
                   </div>
 
-                  <h3 className="text-lg sm:text-xl font-extrabold text-slate-900 group-hover:text-[#009388] transition leading-snug">
-                    {item.title}
-                  </h3>
-
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
-                    {item.description}
-                  </p>
-
-                  <div className="space-y-2 pt-3 border-t border-slate-100 text-xs text-slate-600">
-                    <div className="flex items-center gap-2.5">
-                      <CalendarIcon className="w-4 h-4 text-[#009388] flex-shrink-0" />
-                      <span className="font-semibold text-slate-800">{item.date}</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <Clock className="w-4 h-4 text-amber-500 flex-shrink-0" />
-                      <span>{item.time}</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <MapPin className="w-4 h-4 text-rose-500 flex-shrink-0" />
-                      <span>{item.location}</span>
-                    </div>
-                    <div className="flex items-center gap-2.5">
-                      <Users className="w-4 h-4 text-indigo-500 flex-shrink-0" />
-                      <span>Penyelenggara: <strong className="text-slate-800">{item.organizer}</strong></span>
-                    </div>
+                  <div className="pt-5 mt-5 border-t border-slate-100 flex items-center justify-between text-xs">
+                    <span className="text-slate-400 text-[11px]">Terbuka untuk warga terkait</span>
+                    <button
+                      onClick={() => alert(`Jadwal "${item.title}" ditambahkan ke pengingat.`)}
+                      className="font-bold text-[#009388] hover:underline"
+                    >
+                      Simpan Pengingat &rarr;
+                    </button>
                   </div>
                 </div>
-
-                <div className="pt-5 mt-5 border-t border-slate-100 flex items-center justify-between text-xs">
-                  <span className="text-slate-400 text-[11px]">Terbuka untuk warga terkait</span>
-                  <button
-                    onClick={() => alert(`Jadwal "${item.title}" ditambahkan ke pengingat.`)}
-                    className="font-bold text-[#009388] hover:underline"
-                  >
-                    Simpan Pengingat &rarr;
-                  </button>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
       </main>
 

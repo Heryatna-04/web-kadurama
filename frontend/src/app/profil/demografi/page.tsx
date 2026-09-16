@@ -44,6 +44,7 @@ export default function DemografiPage() {
   const [residents, setResidents] = useState<Resident[]>([]);
   const [kkList, setKkList] = useState<SensusKK[]>([]);
   const [jobFilter, setJobFilter] = useState<"top10" | "all" | "produktif" | "domestik">("top10");
+  const [hoveredJob, setHoveredJob] = useState<{ bidang: string; count: number; persen: number } | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -220,6 +221,54 @@ export default function DemografiPage() {
     if (jobFilter === "domestik") return pekerjaanStats.filter((p) => nonProductiveKeys.includes(p.bidang));
     return pekerjaanStats;
   }, [jobFilter, pekerjaanStats]);
+
+  // Segmentasi Donut Chart Pekerjaan (Top 7 Kategori + Lainnya)
+  const jobDonutSegments = React.useMemo(() => {
+    if (pekerjaanStats.length === 0 || totalPenduduk === 0) return [];
+    const top7 = pekerjaanStats.slice(0, 7);
+    const othersCount = pekerjaanStats.slice(7).reduce((acc, curr) => acc + curr.count, 0);
+    const othersPct = totalPenduduk > 0 ? Number(((othersCount / totalPenduduk) * 100).toFixed(1)) : 0;
+
+    const colors = [
+      "#009388", // Teal Primary
+      "#0891b2", // Cyan
+      "#10b981", // Emerald
+      "#eda50c", // Gold / Amber
+      "#6366f1", // Indigo
+      "#f43f5e", // Rose
+      "#8b5cf6", // Violet
+      "#64748b", // Slate for Lainnya
+    ];
+
+    const all = top7.map((item, idx) => ({
+      ...item,
+      color: colors[idx],
+    }));
+
+    if (othersCount > 0) {
+      all.push({
+        bidang: "Kategori Lainnya",
+        count: othersCount,
+        jumlah: `${othersCount.toLocaleString("id-ID")} Jiwa`,
+        persen: othersPct,
+        color: colors[7],
+      });
+    }
+
+    const circumference = 251.327;
+    let accumulated = 0;
+
+    return all.map((seg) => {
+      const strokeLength = (seg.count / totalPenduduk) * circumference;
+      const strokeOffset = -accumulated;
+      accumulated += strokeLength;
+      return {
+        ...seg,
+        strokeLength,
+        strokeOffset,
+      };
+    });
+  }, [pekerjaanStats, totalPenduduk]);
 
   const stats = [
     {
@@ -478,99 +527,70 @@ export default function DemografiPage() {
             </div>
           </div>
 
-          {/* Dusun Breakdown with Population Comparison Bar Chart */}
+          {/* Dusun Breakdown with Population Proportion Share Chart */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
               <div>
-                <div className="text-xs font-bold text-[#009388] uppercase tracking-wider">
-                  Distribusi Wilayah & Kewilayahan
+                <div className="text-xs font-bold text-[#009388] uppercase tracking-wider flex items-center gap-1.5">
+                  <MapPin className="w-3.5 h-3.5" />
+                  Distribusi Proporsi Kewilayahan
                 </div>
                 <h3 className="text-xl font-extrabold text-slate-900 mt-0.5">
-                  Komparasi Populasi & Kartu Keluarga Antar Dusun
+                  Proporsi Sebaran Penduduk Antar 3 Dusun
                 </h3>
               </div>
-              <p className="text-xs text-slate-500 max-w-sm">
-                Perbandingan jumlah jiwa warga dan kepala keluarga pada 3 dusun (Pahing, Wage, Manis).
-              </p>
+              <div className="text-xs text-slate-500 font-mono bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                Total Populasi: <strong className="text-slate-900">{totalPenduduk.toLocaleString("id-ID")}</strong> Jiwa
+              </div>
             </div>
 
-            {/* Graphic Comparison Bars (Visual Bar Chart) */}
-            <div className="p-5 bg-slate-50/80 rounded-2xl border border-slate-200 space-y-5">
-              <div className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center justify-between">
-                <span>Grafik Batang Perbandingan Jiwa & Kepala Keluarga (KK)</span>
-                <div className="flex items-center gap-4 font-normal text-[11px]">
-                  <span className="flex items-center gap-1.5 text-slate-700">
-                    <span className="w-3 h-3 rounded-xs bg-[#009388]" /> Populasi Jiwa
-                  </span>
-                  <span className="flex items-center gap-1.5 text-slate-700">
-                    <span className="w-3 h-3 rounded-xs bg-[#eda50c]" /> Kepala Keluarga (KK)
-                  </span>
+            {/* Visual Stacked Proportion Bar */}
+            <div className="p-5 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
+              <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                <span>Porsi Populasi Warga (% dari Total 2.481 Jiwa)</span>
+                <span className="font-mono text-slate-500">100% Sensus Terdata</span>
+              </div>
+
+              {/* Tri-Color Stacked Percentage Bar */}
+              <div className="w-full h-5 rounded-full overflow-hidden flex bg-slate-200 p-0.5 border border-slate-200 shadow-inner">
+                <div
+                  className="h-full rounded-l-full bg-teal-600 transition-all duration-700"
+                  style={{ width: `${totalPenduduk > 0 ? (dusunStats[0]?.jiwa / totalPenduduk) * 100 : 33.3}%` }}
+                  title={`Dusun Pahing: ${dusunStats[0]?.jiwa} Jiwa (${dusunStats[0]?.porsi})`}
+                />
+                <div
+                  className="h-full bg-emerald-500 transition-all duration-700"
+                  style={{ width: `${totalPenduduk > 0 ? (dusunStats[1]?.jiwa / totalPenduduk) * 100 : 33.1}%` }}
+                  title={`Dusun Wage: ${dusunStats[1]?.jiwa} Jiwa (${dusunStats[1]?.porsi})`}
+                />
+                <div
+                  className="h-full rounded-r-full bg-[#eda50c] transition-all duration-700"
+                  style={{ width: `${totalPenduduk > 0 ? (dusunStats[2]?.jiwa / totalPenduduk) * 100 : 33.6}%` }}
+                  title={`Dusun Manis: ${dusunStats[2]?.jiwa} Jiwa (${dusunStats[2]?.porsi})`}
+                />
+              </div>
+
+              {/* Legend Chips */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 text-xs">
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-teal-600 shrink-0" />
+                  <span className="font-bold text-slate-800">Dusun I Pahing:</span>
+                  <span className="font-mono text-slate-600">{dusunStats[0]?.jiwa} Jiwa ({dusunStats[0]?.porsi})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-emerald-500 shrink-0" />
+                  <span className="font-bold text-slate-800">Dusun II Wage:</span>
+                  <span className="font-mono text-slate-600">{dusunStats[1]?.jiwa} Jiwa ({dusunStats[1]?.porsi})</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="w-3 h-3 rounded-full bg-[#eda50c] shrink-0" />
+                  <span className="font-bold text-slate-800">Dusun III Manis:</span>
+                  <span className="font-mono text-slate-600">{dusunStats[2]?.jiwa} Jiwa ({dusunStats[2]?.porsi})</span>
                 </div>
               </div>
-
-              <div className="space-y-4">
-                {dusunStats.map((dsn, idx) => {
-                  const maxJiwa = 1000;
-                  const jiwaBarWidth = Math.min(100, Math.max(10, (dsn.jiwa / maxJiwa) * 100));
-                  const kkBarWidth = Math.min(100, Math.max(10, (dsn.kk / 350) * 100));
-
-                  return (
-                    <div key={idx} className="bg-white p-4 rounded-xl border border-slate-200/80 space-y-2.5">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <span className="px-2 py-0.5 rounded-md bg-emerald-50 text-[#009388] border border-emerald-200 text-xs font-bold font-mono">
-                            DUSUN {idx + 1}
-                          </span>
-                          <span className="font-extrabold text-sm text-slate-900">{dsn.name}</span>
-                          <span className="text-[11px] text-slate-400 font-mono">({dsn.area})</span>
-                        </div>
-                        <div className="flex items-center gap-3 font-mono text-xs">
-                          <span className="font-extrabold text-[#009388]">{loading ? "..." : dsn.jiwa} Jiwa</span>
-                          <span className="text-slate-300">•</span>
-                          <span className="font-extrabold text-[#eda50c]">{loading ? "..." : dsn.kk} KK</span>
-                          <span className="text-slate-300">•</span>
-                          <span className="font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded text-[11px]">
-                            {dsn.porsi}
-                          </span>
-                        </div>
-                      </div>
-
-                      {/* Double Bar (Jiwa & KK) */}
-                      <div className="space-y-1.5">
-                        {/* Jiwa Bar */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-[#009388] w-10 shrink-0">JIWA</span>
-                          <div className="flex-1 bg-slate-100 h-3 rounded-full overflow-hidden">
-                            <div
-                              className="bg-gradient-to-r from-[#009388] to-teal-400 h-full rounded-full transition-all duration-700"
-                              style={{ width: `${jiwaBarWidth}%` }}
-                            />
-                          </div>
-                          <span className="text-[10px] font-mono text-slate-500 w-16 text-right">
-                            {dsn.jiwa} org
-                          </span>
-                        </div>
-                        {/* KK Bar */}
-                        <div className="flex items-center gap-2">
-                          <span className="text-[10px] font-bold text-[#eda50c] w-10 shrink-0">KK</span>
-                          <div className="flex-1 bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                            <div
-                              className="bg-gradient-to-r from-[#eda50c] to-amber-400 h-full rounded-full transition-all duration-700"
-                              style={{ width: `${kkBarWidth}%` }}
-                            />
-                          </div>
-                          <span className="text-[10px] font-mono text-slate-500 w-16 text-right">
-                            {dsn.kk} KK
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
             </div>
 
-            {/* Dusun 3 Cards Details */}
+            {/* Dusun 3 Cards Details with clean companion metadata */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {dusunStats.map((dsn, idx) => (
                 <div
@@ -583,21 +603,22 @@ export default function DemografiPage() {
                         {dsn.name}
                       </span>
                       <div className="flex items-center gap-1.5">
-                        {dsn.jiwa === 0 && !loading && (
-                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
-                            Data Belum Lengkap
-                          </span>
-                        )}
                         <span className="text-[11px] font-mono font-bold text-slate-700 bg-white px-2 py-0.5 rounded-md border border-slate-200">
                           {dsn.area}
                         </span>
                       </div>
                     </div>
                     <div className="text-2xl font-black text-slate-900 mt-1">
-                      {loading ? "..." : dsn.jiwa} <span className="text-xs font-normal text-slate-500">Jiwa</span>
+                      {loading ? "..." : dsn.jiwa.toLocaleString("id-ID")} <span className="text-xs font-normal text-slate-500">Jiwa</span>
                     </div>
-                    <div className="text-xs text-slate-600 font-mono mt-0.5">
-                      {loading ? "..." : dsn.kk} KK • {dsn.rtRw} • Porsi {dsn.porsi}
+                    <div className="text-xs text-slate-600 font-mono mt-0.5 flex items-center gap-2">
+                      <span className="font-bold text-[#009388] bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                        {dsn.porsi} Porsi
+                      </span>
+                      <span>•</span>
+                      <span>{dsn.kk} KK</span>
+                      <span>•</span>
+                      <span>{dsn.rtRw}</span>
                     </div>
                     <p className="text-xs text-slate-600 mt-2 leading-relaxed">
                       {dsn.role}
@@ -609,7 +630,7 @@ export default function DemografiPage() {
                       href={`/dusun/${dsn.slug}`}
                       className="text-xs font-bold text-[#009388] hover:underline flex items-center justify-between"
                     >
-                      <span>Buka Halaman {dsn.name}</span>
+                      <span>Buka Profil {dsn.name}</span>
                       <ChevronRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
@@ -883,52 +904,134 @@ export default function DemografiPage() {
               </div>
             </div>
 
-            {/* Top 5 Highlight Visual Chart */}
-            {pekerjaanStats.length > 0 && (
-              <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-[#002825] text-white space-y-4">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/10 pb-3">
+            {/* Donut Chart Pekerjaan Interaktif (Bisa di-hover persentasenya) */}
+            {jobDonutSegments.length > 0 && (
+              <div className="p-6 rounded-3xl bg-slate-900 text-white space-y-5 border border-slate-800 shadow-md">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-3">
                   <div className="flex items-center gap-2">
                     <span className="p-1.5 rounded-lg bg-emerald-500/20 text-emerald-300 border border-emerald-400/30">
-                      <BarChart3 className="w-4 h-4" />
+                      <PieChart className="w-4 h-4" />
                     </span>
                     <span className="text-xs font-bold uppercase tracking-wider text-emerald-300">
-                      Top 5 Profesi Terbesar di Desa Kadurama
+                      Grafik Lingkaran Struktur Mata Pencaharian (Interaktif)
                     </span>
                   </div>
-                  <span className="text-[11px] text-slate-300 font-mono">
-                    Kontribusi 5 besar terhadap populasi total
+                  <span className="text-[11px] text-slate-400 font-mono">
+                    Arahkan kursor ke lingkaran untuk melihat detail & persentase
                   </span>
                 </div>
 
-                <div className="space-y-3 pt-1">
-                  {pekerjaanStats.slice(0, 5).map((top, idx) => {
-                    const highestCount = pekerjaanStats[0]?.count || 1;
-                    const relativePct = (top.count / highestCount) * 100;
-                    return (
-                      <div key={idx} className="space-y-1.5">
-                        <div className="flex items-center justify-between text-xs">
-                          <div className="flex items-center gap-2">
-                            <span className="w-5 h-5 rounded-md bg-white/10 text-emerald-300 font-mono text-[10px] font-bold flex items-center justify-center">
-                              #{idx + 1}
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-center">
+                  {/* Lingkaran Donut SVG Interaktif (5 Kolom) */}
+                  <div className="lg:col-span-5 flex flex-col items-center justify-center">
+                    <div className="relative w-56 h-56 sm:w-60 sm:h-60 flex items-center justify-center">
+                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                        {/* Background Base Ring */}
+                        <circle
+                          cx="50"
+                          cy="50"
+                          r="40"
+                          fill="transparent"
+                          stroke="#1e293b"
+                          strokeWidth="12"
+                        />
+                        {/* Slices */}
+                        {jobDonutSegments.map((seg, idx) => {
+                          const isHovered = hoveredJob?.bidang === seg.bidang;
+                          return (
+                            <circle
+                              key={idx}
+                              cx="50"
+                              cy="50"
+                              r="40"
+                              fill="transparent"
+                              stroke={seg.color}
+                              strokeWidth={isHovered ? 15 : 12}
+                              strokeDasharray={`${seg.strokeLength} 251.327`}
+                              strokeDashoffset={seg.strokeOffset}
+                              strokeLinecap="round"
+                              className="transition-all duration-300 cursor-pointer hover:opacity-90"
+                              onMouseEnter={() =>
+                                setHoveredJob({ bidang: seg.bidang, count: seg.count, persen: seg.persen })
+                              }
+                              onMouseLeave={() => setHoveredJob(null)}
+                            />
+                          );
+                        })}
+                      </svg>
+
+                      {/* Center Hover Label Dynamic */}
+                      <div className="absolute inset-0 flex flex-col items-center justify-center text-center p-3 pointer-events-none">
+                        {hoveredJob ? (
+                          <>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-300 font-sans truncate max-w-[130px]">
+                              {hoveredJob.bidang}
                             </span>
-                            <span className="font-bold text-slate-100">{top.bidang}</span>
-                          </div>
-                          <div className="flex items-center gap-2 font-mono text-[11px]">
-                            <span className="text-white font-black">{top.jumlah}</span>
-                            <span className="text-emerald-400 font-bold bg-emerald-500/20 px-1.5 py-0.5 rounded border border-emerald-400/30">
-                              {top.persen}%
+                            <span className="text-3xl font-black text-white font-mono mt-0.5 leading-none">
+                              {hoveredJob.persen}%
                             </span>
-                          </div>
-                        </div>
-                        <div className="w-full bg-white/10 h-2.5 rounded-full overflow-hidden">
-                          <div
-                            className="bg-gradient-to-r from-emerald-400 to-[#009388] h-full rounded-full transition-all duration-700"
-                            style={{ width: `${relativePct}%` }}
-                          />
-                        </div>
+                            <span className="text-[11px] text-slate-300 font-mono mt-1">
+                              {hoveredJob.count.toLocaleString("id-ID")} Jiwa
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 font-sans">
+                              Total Klasifikasi
+                            </span>
+                            <span className="text-2xl font-black text-white font-mono mt-0.5">
+                              {totalKategoriPekerjaan} Profesi
+                            </span>
+                            <span className="text-[10px] text-emerald-400 font-medium bg-emerald-500/20 px-2 py-0.5 rounded-full mt-1 border border-emerald-400/30">
+                              Hover Lingkaran
+                            </span>
+                          </>
+                        )}
                       </div>
-                    );
-                  })}
+                    </div>
+                  </div>
+
+                  {/* Legenda & Ranking Sektor (7 Kolom) */}
+                  <div className="lg:col-span-7 space-y-2.5">
+                    <div className="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                      Komposisi Persentase Sektor Pekerjaan Terbesar:
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      {jobDonutSegments.map((seg, idx) => {
+                        const isHovered = hoveredJob?.bidang === seg.bidang;
+                        return (
+                          <div
+                            key={idx}
+                            onMouseEnter={() =>
+                              setHoveredJob({ bidang: seg.bidang, count: seg.count, persen: seg.persen })
+                            }
+                            onMouseLeave={() => setHoveredJob(null)}
+                            className={`p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
+                              isHovered
+                                ? "bg-slate-800 border-emerald-400 shadow-md ring-1 ring-emerald-400/30"
+                                : "bg-slate-800/60 border-slate-700/60 hover:bg-slate-800"
+                            }`}
+                          >
+                            <div className="flex items-center gap-2 min-w-0">
+                              <span
+                                className="w-3 h-3 rounded-full shrink-0"
+                                style={{ backgroundColor: seg.color }}
+                              />
+                              <span className="text-xs font-bold text-slate-200 truncate">
+                                {seg.bidang}
+                              </span>
+                            </div>
+                            <div className="font-mono text-xs font-extrabold text-right shrink-0 pl-2">
+                              <span className="text-white">{seg.persen}%</span>
+                              <span className="text-[10px] text-slate-400 block font-normal">
+                                {seg.count} org
+                              </span>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
