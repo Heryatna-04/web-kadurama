@@ -31,71 +31,44 @@ const CivicGisMap = dynamic(() => import("@/components/CivicGisMap"), {
 
 export default function PetaPage() {
   const [selectedDusun, setSelectedDusun] = useState<"all" | "manis" | "pahing" | "wage">("all");
-  const [selectedPoiId, setSelectedPoiId] = useState<number | null>(null);
+  const [selectedPoiId, setSelectedPoiId] = useState<string | number | null>("balai-desa");
 
   const FACILITIES = [
     {
-      id: 1,
-      name: "Kantor Balai Desa Kadurama & Pendopo",
+      id: "balai-desa",
+      name: "Kantor Balai Desa Kadurama",
       dusun: "Manis",
       type: "Pemerintahan",
-      coord: [-6.9754, 108.5422] as [number, number],
-      address: "Jl. Desa Kadurama No. 01, Dusun Manis RT 02 / RW 01",
-      desc: "Pusat pelayanan administrasi warga, kantor Kuwu, ruang kerja BPD, dan aula musyawarah desa.",
+      coord: [-6.978256, 108.598226] as [number, number],
+      address: "Jl. Desa Kadurama No. 01, Dusun Manis, Kec. Ciawigebang, Kab. Kuningan 45591",
+      desc: "Pusat pelayanan administrasi publik warga, kantor Kuwu Samir Syarifudin, ruang kerja pamong desa, dan aula pertemuan warga.",
     },
     {
-      id: 2,
-      name: "Puskesmas Pembantu (Pustu) Kadurama",
+      id: "dusun-manis",
+      name: "Wilayah Dusun III Manis",
       dusun: "Manis",
-      type: "Kesehatan",
-      coord: [-6.9745, 108.541] as [number, number],
-      address: "Jl. Balai Desa RT 03 Dusun Manis",
-      desc: "Pelayanan kesehatan tingkat pertama, pos siaga medis 24 jam, dan konsultasi gizi balita.",
+      type: "Administratif",
+      coord: [-6.9765, 108.5975] as [number, number],
+      address: "Wilayah Kerja RT 01 s.d. RT 03 / RW 01",
+      desc: "Sentra pemerintahan dan pelayanan warga, menaungi Balai Desa, KUA, SDN Kadurama, 4 unit mushola, dan Posyandu. Kepala Dusun: Bpk. Jamaludin.",
     },
     {
-      id: 3,
-      name: "SD Negeri 1 Kadurama",
-      dusun: "Manis",
-      type: "Pendidikan",
-      coord: [-6.9762, 108.543] as [number, number],
-      address: "Dusun Manis RT 04 / RW 02",
-      desc: "Lembaga pendidikan dasar terakreditasi A dengan 12 ruang kelas dan lapangan upacara.",
-    },
-    {
-      id: 4,
-      name: "Gelora Olahraga Kadurama",
+      id: "dusun-pahing",
+      name: "Wilayah Dusun I Pahing",
       dusun: "Pahing",
-      type: "Olahraga",
-      coord: [-6.972, 108.5465] as [number, number],
-      address: "Dusun Pahing RT 03 / RW 02",
-      desc: "Lapangan sepak bola rumput alami, lapangan bola voli, dan tribun serbaguna kegiatan pemuda.",
+      type: "Administratif",
+      coord: [-6.9785, 108.6025] as [number, number],
+      address: "Wilayah Kerja RT 01 s.d. RT 03 / RW 01",
+      desc: "Lumbung pangan pertanian sawah produktif seluas ± 27 Ha, fasilitas pendidikan dasar, mushola, dan Posyandu. Kepala Dusun: Bpk. Trida Sentosa.",
     },
     {
-      id: 5,
-      name: "Posyandu Melati I Dusun Pahing",
-      dusun: "Pahing",
-      type: "Kesehatan",
-      coord: [-6.9712, 108.545] as [number, number],
-      address: "Dusun Pahing RT 01 / RW 01",
-      desc: "Sentra pemantauan gizi anak, imunisasi, dan penimbangan balita terintegrasi Dusun Pahing.",
-    },
-    {
-      id: 6,
-      name: "Mata Air Purba Cikaduran",
+      id: "dusun-wage",
+      name: "Wilayah Dusun II Wage",
       dusun: "Wage",
-      type: "Sumber Daya Air",
-      coord: [-6.968, 108.539] as [number, number],
-      address: "Dusun Wage RT 02 / RW 01",
-      desc: "Sumber mata air alami pegunungan Ciremai dengan debit 45 liter/detik untuk konsumsi warga & irigasi.",
-    },
-    {
-      id: 7,
-      name: "Posyandu Melati II Dusun Wage",
-      dusun: "Wage",
-      type: "Kesehatan",
-      coord: [-6.967, 108.5375] as [number, number],
-      address: "Dusun Wage RT 04 / RW 02",
-      desc: "Layanan posyandu keluarga lansia dan balita di elevasi 340 mdpl kawasan perbukitan.",
+      type: "Administratif",
+      coord: [-6.9825, 108.5955] as [number, number],
+      address: "Wilayah Kerja RT 01 s.d. RT 02 / RW 01",
+      desc: "Kawasan lereng sejuk kaki Ciremai seluas ± 23 Ha dengan sarana ibadah masjid jami, mushola, pesantren, PAUD, dan Posyandu. Kepala Dusun: Bpk. Andri Rukmana.",
     },
   ];
 
@@ -124,11 +97,11 @@ export default function PetaPage() {
                 <MapPin className="w-3.5 h-3.5" />
                 Sistem Informasi Geografis (SIG) Desa
               </span>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                Peta Satelit & Tata Ruang Desa
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold tracking-tight text-white">
+                Peta Citra Wilayah Desa Kadurama
               </h1>
               <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal">
-                Peta geospasial resmi Desa Kadurama berbasis citra satelit resolusi tinggi. Dilengkapi delineasi batas wilayah 3 dusun, zonasi sawah organik, jalur irigasi, dan titik fasilitas umum.
+                Peta geospasial resmi Desa Kadurama berbasis citra satelit resolusi tinggi dan peta jalan resmi. Menampilkan titik pusat koordinat Kantor Balai Desa dan 3 dusun administratif.
               </p>
             </div>
 

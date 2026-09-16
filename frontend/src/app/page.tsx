@@ -9,7 +9,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { recordAuditLog } from "@/lib/supabase/audit";
 import dynamic from "next/dynamic";
-import { POI_POINTS, type POIItem } from "@/components/CivicGisMap";
+import { OFFICIAL_POINTS, POI_POINTS, type POIItem, type CivicPoint } from "@/components/CivicGisMap";
 
 const CivicGisMap = dynamic(() => import("@/components/CivicGisMap"), {
   ssr: false,
@@ -1153,63 +1153,65 @@ export const DUSUN_REGISTRY_DATA: Record<
     area: "89.0 Hektar",
     kk: "810 KK",
     pop: "2.481 Jiwa",
-    coords: "-6.9782, 108.5982",
-    desc: "Kawasan pedesaan agraris mandiri di lereng timur Gunung Ciremai seluas 89 Ha (termasuk tanah perhutani: 42 Ha Sawah & 47 Ha Darat) yang terbagi dalam 3 Dusun: Dusun I Pahing (27 Ha), Dusun II Wage (23 Ha), dan Dusun III Manis (39 Ha).",
+    coords: "-6.978256, 108.598226",
+    desc: "Kawasan pedesaan mandiri di lereng timur Gunung Ciremai seluas 89 Ha yang terbagi dalam 3 wilayah dusun resmi: Dusun I Pahing (27 Ha), Dusun II Wage (23 Ha), dan Dusun III Manis (39 Ha) menaungi 8 RT dan 3 RW.",
     facilities: [
-      { name: "Lapangan Sepakbola Gelora Kadurama", dusun: "Dusun I Pahing" },
-      { name: "Mata Air Cikaduran, Masjid & Pesantren", dusun: "Dusun II Wage" },
-      { name: "Kantor Balai Desa, KUA & SD", dusun: "Dusun III Manis" },
+      { name: "Kantor Balai Desa Kadurama", dusun: "Dusun III Manis" },
+      { name: "Kantor Urusan Agama (KUA)", dusun: "Dusun III Manis" },
+      { name: "SDN Kadurama", dusun: "Dusun III Manis" },
+      { name: "Sarana Ibadah & Posyandu Lingkungan", dusun: "Semua Dusun" },
     ],
   },
   pahing: {
-    tag: "Dusun I (Pertanian & Olahraga)",
+    tag: "Dusun I (Pertanian & Pemukiman)",
     name: "Dusun Pahing",
-    sub: "Lumbung Pangan & Gelora Olahraga Desa",
+    sub: "Wilayah Kerja RT 01 s.d. RT 03 / RW 01",
     lead: "Trida Sentosa",
     leadRole: "Kepala Dusun I Pahing",
     area: "27.0 Hektar",
     kk: "260 KK",
     pop: "826 Jiwa",
-    coords: "-6.9785, 108.6020",
-    desc: "Dusun pertama dengan luas wilayah ± 27 Ha (3 RT / 1 RW). Menjadi lumbung pangan padi sawah desa, lapangan sepakbola kebanggaan desa, 2 mushola, SD, TK, dan Posyandu.",
+    coords: "-6.9785, 108.6025",
+    desc: "Dusun pertama dengan luas wilayah ± 27 Ha (3 RT / 1 RW). Sentra hamparan sawah pertanian padi produktif desa, sarana pendidikan dasar, peribadatan mushola, serta layanan Posyandu warga.",
     facilities: [
-      { name: "Lapangan Sepakbola Gelora Kadurama", dusun: "Dusun Pahing" },
-      { name: "Gedung SD & TK Tunas Mandiri", dusun: "Dusun Pahing" },
-      { name: "2 Mushola & Posyandu Dusun Pahing", dusun: "Dusun Pahing" },
+      { name: "Lahan Pertanian Padi Produktif", dusun: "Dusun Pahing" },
+      { name: "Gedung Sekolah Dasar & TK", dusun: "Dusun Pahing" },
+      { name: "2 Unit Mushola & Posyandu", dusun: "Dusun Pahing" },
     ],
   },
   wage: {
-    tag: "Dusun II (Konservasi & Religi)",
+    tag: "Dusun II (Pemukiman & Religi)",
     name: "Dusun Wage",
-    sub: "Mata Air Cikaduran & Pendidikan Santri",
+    sub: "Wilayah Kerja RT 01 s.d. RT 02 / RW 01",
     lead: "Andri Rukmana",
     leadRole: "Kepala Dusun II Wage",
     area: "23.0 Hektar",
     kk: "260 KK",
     pop: "822 Jiwa",
     coords: "-6.9825, 108.5955",
-    desc: "Dusun kedua dengan luas wilayah ± 23 Ha (2 RT / 1 RW). Zona konservasi mata air alami Cikaduran 45 L/dtk, dilengkapi fasilitas 1 masjid, 1 mushola, pondok pesantren, PAUD, dan Posyandu.",
+    desc: "Dusun kedua dengan luas wilayah ± 23 Ha (2 RT / 1 RW). Berada di kontur sejuk lereng perbukitan kaki Ciremai dengan sarana ibadah masjid jami dan mushola, pondok pesantren, gedung PAUD, serta Posyandu.",
     facilities: [
-      { name: "Mata Air Alami Cikaduran 45 L/s", dusun: "Dusun Wage" },
-      { name: "Masjid Baiturrahman & 1 Mushola", dusun: "Dusun Wage" },
-      { name: "Pondok Pesantren, PAUD & Posyandu", dusun: "Dusun Wage" },
+      { name: "Masjid Jami Lingkungan & Mushola", dusun: "Dusun Wage" },
+      { name: "Pondok Pesantren & Gedung PAUD", dusun: "Dusun Wage" },
+      { name: "Posyandu Dusun Wage", dusun: "Dusun Wage" },
     ],
   },
   manis: {
-    tag: "Dusun III (Pemerintahan & Pelayanan Publik)",
+    tag: "Dusun III (Pemerintahan & Pelayanan)",
     name: "Dusun Manis",
-    sub: "Pusat Pelayanan Publik, Balai Desa & KUA",
+    sub: "Wilayah Kerja RT 01 s.d. RT 03 / RW 01",
     lead: "Jamaludin",
     leadRole: "Kepala Dusun III Manis",
     area: "39.0 Hektar",
     kk: "288 KK",
     pop: "833 Jiwa",
-    coords: "-6.9755, 108.5980",
-    desc: "Dusun ketiga dengan luas wilayah terbesar ± 39 Ha (3 RT / 1 RW). Sentra administrasi Kantor Balai Desa, KUA, gedung SD, 4 mushola, 1 pesantren, dan Posyandu.",
+    coords: "-6.9765, 108.5975",
+    desc: "Dusun ketiga dengan luas wilayah terbesar ± 39 Ha (3 RT / 1 RW). Menjadi gerbang utama sekaligus sentra administrasi publik desa yang menaungi Kantor Balai Desa, KUA, gedung SDN Kadurama, mushola, dan Posyandu.",
     facilities: [
-      { name: "Kantor Urusan Agama (KUA) & Balai Desa", dusun: "Dusun Manis" },
-      { name: "Gedung SDN 1 Kadurama & 1 Pesantren", dusun: "Dusun Manis" },
-      { name: "Jaringan 4 Unit Mushola & Posyandu", dusun: "Dusun Manis" },
+      { name: "Kantor Balai Desa Kadurama", dusun: "Dusun Manis" },
+      { name: "Kantor Urusan Agama (KUA)", dusun: "Dusun Manis" },
+      { name: "Gedung SDN Kadurama", dusun: "Dusun Manis" },
+      { name: "4 Unit Mushola & Posyandu", dusun: "Dusun Manis" },
     ],
   },
 };
@@ -1724,12 +1726,10 @@ export default function Home() {
   >("all");
   const [activeServiceKey, setActiveServiceKey] = useState<string>("surat-sktm");
 
-  // Public GIS Map State (Satellite-Only with Official Boundaries)
+  // Public GIS Map State (Verified Real Entities, Dual Basemap)
   const [gisSelectedDusun, setGisSelectedDusun] = useState<"all" | "manis" | "pahing" | "wage">("all");
-  const [gisSelectedPoiId, setGisSelectedPoiId] = useState<number | null>(null);
-  const [gisShowOuter, setGisShowOuter] = useState<boolean>(false);
-  const [gisShowDusuns, setGisShowDusuns] = useState<boolean>(false);
-  const [gisShowWater, setGisShowWater] = useState<boolean>(true);
+  const [gisSelectedPoiId, setGisSelectedPoiId] = useState<string | number | null>("balai-desa");
+  const [gisBasemapMode, setGisBasemapMode] = useState<"satellite" | "streets">("satellite");
 
   // Admin Panel States
   const [adminTab, setAdminTab] = useState<
@@ -3151,63 +3151,46 @@ export default function Home() {
               {/* CONSOLE TOP TOOLBAR */}
               <div className="px-5 py-3.5 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
 
-                {/* Dusun Segmented Controller */}
-                <div className="flex items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
+                {/* Focus Location Controller */}
+                <div className="flex flex-wrap items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
                   {(
                     [
-                      { id: "all", label: "Semua Wilayah" },
-                      { id: "pahing", label: "Dusun I Pahing" },
-                      { id: "wage", label: "Dusun II Wage" },
-                      { id: "manis", label: "Dusun III Manis" },
+                      { id: "all", poiId: null, label: "Semua Wilayah" },
+                      { id: "manis", poiId: "balai-desa", label: "Kantor Balai Desa" },
+                      { id: "manis", poiId: "dusun-manis", label: "Dusun III Manis" },
+                      { id: "pahing", poiId: "dusun-pahing", label: "Dusun I Pahing" },
+                      { id: "wage", poiId: "dusun-wage", label: "Dusun II Wage" },
                     ] as const
-                  ).map((tab) => (
-                    <button
-                      key={tab.id}
-                      onClick={() => {
-                        setGisSelectedDusun(tab.id);
-                        setGisSelectedPoiId(null);
-                      }}
-                      className={`px-3 py-1.5 rounded-lg transition font-semibold ${gisSelectedDusun === tab.id && gisSelectedPoiId === null
-                        ? "bg-[#009388] text-white font-bold shadow-2xs"
-                        : "text-slate-600 hover:text-slate-900"
+                  ).map((tab) => {
+                    const isSelected =
+                      tab.poiId !== null
+                        ? gisSelectedPoiId === tab.poiId
+                        : gisSelectedDusun === "all" && gisSelectedPoiId === null;
+                    return (
+                      <button
+                        key={`${tab.id}-${tab.poiId || "all"}`}
+                        onClick={() => {
+                          setGisSelectedDusun(tab.id);
+                          setGisSelectedPoiId(tab.poiId);
+                        }}
+                        className={`px-3 py-1.5 rounded-lg transition font-semibold ${
+                          isSelected
+                            ? "bg-[#009388] text-white font-bold shadow-2xs"
+                            : "text-slate-600 hover:text-slate-900"
                         }`}
-                    >
-                      {tab.label}
-                    </button>
-                  ))}
+                      >
+                        {tab.label}
+                      </button>
+                    );
+                  })}
                 </div>
 
-                {/* Layer Toggles */}
-                <div className="flex items-center gap-4 text-xs">
-                  <div className="flex items-center gap-3 text-[11px] text-slate-600">
-                    <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-900">
-                      <input
-                        type="checkbox"
-                        checked={gisShowOuter}
-                        onChange={(e) => setGisShowOuter(e.target.checked)}
-                        className="w-3.5 h-3.5 accent-[#eda50c] rounded"
-                      />
-                      <span>Batas Luar Desa</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-900">
-                      <input
-                        type="checkbox"
-                        checked={gisShowDusuns}
-                        onChange={(e) => setGisShowDusuns(e.target.checked)}
-                        className="w-3.5 h-3.5 accent-[#009388] rounded"
-                      />
-                      <span>Batas 3 Dusun</span>
-                    </label>
-                    <label className="flex items-center gap-1.5 cursor-pointer hover:text-slate-900">
-                      <input
-                        type="checkbox"
-                        checked={gisShowWater}
-                        onChange={(e) => setGisShowWater(e.target.checked)}
-                        className="w-3.5 h-3.5 accent-[#0284c7] rounded"
-                      />
-                      <span>Irigasi & Air</span>
-                    </label>
-                  </div>
+                {/* Official Verification Indicator */}
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#009388]" />
+                    <span>Titik Terverifikasi (Ref: 32.08.10.2002)</span>
+                  </span>
                 </div>
 
               </div>
@@ -3221,16 +3204,18 @@ export default function Home() {
                     <CivicGisMap
                       selectedDusun={gisSelectedDusun}
                       selectedPoiId={gisSelectedPoiId}
+                      basemapMode={gisBasemapMode}
+                      onToggleBasemap={(m) => setGisBasemapMode(m)}
                       onSelectDusun={(d) => {
                         setGisSelectedDusun(d);
                         setGisSelectedPoiId(null);
                       }}
                       onSelectPoi={(p) => {
                         setGisSelectedPoiId(p.id);
+                        if (p.dusun !== "all") {
+                          setGisSelectedDusun(p.dusun);
+                        }
                       }}
-                      showOuterBoundary={gisShowOuter}
-                      showDusunBoundaries={gisShowDusuns}
-                      showWaterways={gisShowWater}
                     />
                   ) : (
                     <div className="w-full h-full min-h-[480px] bg-slate-900 flex flex-col items-center justify-center text-slate-300 text-xs p-6 text-center">
@@ -3245,8 +3230,8 @@ export default function Home() {
                 <div className="lg:col-span-4 p-6 flex flex-col justify-between bg-white text-xs">
 
                   {(() => {
-                    const activePoi = gisSelectedPoiId
-                      ? POI_POINTS.find((p) => p.id === gisSelectedPoiId)
+                    const activePoint = gisSelectedPoiId
+                      ? OFFICIAL_POINTS.find((p) => p.id === gisSelectedPoiId)
                       : null;
                     const rawInfo = DUSUN_REGISTRY_DATA[gisSelectedDusun] || DUSUN_REGISTRY_DATA.all;
                     const dInfo = {
@@ -3261,86 +3246,24 @@ export default function Home() {
                           : `${(demografiStats[gisSelectedDusun]?.jiwa ?? 0).toLocaleString("id-ID")} Jiwa`,
                     };
 
-                    if (activePoi) {
-                      return (
-                        <div className="space-y-4">
-                          <div className="pb-3 border-b border-slate-100">
-                            <div className="flex items-center justify-between mb-1.5">
-                              <span className="text-[10px] font-bold text-[#009388] uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                                Fasilitas Dusun {activePoi.dusun}
-                              </span>
-                              <span className="font-mono text-[10px] text-slate-400">STATUS: AKTIF</span>
-                            </div>
-                            <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                              {activePoi.name}
-                            </h3>
-                            <p className="text-xs text-slate-500 mt-0.5">
-                              Terdaftar di Master Aset Desa Kadurama 2026
-                            </p>
-                          </div>
-
-                          <div className="grid grid-cols-2 gap-2">
-                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Lokasi Wilayah</div>
-                              <div className="font-bold text-slate-800 text-xs mt-1">Dusun {activePoi.dusun}</div>
-                              <div className="text-[10px] text-slate-500">Desa Kadurama</div>
-                            </div>
-                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                              <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Ketinggian</div>
-                              <div className="font-bold text-slate-800 text-xs mt-1 font-mono">{activePoi.elev}</div>
-                              <div className="text-[10px] text-[#009388]">Kaki Gunung Ciremai</div>
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Koordinat Geospasial</div>
-                            <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 font-mono text-xs text-slate-800">
-                              {activePoi.lat}, {activePoi.lng}
-                            </div>
-                          </div>
-
-                          <div>
-                            <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Catatan Layanan</div>
-                            <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                              Sarana publik strategis yang melayani warga Dusun {activePoi.dusun} dan sekitarnya. Terintegrasi dengan jalan poros lingkungan desa.
-                            </p>
-                          </div>
-
-                          <div className="pt-4 mt-4 border-t border-slate-100 space-y-2">
-                            <a
-                              href={`https://maps.google.com/?q=${activePoi.lat},${activePoi.lng}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-xs"
-                            >
-                              <span>Buka Rute di Google Maps</span>
-                              <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
-                            </a>
-                            <button
-                              onClick={() => setGisSelectedPoiId(null)}
-                              className="w-full py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 font-semibold text-xs transition"
-                            >
-                              Kembali ke Profil Dusun
-                            </button>
-                          </div>
-                        </div>
-                      );
-                    }
+                    const targetLat = activePoint ? activePoint.lat : -6.978256;
+                    const targetLng = activePoint ? activePoint.lng : 108.598226;
+                    const targetName = activePoint ? activePoint.name : dInfo.name;
 
                     return (
                       <div className="space-y-4">
                         <div className="pb-3 border-b border-slate-100">
                           <div className="flex items-center justify-between mb-1.5">
                             <span className="text-[10px] font-bold text-[#009388] uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                              {dInfo.tag}
+                              {activePoint ? activePoint.categoryLabel : dInfo.tag}
                             </span>
-                            <span className="font-mono text-[10px] text-slate-400">KODE: 32.08.10.2002</span>
+                            <span className="font-mono text-[10px] text-slate-400">KEMENDAGRI: 32.08.10.2002</span>
                           </div>
                           <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                            {dInfo.name}
+                            {targetName}
                           </h3>
                           <p className="text-xs text-slate-500 mt-0.5">
-                            {dInfo.sub}
+                            {activePoint ? "Titik Koordinat Resmi Desa Kadurama" : dInfo.sub}
                           </p>
                         </div>
 
@@ -3351,9 +3274,9 @@ export default function Home() {
                             <div className="text-[10px] text-slate-500">{dInfo.leadRole}</div>
                           </div>
                           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Luas Wilayah</div>
+                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Wilayah / Luas</div>
                             <div className="font-bold text-slate-800 text-xs mt-1 font-mono">{dInfo.area}</div>
-                            <div className="text-[10px] text-[#009388]">100% Batas Geospasial</div>
+                            <div className="text-[10px] text-[#009388]">Kec. Ciawigebang</div>
                           </div>
                           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
                             <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Populasi Jiwa</div>
@@ -3368,14 +3291,19 @@ export default function Home() {
                         </div>
 
                         <div>
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Karakteristik & Potensi</div>
-                          <p className="text-xs text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-xl border border-slate-100">
-                            {dInfo.desc}
-                          </p>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Koordinat GPS & Alamat</div>
+                          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
+                            <div className="font-mono text-xs text-slate-800">
+                              {targetLat}, {targetLng}
+                            </div>
+                            <div className="text-[11px] text-slate-500">
+                              {activePoint ? activePoint.description : "Jl. Desa Kadurama No. 01, Kecamatan Ciawigebang, Kabupaten Kuningan 45591."}
+                            </div>
+                          </div>
                         </div>
 
                         <div>
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Fasilitas Pelayanan Strategis</div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Fasilitas Nyata Terverifikasi</div>
                           <div className="space-y-1.5">
                             {dInfo.facilities.map((fac, fIdx) => (
                               <div
@@ -3391,16 +3319,16 @@ export default function Home() {
 
                         <div className="pt-4 mt-4 border-t border-slate-100 space-y-2">
                           <a
-                            href={`https://maps.google.com/?q=${dInfo.coords}`}
+                            href={`https://www.google.com/maps/dir/?api=1&destination=${targetLat},${targetLng}`}
                             target="_blank"
                             rel="noreferrer"
                             className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-xs"
                           >
-                            <span>Navigasi Presisi Google Maps</span>
+                            <span>Buka Rute Navigasi Google Maps</span>
                             <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
                           </a>
                           <div className="text-[10px] text-slate-400 text-center">
-                            Data terverifikasi Buku Monografi Desa Kadurama 2026
+                            Koordinat Resmi Desa Kadurama (Kemendagri Ref: 32.08.10.2002)
                           </div>
                         </div>
                       </div>
