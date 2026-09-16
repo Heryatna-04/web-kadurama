@@ -61,10 +61,101 @@ export const DESA_SEJARAH_DATA = {
   },
 };
 
+export interface MisiItem {
+  nomor: number;
+  title: string;
+  desc: string;
+}
+
+export interface PilarStrategis {
+  pilarNumber: string;
+  pilarTitle: string;
+  pilarDesc: string;
+  badgeColor: string;
+  dotColor: string;
+  items: MisiItem[];
+}
+
+export const PILAR_STRATEGIS_DATA: PilarStrategis[] = [
+  {
+    pilarNumber: "PILAR 1",
+    pilarTitle: "Tata Kelola & Akuntabilitas",
+    pilarDesc: "Pemerintahan transparan, musyawarah desa berkesinambungan, dan birokrasi terencana.",
+    badgeColor: "bg-[#003733] text-white border border-[#005851]",
+    dotColor: "bg-[#009388]",
+    items: [
+      {
+        nomor: 1,
+        title: "Pemerintahan Transparan & Adil",
+        desc: "Penyelenggaraan tata kelola pemerintahan yang transparan, adil, cepat, tepat, dan akuntabel.",
+      },
+      {
+        nomor: 2,
+        title: "Pembangunan Berkesinambungan & Gotong Royong",
+        desc: "Pelaksanaan pembangunan desa yang berkesinambungan melalui musyawarah mufakat serta partisipasi gotong-royong masyarakat.",
+      },
+      {
+        nomor: 3,
+        title: "Tata Kelola Pemerintahan & Lingkungan",
+        desc: "Menyelenggarakan sistem organisasi pemerintahan yang terarah dan terprogram serta tata kelola lingkungan yang baik.",
+      },
+    ],
+  },
+  {
+    pilarNumber: "PILAR 2",
+    pilarTitle: "Layanan Publik, SDM & Budaya",
+    pilarDesc: "Pelayanan warga berkualitas, peningkatan mutu SDM perangkat, dan etika masyarakat ramah.",
+    badgeColor: "bg-[#003733] text-white border border-[#005851]",
+    dotColor: "bg-[#eda50c]",
+    items: [
+      {
+        nomor: 1,
+        title: "Pelayanan Publik Prima",
+        desc: "Mengutamakan pelayanan masyarakat yang ramah, santun, transparan, dan tidak berbelit.",
+      },
+      {
+        nomor: 2,
+        title: "Penguatan SDM Iptek & Imtaq",
+        desc: "Mempersiapkan kapasitas SDM perangkat dan warga yang cerdas dalam ilmu pengetahuan, teknologi, serta keimanan.",
+      },
+      {
+        nomor: 3,
+        title: "Masyarakat Terampil & Kreatif",
+        desc: "Menumbuhkembangkan potensi masyarakat yang terampil, mandiri, kreatif, dan inovatif.",
+      },
+      {
+        nomor: 4,
+        title: "Budaya Ramah & Pariwisata",
+        desc: "Mengembangkan budaya ramah dalam pergaulan masyarakat guna mendukung Kuningan Daerah Pariwisata.",
+      },
+    ],
+  },
+  {
+    pilarNumber: "PILAR 3",
+    pilarTitle: "Ekonomi Pertanian & Sinergi",
+    pilarDesc: "Fondasi sektor tani yang kokoh serta sinergi terarah dengan program Kabupaten Kuningan.",
+    badgeColor: "bg-[#003733] text-white border border-[#005851]",
+    dotColor: "bg-teal-700",
+    items: [
+      {
+        nomor: 1,
+        title: "Penguatan Sektor Pertanian",
+        desc: "Meningkatkan usaha di bidang pertanian dan pengairan sawah sebagai landasan utama perekonomian Desa Kadurama.",
+      },
+      {
+        nomor: 2,
+        title: "Sinergi Program Kabupaten Kuningan",
+        desc: "Memfasilitasi masyarakat dan menyelaraskan langkah pembangunan desa dalam mendukung program Pemerintah Kabupaten Kuningan.",
+      },
+    ],
+  },
+];
+
 export const VISI_MISI_DATA = {
-  visi: "Terwujudnya Trasfaransi Akuntabilitas Menuju Masyarakat Desa Kadurama yang Aman dan Sejahtera",
+  visi: "Terwujudnya Trasparansi Akuntabilitas Menuju Masyarakat Desa Kadurama yang Aman dan Sejahtera",
   visiPenjelasan:
     "Berdasarkan kondisi saat ini dan menghadapi 5 tahun mendatang, Visi Pembangunan Desa Kadurama diartikan sebagai komitmen untuk memberikan kepuasan pelayanan kepada masyarakat di berbagai bidang, serta meningkatkan kesejahteraan segenap warga desa secara berkelanjutan.",
+  pilarList: PILAR_STRATEGIS_DATA,
   misiList: [
     {
       code: "A",

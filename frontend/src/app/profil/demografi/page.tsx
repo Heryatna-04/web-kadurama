@@ -49,7 +49,7 @@ export default function DemografiPage() {
     async function loadData() {
       try {
         const supabase = createClient();
-        
+
         // Helper untuk fetch seluruh baris melebihi default limit 1000 PostgREST
         async function fetchAllRows(tableName: string, selectCols: string) {
           const allRows: any[] = [];
@@ -444,12 +444,7 @@ export default function DemografiPage() {
         {/* Content Section */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10 space-y-10">
           {/* Status info bar */}
-          <div className="flex items-center gap-3 p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs text-emerald-900">
-            <Info className="w-4 h-4 text-[#009388] shrink-0" />
-            <span>
-              <strong>Pembaruan Otomatis:</strong> Data statistik ini dihitung dinamis secara real-time dari {totalPenduduk} warga ({totalKK} KK) yang telah terverifikasi dalam database kependudukan Desa Kadurama.
-            </span>
-          </div>
+
 
           {/* Komparasi Statistik Gender (Laki-laki vs Perempuan) DENGAN DONUT CHART SVG */}
           <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
@@ -1118,11 +1113,10 @@ export default function DemografiPage() {
                               })
                             }
                             onMouseLeave={() => setHoveredJob(null)}
-                            className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${
-                              isHovered
+                            className={`p-3 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between ${isHovered
                                 ? "bg-slate-800 border-emerald-400 shadow-md ring-1 ring-emerald-400/40 translate-x-0.5"
                                 : "bg-slate-800/60 border-slate-700/60 hover:bg-slate-800 hover:border-slate-600"
-                            }`}
+                              }`}
                           >
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex items-center gap-2 min-w-0">

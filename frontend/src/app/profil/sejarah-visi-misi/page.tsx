@@ -9,6 +9,7 @@ import {
   KUWU_HISTORY_LIST,
   DESA_SEJARAH_DATA,
   VISI_MISI_DATA,
+  PILAR_STRATEGIS_DATA,
 } from "@/data/sejarahVisiMisiData";
 import {
   BookOpen,
@@ -23,7 +24,6 @@ import {
   Calendar,
   CloudRain,
   Mountain,
-  Navigation,
   Sparkles,
   ShieldCheck,
   Building2,
@@ -36,9 +36,6 @@ import {
   ArrowRight,
   Quote,
   Layers,
-  Car,
-  Bike,
-  Route,
   ExternalLink,
 } from "lucide-react";
 
@@ -79,33 +76,8 @@ export default function SejarahVisiMisiPage() {
     return { label: "Era Pra-Kemerdekaan / Hindia", color: "bg-slate-100 text-slate-700 border-slate-200" };
   };
 
-  // Pengelompokan 9 Butir Misi ke dalam 3 Pilar Strategis (Struktur Ramping Tanpa Nested Cards)
-  const pilarList = [
-    {
-      pilarNumber: "PILAR 1",
-      pilarTitle: "Tata Kelola & Akuntabilitas",
-      pilarDesc: "Pemerintahan transparan, musyawarah desa berkesinambungan, dan birokrasi terencana.",
-      badgeColor: "bg-[#009388] text-white",
-      dotColor: "bg-[#009388]",
-      items: VISI_MISI_DATA.misiList.filter((m) => ["A", "B", "H"].includes(m.code.toUpperCase())),
-    },
-    {
-      pilarNumber: "PILAR 2",
-      pilarTitle: "Layanan Publik, SDM & Budaya",
-      pilarDesc: "Pelayanan warga berkualitas, peningkatan mutu SDM perangkat, dan etika masyarakat ramah.",
-      badgeColor: "bg-[#eda50c] text-slate-950",
-      dotColor: "bg-[#eda50c]",
-      items: VISI_MISI_DATA.misiList.filter((m) => ["C", "D", "F", "G"].includes(m.code.toUpperCase())),
-    },
-    {
-      pilarNumber: "PILAR 3",
-      pilarTitle: "Ekonomi Pertanian & Sinergi",
-      pilarDesc: "Fondasi sektor tani yang kokoh serta sinergi terarah dengan program Kabupaten Kuningan.",
-      badgeColor: "bg-teal-700 text-white",
-      dotColor: "bg-teal-700",
-      items: VISI_MISI_DATA.misiList.filter((m) => ["E", "I"].includes(m.code.toUpperCase())),
-    },
-  ];
+  // 3 Pilar Strategis Pembangunan Desa (Struktur Ramping dengan Penomoran 1, 2, 3 Per Pilar)
+  const pilarList = PILAR_STRATEGIS_DATA;
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
@@ -314,28 +286,25 @@ export default function SejarahVisiMisiPage() {
                   return (
                     <div
                       key={idx}
-                      className={`w-[290px] sm:w-[320px] flex-shrink-0 rounded-2xl p-5 border transition-all flex flex-col justify-between relative ${
-                        isCurrent
+                      className={`w-[290px] sm:w-[320px] flex-shrink-0 rounded-2xl p-5 border transition-all flex flex-col justify-between relative ${isCurrent
                           ? "bg-gradient-to-br from-[#003733] to-[#002825] text-white border-[#009388] shadow-lg ring-2 ring-[#009388]/40"
                           : "bg-white text-slate-900 border-slate-200 hover:border-[#009388]/50 hover:shadow-md"
-                      }`}
+                        }`}
                     >
                       {/* Top Meta Line: Era Badge & Sequence Number */}
                       <div className="space-y-3">
                         <div className="flex items-center justify-between gap-2">
                           <span
-                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${
-                              isCurrent ? "bg-[#eda50c] text-slate-950 border-[#eda50c]" : era.color
-                            }`}
+                            className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider border ${isCurrent ? "bg-[#eda50c] text-slate-950 border-[#eda50c]" : era.color
+                              }`}
                           >
                             {isCurrent ? "Menjabat (Aktif)" : era.label}
                           </span>
                           <span
-                            className={`font-mono text-xs font-black px-2 py-0.5 rounded-md ${
-                              isCurrent
+                            className={`font-mono text-xs font-black px-2 py-0.5 rounded-md ${isCurrent
                                 ? "bg-white/10 text-emerald-300"
                                 : "bg-slate-100 text-slate-500"
-                            }`}
+                              }`}
                           >
                             #{kuwu.originalOrder}
                           </span>
@@ -344,9 +313,8 @@ export default function SejarahVisiMisiPage() {
                         {/* Masa Bakti / Periode */}
                         <div className="pt-1">
                           <div
-                            className={`text-xs font-mono font-black uppercase tracking-wider ${
-                              isCurrent ? "text-[#eda50c]" : "text-[#009388]"
-                            }`}
+                            className={`text-xs font-mono font-black uppercase tracking-wider ${isCurrent ? "text-[#eda50c]" : "text-[#009388]"
+                              }`}
                           >
                             Periode Masa Jabatan
                           </div>
@@ -358,16 +326,14 @@ export default function SejarahVisiMisiPage() {
                         {/* Nama Kuwu */}
                         <div className="pt-2 border-t border-slate-100/20">
                           <div
-                            className={`text-[11px] font-medium ${
-                              isCurrent ? "text-emerald-200/80" : "text-slate-400"
-                            }`}
+                            className={`text-[11px] font-medium ${isCurrent ? "text-emerald-200/80" : "text-slate-400"
+                              }`}
                           >
                             Kuwu Terpilih
                           </div>
                           <h4
-                            className={`text-lg font-black uppercase tracking-tight leading-snug mt-0.5 ${
-                              isCurrent ? "text-white" : "text-slate-900"
-                            }`}
+                            className={`text-lg font-black uppercase tracking-tight leading-snug mt-0.5 ${isCurrent ? "text-white" : "text-slate-900"
+                              }`}
                           >
                             {kuwu.name}
                           </h4>
@@ -376,11 +342,10 @@ export default function SejarahVisiMisiPage() {
 
                       {/* Bottom Footer Item Status */}
                       <div
-                        className={`mt-6 pt-3 border-t text-[11px] font-medium flex items-center justify-between ${
-                          isCurrent
+                        className={`mt-6 pt-3 border-t text-[11px] font-medium flex items-center justify-between ${isCurrent
                             ? "border-white/15 text-emerald-300"
                             : "border-slate-100 text-slate-400"
-                        }`}
+                          }`}
                       >
                         <span>{isCurrent ? "Kuwu Petahana ke-15" : `Pemimpin ke-${kuwu.originalOrder}`}</span>
                         {isCurrent ? (
@@ -443,11 +408,11 @@ export default function SejarahVisiMisiPage() {
                   </h3>
                 </div>
                 <div className="text-xs text-slate-500 font-mono">
-                  9 Butir Misi (A – I) Terstruktur
+                  Agenda Kebijakan Terstruktur Per Pilar
                 </div>
               </div>
 
-              {/* 3 Kolom Ramping Tanpa Card-in-Card */}
+              {/* 3 Kolom Ramping dengan Poin 1, 2, 3 Beraksen Dark */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {pilarList.map((pilar, pIdx) => (
                   <div
@@ -473,19 +438,22 @@ export default function SejarahVisiMisiPage() {
                         </p>
                       </div>
 
-                      {/* Clean Line Items (TIDAK ADA CARD DI DALAM CARD) */}
-                      <div className="divide-y divide-slate-100">
-                        {pilar.items.map((misi, mIdx) => (
-                          <div key={mIdx} className="py-3 first:pt-3 last:pb-0 space-y-1">
-                            <div className="flex items-center gap-2">
-                              <span className="w-5 h-5 rounded-md bg-emerald-50 text-[#009388] font-mono font-black text-[11px] flex items-center justify-center border border-emerald-200 shrink-0">
-                                {misi.code}
+                      {/* Poin Misi dengan Nomor 1, 2, 3 dan Warna Dark Kontras */}
+                      <div className="space-y-2.5 pt-2">
+                        {pilar.items.map((misi) => (
+                          <div
+                            key={misi.nomor}
+                            className="p-3.5 rounded-xl bg-slate-900 text-white border border-slate-800 shadow-xs space-y-1.5 transition-all hover:bg-slate-950 hover:border-slate-700 group/point"
+                          >
+                            <div className="flex items-center gap-2.5">
+                              <span className="w-6 h-6 rounded-md bg-[#009388] text-white font-mono font-black text-xs flex items-center justify-center shrink-0 shadow-2xs group-hover/point:bg-[#eda50c] group-hover/point:text-slate-950 transition-colors">
+                                {misi.nomor}
                               </span>
-                              <h5 className="text-xs font-bold text-slate-900 leading-tight">
+                              <h5 className="text-xs sm:text-[13px] font-extrabold text-slate-100 leading-tight">
                                 {misi.title}
                               </h5>
                             </div>
-                            <p className="text-xs text-slate-600 leading-relaxed pl-7">
+                            <p className="text-xs text-slate-300/90 leading-relaxed pl-[34px]">
                               {misi.desc}
                             </p>
                           </div>
@@ -507,201 +475,7 @@ export default function SejarahVisiMisiPage() {
           {/* =================================================================== */}
           {/* SECTION 5: KONEKTIVITAS WILAYAH & RADAR SPASIAL INFORMATIF          */}
           {/* =================================================================== */}
-          <section className="space-y-6 pt-4 border-t border-slate-200">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-3 border-b border-slate-200 pb-4">
-              <div>
-                <div className="text-xs font-bold uppercase tracking-wider text-[#009388] flex items-center gap-1.5">
-                  <Compass className="w-3.5 h-3.5 text-[#eda50c]" />
-                  Orientasi Teritorial & Aksesibilitas
-                </div>
-                <h3 className="text-xl sm:text-2xl font-extrabold text-slate-900 mt-0.5">
-                  Konektivitas Wilayah & Batas Spasial Desa Kadurama
-                </h3>
-                <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-                  Visualisasi orientasi 4 mata angin dan waktu tempuh nyata ke pusat layanan publik kecamatan dan kabupaten.
-                </p>
-              </div>
 
-              <Link
-                href="/peta"
-                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-50 border border-emerald-200 text-[#009388] hover:bg-[#009388] hover:text-white transition font-bold text-xs"
-              >
-                <span>Buka Peta Satelit GIS Desa</span>
-                <ExternalLink className="w-3.5 h-3.5" />
-              </Link>
-            </div>
-
-            {/* 2 Kolom: Radar Spasial 4 Arah & Waktu Tempuh Riil */}
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-              {/* Kolom Kiri (6 Kolom): Radar Spasial 4 Arah Mata Angin */}
-              <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
-                    <Compass className="w-4 h-4 text-[#009388]" />
-                    <span>Batas Wilayah & Desa Tetangga</span>
-                  </div>
-                  <span className="text-[11px] font-mono text-slate-400">Kode: 32.08.10.2002</span>
-                </div>
-
-                {/* Visual Cardinal Hub Layout */}
-                <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/80 space-y-3">
-                  {/* UTARA */}
-                  <div className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded bg-emerald-100/70 text-[#009388] font-mono font-bold text-[10px]">
-                        UTARA
-                      </span>
-                      <span className="font-extrabold text-slate-900">Desa Kalimanggis Kulon</span>
-                    </div>
-                    <span className="text-[11px] text-slate-500">Batas Lahan Tani & Dusun Pahing</span>
-                  </div>
-
-                  {/* BARAT & TIMUR (Row) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1 text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded bg-cyan-100/70 text-cyan-800 font-mono font-bold text-[10px]">
-                          BARAT
-                        </span>
-                        <span className="font-extrabold text-slate-900">Desa Ciawigebang</span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 pl-1">
-                        Pusat Ibukota Kec. (Pasar & Medis)
-                      </div>
-                    </div>
-
-                    <div className="p-3 bg-white rounded-xl border border-slate-200 space-y-1 text-xs">
-                      <div className="flex items-center gap-1.5">
-                        <span className="px-2 py-0.5 rounded bg-amber-100/70 text-amber-800 font-mono font-bold text-[10px]">
-                          TIMUR
-                        </span>
-                        <span className="font-extrabold text-slate-900">Desa Cihideunggirang</span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 pl-1">
-                        Kawasan Irigasi Pertanian
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* SELATAN */}
-                  <div className="p-3 bg-white rounded-xl border border-slate-200 flex items-center justify-between text-xs">
-                    <div className="flex items-center gap-2">
-                      <span className="px-2 py-0.5 rounded bg-rose-100/70 text-rose-800 font-mono font-bold text-[10px]">
-                        SELATAN
-                      </span>
-                      <span className="font-extrabold text-slate-900">Desa Panyosogan</span>
-                    </div>
-                    <span className="text-[11px] text-slate-500">Jalur Penghubung Antar-Kecamatan</span>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono px-1">
-                  <span>Luas Total: 89 Ha</span>
-                  <span>Topografi: 550 mdpl</span>
-                  <span>Curah Hujan: 2.124 Mm/Th</span>
-                </div>
-              </div>
-
-              {/* Kolom Kanan (6 Kolom): Aksesibilitas & Waktu Tempuh Nyata */}
-              <div className="lg:col-span-6 bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-                <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                  <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-slate-700">
-                    <Navigation className="w-4 h-4 text-[#eda50c]" />
-                    <span>Aksesibilitas & Waktu Tempuh Riil</span>
-                  </div>
-                  <span className="text-[11px] font-mono text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                    Jalan Aspal Hotmix
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  {/* Destinasi 1: Kecamatan */}
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-emerald-100/80 text-[#009388] flex items-center justify-center font-bold shrink-0">
-                        <Bike className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-slate-900">Pusat Kec. Ciawigebang</div>
-                        <div className="text-[11px] text-slate-500">Pasar, KUA, Polsek & Puskesmas</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-mono font-extrabold text-xs text-[#009388]">1 Km</div>
-                      <div className="text-[10px] text-slate-500">~3 Menit</div>
-                    </div>
-                  </div>
-
-                  {/* Destinasi 2: Ibu Kota Kabupaten */}
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-cyan-100/80 text-cyan-800 flex items-center justify-center font-bold shrink-0">
-                        <Car className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-slate-900">Pusat Pemerintahan Kab. Kuningan</div>
-                        <div className="text-[11px] text-slate-500">Kantor Bupati, Dinas & RSUD 45</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-mono font-extrabold text-xs text-cyan-800">15 Km</div>
-                      <div className="text-[10px] text-slate-500">~25 Menit</div>
-                    </div>
-                  </div>
-
-                  {/* Destinasi 3: Bakorwil / Cirebon */}
-                  <div className="p-3 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-amber-100/80 text-amber-800 flex items-center justify-center font-bold shrink-0">
-                        <Route className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold text-slate-900">Wilayah Tiga Cirebon</div>
-                        <div className="text-[11px] text-slate-500">Stasiun KA Kejaksan & Akses Tol Cipali</div>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <div className="font-mono font-extrabold text-xs text-amber-800">56 Km</div>
-                      <div className="text-[10px] text-slate-500">~1,2 Jam</div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Info moda transportasi */}
-                <div className="pt-2 text-[11px] text-slate-500 flex items-center gap-2 border-t border-slate-100">
-                  <CheckCircle2 className="w-3.5 h-3.5 text-[#009388] shrink-0" />
-                  <span>Konektivitas jalan utama terhubung langsung ke jalan provinsi & dilalui angkutan pedesaan.</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Quick Link 3 Dusun */}
-            <div className="bg-slate-100 rounded-2xl p-4 border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-              <span className="text-xs text-slate-600 font-medium">
-                Desa Kadurama terbagi atas <strong>3 Dusun administratif definitif</strong>:
-              </span>
-              <div className="flex items-center gap-2 flex-wrap">
-                <Link
-                  href="/dusun/pahing"
-                  className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 hover:border-[#009388] hover:text-[#009388] transition shadow-2xs"
-                >
-                  Dusun I Pahing &rarr;
-                </Link>
-                <Link
-                  href="/dusun/wage"
-                  className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 hover:border-[#009388] hover:text-[#009388] transition shadow-2xs"
-                >
-                  Dusun II Wage &rarr;
-                </Link>
-                <Link
-                  href="/dusun/manis"
-                  className="px-3 py-1.5 rounded-xl bg-white border border-slate-200 text-xs font-bold text-slate-800 hover:border-[#009388] hover:text-[#009388] transition shadow-2xs"
-                >
-                  Dusun III Manis &rarr;
-                </Link>
-              </div>
-            </div>
-          </section>
         </div>
       </main>
 
