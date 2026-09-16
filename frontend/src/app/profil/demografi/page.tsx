@@ -46,9 +46,43 @@ export default function DemografiPage() {
     async function loadData() {
       try {
         const supabase = createClient();
-        const [{ data: resData }, { data: kkData }] = await Promise.all([
-          supabase.from("residents").select("nik, nama, dusun, jenis_kelamin, pekerjaan").eq("is_deleted", false),
-          supabase.from("sensus_kk").select("no_kk, dusun, jumlah_anggota").eq("is_deleted", false),
+        
+        // Helper untuk fetch seluruh baris melebihi default limit 1000 PostgREST
+        async function fetchAllRows(tableName: string, selectCols: string) {
+          const allRows: any[] = [];
+          const pageSize = 1000;
+          let from = 0;
+          let hasMore = true;
+
+          while (hasMore) {
+            const { data, error } = await supabase
+              .from(tableName)
+              .select(selectCols)
+              .eq("is_deleted", false)
+              .range(from, from + pageSize - 1);
+
+            if (error) {
+              console.error(`Error fetching ${tableName}:`, error.message);
+              break;
+            }
+
+            if (data && data.length > 0) {
+              allRows.push(...data);
+              if (data.length < pageSize) {
+                hasMore = false;
+              } else {
+                from += pageSize;
+              }
+            } else {
+              hasMore = false;
+            }
+          }
+          return allRows;
+        }
+
+        const [resData, kkData] = await Promise.all([
+          fetchAllRows("residents", "nik, nama, dusun, jenis_kelamin, pekerjaan"),
+          fetchAllRows("sensus_kk", "no_kk, dusun, jumlah_anggota"),
         ]);
 
         if (resData) setResidents(resData);

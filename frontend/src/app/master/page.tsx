@@ -216,12 +216,41 @@ export default function MasterPanelPage() {
   const fetchAllData = async () => {
     setIsLoadingData(true);
     try {
+      // Helper untuk fetch seluruh baris melebihi default limit 1000 PostgREST
+      async function fetchAllRows(tableName: string) {
+        const allRows: any[] = [];
+        const pageSize = 1000;
+        let from = 0;
+        let hasMore = true;
+
+        while (hasMore) {
+          const { data, error } = await supabase
+            .from(tableName)
+            .select("*")
+            .eq("is_deleted", false)
+            .range(from, from + pageSize - 1);
+
+          if (error) {
+            console.error(`Error fetching ${tableName}:`, error.message);
+            break;
+          }
+
+          if (data && data.length > 0) {
+            allRows.push(...data);
+            if (data.length < pageSize) {
+              hasMore = false;
+            } else {
+              from += pageSize;
+            }
+          } else {
+            hasMore = false;
+          }
+        }
+        return allRows;
+      }
+
       // 1. Sensus KK (Active only)
-      const { data: sensusData } = await supabase
-        .from("sensus_kk")
-        .select("*")
-        .eq("is_deleted", false)
-        .order("created_at", { ascending: false });
+      const sensusData = await fetchAllRows("sensus_kk");
 
       if (sensusData) {
         setSensusList(
@@ -267,11 +296,7 @@ export default function MasterPanelPage() {
       }
 
       // 2. Residents (Active only)
-      const { data: residentData } = await supabase
-        .from("residents")
-        .select("*")
-        .eq("is_deleted", false)
-        .order("created_at", { ascending: false });
+      const residentData = await fetchAllRows("residents");
 
       if (residentData) {
         setResidentsList(
