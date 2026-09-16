@@ -39,8 +39,8 @@ export default function PetaPage() {
       name: "Kantor Balai Desa Kadurama",
       dusun: "Manis",
       type: "Pemerintahan",
-      coord: [-6.978256, 108.598226] as [number, number],
-      address: "Jl. Desa Kadurama No. 01, Dusun Manis, Kec. Ciawigebang, Kab. Kuningan 45591",
+      coord: [-6.974814, 108.597824] as [number, number],
+      address: "Jl. Raya Kadurama, Kec. Ciawigebang, Kab. Kuningan 45591",
       desc: "Pusat pelayanan administrasi publik warga, kantor Kuwu Samir Syarifudin, ruang kerja pamong desa, dan aula pertemuan warga.",
     },
     {
@@ -141,9 +141,9 @@ export default function PetaPage() {
                   selectedPoiId={selectedPoiId}
                   onSelectDusun={(d) => setSelectedDusun(d)}
                   onSelectPoi={(poi) => setSelectedPoiId(poi ? poi.id : null)}
-                  showOuterBoundary={false}
+                  showOuterBoundary={true}
                   showDusunBoundaries={false}
-                  showWaterways={true}
+                  showWaterways={false}
                 />
               </div>
             </div>

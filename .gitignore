@@ -17,3 +17,5 @@ map
 *.xlsx
 localhost_*.json
 www.*.json
+*.geojson
+*border*.json

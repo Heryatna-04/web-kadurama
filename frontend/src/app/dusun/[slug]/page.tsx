@@ -352,9 +352,9 @@ export default function DusunDetailPage() {
               <CivicGisMap
                 selectedDusun={slug}
                 selectedPoiId={null}
-                showOuterBoundary={false}
+                showOuterBoundary={true}
                 showDusunBoundaries={false}
-                showWaterways={true}
+                showWaterways={false}
                 onSelectDusun={() => {}}
                 onSelectPoi={() => {}}
               />

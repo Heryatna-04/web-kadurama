@@ -3153,43 +3153,44 @@ export default function Home() {
 
                 {/* Focus Location Controller */}
                 <div className="flex flex-wrap items-center gap-1 bg-white p-1 rounded-xl border border-slate-200 shadow-2xs">
-                  {(
-                    [
-                      { id: "all", poiId: null, label: "Semua Wilayah" },
-                      { id: "manis", poiId: "balai-desa", label: "Kantor Balai Desa" },
-                      { id: "manis", poiId: "dusun-manis", label: "Dusun III Manis" },
-                      { id: "pahing", poiId: "dusun-pahing", label: "Dusun I Pahing" },
-                      { id: "wage", poiId: "dusun-wage", label: "Dusun II Wage" },
-                    ] as const
-                  ).map((tab) => {
-                    const isSelected =
-                      tab.poiId !== null
-                        ? gisSelectedPoiId === tab.poiId
-                        : gisSelectedDusun === "all" && gisSelectedPoiId === null;
-                    return (
-                      <button
-                        key={`${tab.id}-${tab.poiId || "all"}`}
-                        onClick={() => {
-                          setGisSelectedDusun(tab.id);
-                          setGisSelectedPoiId(tab.poiId);
-                        }}
-                        className={`px-3 py-1.5 rounded-lg transition font-semibold ${
-                          isSelected
-                            ? "bg-[#009388] text-white font-bold shadow-2xs"
-                            : "text-slate-600 hover:text-slate-900"
-                        }`}
-                      >
-                        {tab.label}
-                      </button>
-                    );
-                  })}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGisSelectedDusun("all");
+                      setGisSelectedPoiId(null);
+                    }}
+                    className={`px-3.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 ${
+                      gisSelectedPoiId === null
+                        ? "bg-[#009388] text-white font-bold shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Batas Desa (Seluruh Wilayah)</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setGisSelectedDusun("all");
+                      setGisSelectedPoiId("balai-desa");
+                    }}
+                    className={`px-3.5 py-1.5 rounded-lg transition font-semibold flex items-center gap-1.5 ${
+                      gisSelectedPoiId === "balai-desa"
+                        ? "bg-[#009388] text-white font-bold shadow-2xs"
+                        : "text-slate-600 hover:text-slate-900"
+                    }`}
+                  >
+                    <Building2 className="w-3.5 h-3.5" />
+                    <span>Kantor Balai Desa</span>
+                  </button>
                 </div>
 
                 {/* Official Verification Indicator */}
                 <div className="flex items-center gap-2 text-xs">
                   <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-emerald-50 text-emerald-800 border border-emerald-200 text-[11px] font-semibold">
                     <span className="w-1.5 h-1.5 rounded-full bg-[#009388]" />
-                    <span>Titik Terverifikasi (Ref: 32.08.10.2002)</span>
+                    <span>Dukcapil Kemendagri & Google Maps Terverifikasi</span>
                   </span>
                 </div>
 
@@ -3228,90 +3229,78 @@ export default function Home() {
 
                 {/* RIGHT 4 COLS: OFFICIAL MONOGRAPHY REGISTRY SHEET */}
                 <div className="lg:col-span-4 p-6 flex flex-col justify-between bg-white text-xs">
-
                   {(() => {
-                    const activePoint = gisSelectedPoiId
-                      ? OFFICIAL_POINTS.find((p) => p.id === gisSelectedPoiId)
-                      : null;
-                    const rawInfo = DUSUN_REGISTRY_DATA[gisSelectedDusun] || DUSUN_REGISTRY_DATA.all;
-                    const dInfo = {
-                      ...rawInfo,
-                      kk:
-                        gisSelectedDusun === "all"
-                          ? `${demografiStats.totalKK.toLocaleString("id-ID")} KK`
-                          : `${(demografiStats[gisSelectedDusun]?.kk ?? 0).toLocaleString("id-ID")} KK`,
-                      pop:
-                        gisSelectedDusun === "all"
-                          ? `${demografiStats.totalJiwa.toLocaleString("id-ID")} Jiwa`
-                          : `${(demografiStats[gisSelectedDusun]?.jiwa ?? 0).toLocaleString("id-ID")} Jiwa`,
-                    };
-
-                    const targetLat = activePoint ? activePoint.lat : -6.978256;
-                    const targetLng = activePoint ? activePoint.lng : 108.598226;
-                    const targetName = activePoint ? activePoint.name : dInfo.name;
+                    const isBalaiFocus = gisSelectedPoiId === "balai-desa";
 
                     return (
                       <div className="space-y-4">
                         <div className="pb-3 border-b border-slate-100">
                           <div className="flex items-center justify-between mb-1.5">
                             <span className="text-[10px] font-bold text-[#009388] uppercase tracking-wider bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                              {activePoint ? activePoint.categoryLabel : dInfo.tag}
+                              {isBalaiFocus ? "Pusat Pemerintahan" : "Batas Resmi Kemendagri"}
                             </span>
                             <span className="font-mono text-[10px] text-slate-400">KEMENDAGRI: 32.08.10.2002</span>
                           </div>
                           <h3 className="text-lg font-bold text-slate-900 tracking-tight">
-                            {targetName}
+                            {isBalaiFocus ? "Kantor Balai Desa Kadurama" : "Profil Spasial Desa Kadurama"}
                           </h3>
                           <p className="text-xs text-slate-500 mt-0.5">
-                            {activePoint ? "Titik Koordinat Resmi Desa Kadurama" : dInfo.sub}
+                            {isBalaiFocus
+                              ? "Pusat Pelayanan Administrasi & Kebijakan Desa"
+                              : "Kecamatan Ciawigebang, Kabupaten Kuningan, Jawa Barat"}
                           </p>
                         </div>
 
                         <div className="grid grid-cols-2 gap-2">
                           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Penanggung Jawab</div>
-                            <div className="font-bold text-slate-800 text-xs mt-1">{dInfo.lead}</div>
-                            <div className="text-[10px] text-slate-500">{dInfo.leadRole}</div>
+                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Wilayah / Luas</div>
+                            <div className="font-bold text-slate-800 text-xs mt-1 font-mono">± 120,4 Ha</div>
+                            <div className="text-[10px] text-[#009388]">125 Titik Poligon</div>
                           </div>
                           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Wilayah / Luas</div>
-                            <div className="font-bold text-slate-800 text-xs mt-1 font-mono">{dInfo.area}</div>
-                            <div className="text-[10px] text-[#009388]">Kec. Ciawigebang</div>
+                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Wilayah Dusun</div>
+                            <div className="font-bold text-slate-800 text-xs mt-1">3 Dusun</div>
+                            <div className="text-[10px] text-slate-500">Manis, Pahing, Wage</div>
                           </div>
                           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
                             <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Populasi Jiwa</div>
-                            <div className="font-bold text-[#eda50c] text-xs mt-1 font-mono">{dInfo.pop}</div>
+                            <div className="font-bold text-[#eda50c] text-xs mt-1 font-mono">{demografiStats.totalJiwa.toLocaleString("id-ID")} Jiwa</div>
                             <div className="text-[10px] text-slate-500">Warga Terdaftar</div>
                           </div>
                           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
                             <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Kepala Keluarga</div>
-                            <div className="font-bold text-slate-800 text-xs mt-1 font-mono">{dInfo.kk}</div>
-                            <div className="text-[10px] text-emerald-600">Sensus Mikro Terpadu</div>
+                            <div className="font-bold text-slate-800 text-xs mt-1 font-mono">{demografiStats.totalKK.toLocaleString("id-ID")} KK</div>
+                            <div className="text-[10px] text-emerald-600">8 RT / 3 RW</div>
                           </div>
                         </div>
 
                         <div>
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Koordinat GPS & Alamat</div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">Koordinat Sentral & Alamat</div>
                           <div className="p-3 rounded-xl bg-slate-50 border border-slate-100 space-y-1">
-                            <div className="font-mono text-xs text-slate-800">
-                              {targetLat}, {targetLng}
+                            <div className="font-mono text-xs text-slate-800 font-semibold">
+                              -6.974814, 108.597824
                             </div>
                             <div className="text-[11px] text-slate-500">
-                              {activePoint ? activePoint.description : "Jl. Desa Kadurama No. 01, Kecamatan Ciawigebang, Kabupaten Kuningan 45591."}
+                              Jl. Raya Kadurama, Kec. Ciawigebang, Kab. Kuningan, Jawa Barat 45591.
                             </div>
                           </div>
                         </div>
 
                         <div>
-                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Fasilitas Nyata Terverifikasi</div>
+                          <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">Fasilitas Publik Terverifikasi</div>
                           <div className="space-y-1.5">
-                            {dInfo.facilities.map((fac, fIdx) => (
+                            {[
+                              { name: "Kantor Balai Desa Kadurama", loc: "Jl. Raya Kadurama" },
+                              { name: "SD Negeri Kadurama", loc: "Dusun Manis" },
+                              { name: "Kantor Urusan Agama (KUA)", loc: "Perbatasan Kadurama" },
+                              { name: "Pos Kesehatan Desa / Posyandu", loc: "Pusat Layanan Warga" },
+                            ].map((fac, fIdx) => (
                               <div
                                 key={fIdx}
                                 className="p-2 rounded-lg bg-slate-50 border border-slate-100 flex items-center justify-between text-[11px]"
                               >
                                 <span className="font-semibold text-slate-800">{fac.name}</span>
-                                <span className="text-[10px] font-medium text-slate-500">{fac.dusun}</span>
+                                <span className="text-[10px] font-medium text-slate-500">{fac.loc}</span>
                               </div>
                             ))}
                           </div>
@@ -3319,7 +3308,7 @@ export default function Home() {
 
                         <div className="pt-4 mt-4 border-t border-slate-100 space-y-2">
                           <a
-                            href={`https://www.google.com/maps/dir/?api=1&destination=${targetLat},${targetLng}`}
+                            href="https://maps.app.goo.gl/HdZ7J2ZWmC6eWp199"
                             target="_blank"
                             rel="noreferrer"
                             className="w-full py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs transition flex items-center justify-center gap-2 shadow-xs"
@@ -3334,7 +3323,6 @@ export default function Home() {
                       </div>
                     );
                   })()}
-
                 </div>
 
               </div>
