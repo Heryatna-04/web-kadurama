@@ -99,6 +99,26 @@ export default function PemerintahanPage() {
                   <p className="text-xs text-emerald-200 mt-0.5">Kepala Desa (Kuwu) Kadurama</p>
                 </div>
 
+                {/* Visi Kuwu */}
+                <div className="bg-black/25 rounded-2xl p-4 border border-white/10 text-xs text-slate-100">
+                  <div className="text-[10px] font-bold uppercase tracking-wider text-[#eda50c] mb-1">
+                    Visi Pembangunan Desa:
+                  </div>
+                  <p className="italic font-medium leading-relaxed">
+                    &ldquo;Terwujudnya Trasfaransi Akuntabilitas Menuju Masyarakat Desa Kadurama yang Aman dan Sejahtera&rdquo;
+                  </p>
+                  <div className="mt-2.5 pt-2 border-t border-white/10 flex items-center justify-between">
+                    <span className="text-[11px] text-emerald-200">9 Butir Misi & Silsilah Kuwu (1805–Sekarang)</span>
+                    <Link
+                      href="/profil/sejarah-visi-misi"
+                      className="inline-flex items-center gap-1 font-bold text-[#eda50c] hover:text-amber-300 text-xs transition"
+                    >
+                      <span>Lihat Selengkapnya</span>
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </Link>
+                  </div>
+                </div>
+
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 pt-4 border-t border-white/15 text-xs text-emerald-100">
                   <div>
                     <span className="text-emerald-300 block text-[11px]">Kedudukan</span>

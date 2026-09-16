@@ -22,6 +22,7 @@ import {
   Calendar,
   ShieldAlert,
   ArrowRight,
+  BookOpen,
 } from "lucide-react";
 
 interface CivicNavbarProps {
@@ -192,6 +193,17 @@ export default function CivicNavbar({ onOpenAdminLogin }: CivicNavbarProps) {
                         <div className="px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider text-slate-400">
                           Pemerintahan & Wilayah
                         </div>
+                        <a
+                          href="/profil/sejarah-visi-misi"
+                          onClick={() => setActiveDropdown(null)}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold hover:bg-[#e6f7f5] hover:text-[#009388] transition"
+                        >
+                          <BookOpen className="w-4 h-4 text-[#009388]" />
+                          <div>
+                            <div className="font-bold">Sejarah, Visi & Misi</div>
+                            <div className="text-[11px] text-slate-500 font-normal">Silsilah Kuwu & Visi Pembangunan</div>
+                          </div>
+                        </a>
                         <a
                           href="/profil/pemerintahan"
                           onClick={() => setActiveDropdown(null)}
@@ -404,6 +416,14 @@ export default function CivicNavbar({ onOpenAdminLogin }: CivicNavbarProps) {
               </Link>
             </div>
           </div>
+
+          <Link
+            href="/profil/sejarah-visi-misi"
+            onClick={() => setMobileMenuOpen(false)}
+            className="block px-3 py-2 rounded-lg font-bold text-slate-800 hover:bg-[#e6f7f5] hover:text-[#009388]"
+          >
+            Sejarah, Visi & Misi Desa
+          </Link>
 
           <Link
             href="/profil/pemerintahan"

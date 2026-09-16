@@ -94,6 +94,11 @@ export default function CivicFooter() {
                 </Link>
               </li>
               <li>
+                <Link href="/profil/sejarah-visi-misi" className="hover:text-emerald-300 transition">
+                  Sejarah, Visi & Misi Desa
+                </Link>
+              </li>
+              <li>
                 <Link href="/profil/pemerintahan" className="hover:text-emerald-300 transition">
                   Struktur Pamong & Perangkat Desa
                 </Link>
