@@ -1431,39 +1431,39 @@ const INITIAL_APBDES_BIDANG: APBDesBidang[] = [
     persen: 0,
     pagu: 543725227,
     realisasi: 0,
-    keterangan: "Siltap & tunjangan Kuwu/perangkat, operasional kantor, jaminan sosial ketenagakerjaan, dan tunjangan BPD.",
+    keterangan: "Siltap & tunjangan Kuwu/perangkat, operasional kantor balai desa, kearsipan, dan tunjangan BPD.",
   },
   {
     id: 2,
     nama: "Pelaksanaan Pembangunan Desa",
     persen: 0,
-    pagu: 221727000,
+    pagu: 201627000,
     realisasi: 0,
-    keterangan: "Pembangunan posyandu, rabat beton/hotmix jalan desa, sanitasi, dan penerangan jalan umum desa.",
+    keterangan: "Pengerasan/rehab jalan desa, sarana Posyandu, PAUD desa, dan pemeliharaan fasilitas sampah.",
   },
   {
     id: 3,
     nama: "Pembinaan Kemasyarakatan Desa",
     persen: 0,
-    pagu: 21000000,
+    pagu: 0,
     realisasi: 0,
-    keterangan: "Pembinaan ketenteraman, kelembagaan masyarakat, keagamaan, serta kepemudaan & olahraga.",
+    keterangan: "Belum dialokasikan anggaran pada APBDes murni 2026 (Rp 0 sesuai naskah banner resmi).",
   },
   {
     id: 4,
     nama: "Pemberdayaan Masyarakat Desa",
     persen: 0,
-    pagu: 20000000,
+    pagu: 78000000,
     realisasi: 0,
-    keterangan: "Peningkatan kapasitas aparatur desa, ketahanan pangan hewani/nabati, dan pelatihan UMKM.",
+    keterangan: "Pemeliharaan saluran irigasi tersier pertanian, pemasaran UMKM & pelatihan pemberdayaan.",
   },
   {
     id: 5,
     nama: "Penanggulangan Bencana & Mendesak",
     persen: 0,
-    pagu: 50000000,
+    pagu: 33100000,
     realisasi: 0,
-    keterangan: "Bantuan Langsung Tunai Dana Desa (BLT-DD) dan kesiapsiagaan tanggap darurat bencana.",
+    keterangan: "Kegiatan mitigasi kebencanaan desa dan penanganan situasi darurat mendesak.",
   },
 ];
 
@@ -2432,11 +2432,11 @@ export default function Home() {
           <div className="absolute -right-20 -bottom-20 w-[550px] h-[550px] bg-[#eda50c]/25 rounded-full blur-3xl pointer-events-none" />
           <div className="absolute -top-20 -left-20 w-[500px] h-[500px] bg-[#009388]/30 rounded-full blur-3xl pointer-events-none" />
 
-          {/* 2. Landmark Gerbang Kuningan Asri (2x Size di Tengah, Kiri Kanan Putih Menyatu Tanpa Blocking) */}
+          {/* 2. Landmark Gerbang Kabupaten Kuningan (2x Size di Tengah, Kiri Kanan Putih Menyatu Tanpa Blocking) */}
           <div className="absolute inset-x-0 bottom-0 w-full flex items-end justify-center pointer-events-none select-none z-0 mix-blend-multiply opacity-80 overflow-hidden">
             <img
               src="/kuningan-gate-wide.png"
-              alt="Landmark Gerbang Kuningan Asri"
+              alt="Landmark Gerbang Kabupaten Kuningan"
               className="w-full h-[280px] sm:h-[320px] md:h-[360px] object-cover object-bottom select-none [mask-image:linear-gradient(to_top,black_80%,transparent)] filter brightness-105 contrast-110"
             />
           </div>
@@ -2499,26 +2499,26 @@ export default function Home() {
                 {/* Amber & Emerald Ambient Glow */}
                 <div className="absolute -inset-3 bg-gradient-to-tr from-[#eda50c]/30 via-[#009388]/25 to-transparent rounded-3xl blur-3xl pointer-events-none" />
 
-                <div className="relative bg-white/[0.09] hover:bg-white/[0.13] backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-white/20 hover:border-[#eda50c]/50 transition-all duration-300 shadow-2xl space-y-5 text-white flex flex-col items-center text-center group">
+                <div className="relative bg-white/[0.09] hover:bg-white/[0.13] backdrop-blur-md rounded-3xl p-6 sm:p-10 border border-white/20 hover:border-[#eda50c]/50 transition-all duration-300 shadow-2xl space-y-6 text-white flex flex-col items-center text-center group">
                   {/* Top Gold Accent Line */}
                   <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#eda50c] to-transparent rounded-t-3xl" />
 
                   {/* Official Emblem: Lambang Kabupaten Kuningan */}
                   <div className="relative pt-2">
-                    <div className="absolute inset-0 bg-gradient-to-tr from-[#eda50c]/30 to-emerald-400/20 rounded-full blur-xl pointer-events-none" />
+                    <div className="absolute inset-0 bg-gradient-to-tr from-[#eda50c]/35 to-emerald-400/20 rounded-full blur-2xl pointer-events-none" />
                     <img
                       src="/logo-kuningan.png"
                       alt="Lambang Resmi Kabupaten Kuningan"
-                      className="relative w-28 sm:w-32 h-auto drop-shadow-[0_12px_24px_rgba(0,0,0,0.45)] transition-transform duration-500 group-hover:scale-105 mx-auto"
+                      className="relative w-36 sm:w-44 h-auto drop-shadow-[0_16px_32px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-105 mx-auto"
                     />
                   </div>
 
                   {/* Hierarki Pemerintahan & Tipografi Resmi */}
-                  <div className="space-y-1">
-                    <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#eda50c]">
+                  <div className="space-y-1.5">
+                    <div className="text-xs sm:text-sm font-bold uppercase tracking-[0.25em] text-[#eda50c]">
                       Pemerintah Kabupaten Kuningan
                     </div>
-                    <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                    <h2 className="text-2xl sm:text-4xl font-black text-white tracking-tight">
                       DESA KADURAMA
                     </h2>
                     <p className="text-xs sm:text-sm text-emerald-100/90 font-medium">
@@ -2526,25 +2526,8 @@ export default function Home() {
                     </p>
                   </div>
 
-                  {/* Status Badges: Desa Mandiri & Layanan Aktif */}
-                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eda50c]/20 border border-[#eda50c]/40 text-[#eda50c] text-xs font-bold">
-                      <Award className="w-3.5 h-3.5" />
-                      <span>Desa Mandiri (IDM)</span>
-                    </span>
-                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold">
-                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span>Loket Buka 07.30 - 15.00 WIB</span>
-                    </span>
-                  </div>
-
-                  {/* Semboyan Daerah Kuningan */}
-                  <div className="w-full py-2.5 px-4 rounded-2xl bg-black/25 border border-white/10 text-xs text-amber-200/95 italic font-medium leading-relaxed">
-                    &ldquo;Melesat Ngudag Jaman, Ngakar Kuat Purwadaksi&rdquo;
-                  </div>
-
                   {/* Card Footer: Balai Desa & Navigasi Lokasi */}
-                  <div className="w-full pt-3 border-t border-white/15 flex items-center justify-between text-[11px] sm:text-xs text-emerald-100/80">
+                  <div className="w-full pt-4 border-t border-white/15 flex items-center justify-between text-[11px] sm:text-xs text-emerald-100/80">
                     <span className="flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-[#eda50c]" />
                       <span>Jl. Desa Kadurama No. 01</span>
@@ -3501,9 +3484,9 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Grid 5 Kartu Cuplikan Layanan (Ringkas & Informatif) */}
+            {/* Grid 5 Kartu Cuplikan Layanan + 1 Kartu Lihat Selengkapnya (Total 6 Kartu) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-              {CIVIC_SERVICES_DATA.map((srv) => (
+              {CIVIC_SERVICES_DATA.slice(0, 5).map((srv) => (
                 <div
                   key={srv.id}
                   className="bg-slate-50 rounded-2xl border border-slate-200 p-5 hover:border-[#009388]/50 hover:shadow-md transition flex flex-col justify-between group"
@@ -3551,34 +3534,51 @@ export default function Home() {
                 </div>
               ))}
 
-              {/* Box Khusus CTA Langsung ke Katalog Layanan */}
-              <div className="bg-gradient-to-br from-[#003733] to-[#002825] text-white rounded-2xl p-6 border border-[#005851] shadow-xs flex flex-col justify-between">
+              {/* Kartu ke-6: CTA Khusus "Lihat Selengkapnya" */}
+              <div className="bg-gradient-to-br from-[#003733] via-[#00423d] to-[#002825] text-white rounded-2xl p-5 border border-[#005851] shadow-xs flex flex-col justify-between hover:border-[#eda50c]/60 hover:shadow-lg transition-all duration-300 group">
                 <div>
-                  <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-[10px] font-bold uppercase tracking-wider mb-3">
-                    <ShieldCheck className="w-3.5 h-3.5 text-[#eda50c]" />
-                    Standar Pelayanan (SOP)
-                  </span>
-                  <h3 className="text-lg font-extrabold text-white leading-snug">
-                    Butuh Panduan Surat & Verifikasi Berkas Fisik?
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#eda50c] text-slate-950 shadow-2xs">
+                      KATALOG LENGKAP
+                    </span>
+                    <span className="text-[10px] font-semibold text-emerald-300 uppercase tracking-wider">
+                      Semua Layanan
+                    </span>
+                  </div>
+
+                  <h3 className="font-extrabold text-lg text-white group-hover:text-[#eda50c] transition leading-snug">
+                    Lihat Selengkapnya
                   </h3>
-                  <p className="text-xs text-slate-300 mt-2 leading-relaxed">
-                    Kunjungi direktori layanan untuk membaca SOP resmi, alur verifikasi berkas, dan jam buka loket Balai Desa Kadurama.
+
+                  <p className="text-xs text-emerald-100/80 mt-2 leading-relaxed">
+                    Akses direktori lengkap seluruh persyaratan administrasi seperti Surat Pengantar SKCK, Surat Keterangan Domisili, Pengantar Nikah (NA), Surat Pindah Datang, dan legalisir dokumen desa.
                   </p>
+
+                  <div className="mt-4 pt-3 border-t border-white/10 flex flex-wrap gap-1.5">
+                    <span className="px-2 py-0.5 rounded-md bg-white/10 text-emerald-200 text-[10px] font-medium border border-white/10">
+                      + SKCK
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-white/10 text-emerald-200 text-[10px] font-medium border border-white/10">
+                      + Domisili
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-white/10 text-emerald-200 text-[10px] font-medium border border-white/10">
+                      + Pengantar Nikah (NA)
+                    </span>
+                    <span className="px-2 py-0.5 rounded-md bg-white/10 text-emerald-200 text-[10px] font-medium border border-white/10">
+                      + Pindah Datang
+                    </span>
+                  </div>
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-white/10 space-y-2.5">
+                <div className="mt-5 pt-3 border-t border-white/10">
                   <Link
                     href="/layanan"
-                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white text-xs font-bold transition shadow-xs"
+                    className="w-full inline-flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white text-xs font-bold transition shadow-xs group-hover:bg-[#eda50c] group-hover:text-slate-950"
                   >
                     <FileText className="w-4 h-4" />
                     <span>Buka Katalog Layanan Lengkap</span>
-                    <ArrowRight className="w-4 h-4" />
+                    <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
                   </Link>
-                  <div className="flex items-center justify-center gap-1.5 text-[11px] text-emerald-200/80">
-                    <Clock className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>Senin - Jumat (08.00 - 15.00 WIB)</span>
-                  </div>
                 </div>
               </div>
             </div>

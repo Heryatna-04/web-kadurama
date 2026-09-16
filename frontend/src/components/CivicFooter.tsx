@@ -152,7 +152,7 @@ export default function CivicFooter() {
           <div className="flex items-center gap-4 text-[11px]">
             <span>Portal Resmi Pemerintahan Desa</span>
             <span>•</span>
-            <span>Kabupaten Kuningan Asri</span>
+            <span>Kabupaten Kuningan</span>
           </div>
         </div>
       </div>

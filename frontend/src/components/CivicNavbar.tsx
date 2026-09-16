@@ -91,7 +91,7 @@ export default function CivicNavbar({ onOpenAdminLogin }: CivicNavbarProps) {
                   DESA KADURAMA
                 </span>
                 <span className="hidden sm:inline-block px-2 py-0.5 text-[10px] font-bold bg-[#e6f7f5] text-[#009388] rounded-full border border-[#009388]/30">
-                  Kuningan Asri
+                  Kabupaten Kuningan
                 </span>
               </div>
               <p className="text-xs text-slate-500 font-medium truncate">
