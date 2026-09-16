@@ -1151,8 +1151,8 @@ export const DUSUN_REGISTRY_DATA: Record<
     lead: "Samir Syarifudin",
     leadRole: "Kepala Desa Kadurama",
     area: "89.0 Hektar",
-    kk: "492 KK",
-    pop: "1.720 Jiwa",
+    kk: "810 KK",
+    pop: "2.481 Jiwa",
     coords: "-6.9782, 108.5982",
     desc: "Kawasan pedesaan agraris mandiri di lereng timur Gunung Ciremai seluas 89 Ha (termasuk tanah perhutani: 42 Ha Sawah & 47 Ha Darat) yang terbagi dalam 3 Dusun: Dusun I Pahing (27 Ha), Dusun II Wage (23 Ha), dan Dusun III Manis (39 Ha).",
     facilities: [
@@ -1168,8 +1168,8 @@ export const DUSUN_REGISTRY_DATA: Record<
     lead: "Trida Sentosa",
     leadRole: "Kepala Dusun I Pahing",
     area: "27.0 Hektar",
-    kk: "162 KK",
-    pop: "548 Jiwa",
+    kk: "260 KK",
+    pop: "826 Jiwa",
     coords: "-6.9785, 108.6020",
     desc: "Dusun pertama dengan luas wilayah ± 27 Ha (3 RT / 1 RW). Menjadi lumbung pangan padi sawah desa, lapangan sepakbola kebanggaan desa, 2 mushola, SD, TK, dan Posyandu.",
     facilities: [
@@ -1185,8 +1185,8 @@ export const DUSUN_REGISTRY_DATA: Record<
     lead: "Andri Rukmana",
     leadRole: "Kepala Dusun II Wage",
     area: "23.0 Hektar",
-    kk: "146 KK",
-    pop: "492 Jiwa",
+    kk: "260 KK",
+    pop: "822 Jiwa",
     coords: "-6.9825, 108.5955",
     desc: "Dusun kedua dengan luas wilayah ± 23 Ha (2 RT / 1 RW). Zona konservasi mata air alami Cikaduran 45 L/dtk, dilengkapi fasilitas 1 masjid, 1 mushola, pondok pesantren, PAUD, dan Posyandu.",
     facilities: [
@@ -1202,8 +1202,8 @@ export const DUSUN_REGISTRY_DATA: Record<
     lead: "Jamaludin",
     leadRole: "Kepala Dusun III Manis",
     area: "39.0 Hektar",
-    kk: "184 KK",
-    pop: "680 Jiwa",
+    kk: "288 KK",
+    pop: "833 Jiwa",
     coords: "-6.9755, 108.5980",
     desc: "Dusun ketiga dengan luas wilayah terbesar ± 39 Ha (3 RT / 1 RW). Sentra administrasi Kantor Balai Desa, KUA, gedung SD, 4 mushola, 1 pesantren, dan Posyandu.",
     facilities: [
@@ -1596,6 +1596,28 @@ export default function Home() {
   const currentDusunRealIndex =
     dusunTrackIndex === 0 ? 2 : dusunTrackIndex === 4 ? 0 : dusunTrackIndex - 1;
 
+  // Demografi Real-Time State (Supabase Dynamic Sync)
+  const [demografiStats, setDemografiStats] = useState({
+    totalJiwa: 2481,
+    totalKK: 810,
+    pahing: { jiwa: 826, kk: 260 },
+    wage: { jiwa: 822, kk: 260 },
+    manis: { jiwa: 833, kk: 288 },
+  });
+
+  const pahingPercent =
+    demografiStats.totalJiwa > 0
+      ? ((demografiStats.pahing.jiwa / demografiStats.totalJiwa) * 100).toFixed(1)
+      : "33.3";
+  const wagePercent =
+    demografiStats.totalJiwa > 0
+      ? ((demografiStats.wage.jiwa / demografiStats.totalJiwa) * 100).toFixed(1)
+      : "33.1";
+  const manisPercent =
+    demografiStats.totalJiwa > 0
+      ? ((demografiStats.manis.jiwa / demografiStats.totalJiwa) * 100).toFixed(1)
+      : "33.6";
+
   // Function to start or reset the 5-second timer cleanly
   const resetAutoSlideTimer = useCallback(() => {
     if (autoSlideTimerRef.current) {
@@ -1877,29 +1899,67 @@ export default function Home() {
     };
   }, []);
 
-  // Fetch dynamic News & APBDes from Supabase
+  // Fetch dynamic News, APBDes & Demografi from Supabase
   useEffect(() => {
     const fetchLandingData = async () => {
       try {
         const supabase = createClient();
-        const [{ data: newsData }, { data: summaryData }, { data: sectorsData }] =
-          await Promise.all([
-            supabase
-              .from("news_articles")
-              .select("*")
-              .eq("is_deleted", false)
-              .order("created_at", { ascending: false }),
-            supabase
-              .from("apbdes_summary")
-              .select("*")
-              .eq("tahun", 2026)
-              .maybeSingle(),
-            supabase
-              .from("apbdes_sectors")
-              .select("*")
-              .eq("is_deleted", false)
-              .order("id", { ascending: true }),
-          ]);
+        const [
+          { data: newsData },
+          { data: summaryData },
+          { data: sectorsData },
+          { count: countPahingJiwa },
+          { count: countPahingKK },
+          { count: countWageJiwa },
+          { count: countWageKK },
+          { count: countManisJiwa },
+          { count: countManisKK },
+          { count: countTotalJiwa },
+          { count: countTotalKK },
+        ] = await Promise.all([
+          supabase
+            .from("news_articles")
+            .select("*")
+            .eq("is_deleted", false)
+            .order("created_at", { ascending: false }),
+          supabase
+            .from("apbdes_summary")
+            .select("*")
+            .eq("tahun", 2026)
+            .maybeSingle(),
+          supabase
+            .from("apbdes_sectors")
+            .select("*")
+            .eq("is_deleted", false)
+            .order("id", { ascending: true }),
+          supabase.from("residents").select("*", { count: "exact", head: true }).ilike("dusun", "%pahing%"),
+          supabase.from("sensus_kk").select("*", { count: "exact", head: true }).ilike("dusun", "%pahing%"),
+          supabase.from("residents").select("*", { count: "exact", head: true }).ilike("dusun", "%wage%"),
+          supabase.from("sensus_kk").select("*", { count: "exact", head: true }).ilike("dusun", "%wage%"),
+          supabase.from("residents").select("*", { count: "exact", head: true }).ilike("dusun", "%manis%"),
+          supabase.from("sensus_kk").select("*", { count: "exact", head: true }).ilike("dusun", "%manis%"),
+          supabase.from("residents").select("*", { count: "exact", head: true }),
+          supabase.from("sensus_kk").select("*", { count: "exact", head: true }),
+        ]);
+
+        if (countTotalJiwa !== null && countTotalJiwa > 0) {
+          setDemografiStats({
+            totalJiwa: countTotalJiwa,
+            totalKK: countTotalKK || 810,
+            pahing: {
+              jiwa: countPahingJiwa ?? 826,
+              kk: countPahingKK ?? 260,
+            },
+            wage: {
+              jiwa: countWageJiwa ?? 822,
+              kk: countWageKK ?? 260,
+            },
+            manis: {
+              jiwa: countManisJiwa ?? 833,
+              kk: countManisKK ?? 288,
+            },
+          });
+        }
 
         if (newsData && newsData.length > 0) {
           setNewsList(
@@ -2503,7 +2563,7 @@ export default function Home() {
                           Sensus Mikro 3 Dusun Harmonis
                         </div>
                         <div className="text-[11px] text-emerald-100/80 mt-0.5 leading-relaxed">
-                          492 Kepala Keluarga dan 1.660 Jiwa terdata lengkap di Dusun Manis, Pahing, dan Wage.
+                          {demografiStats.totalKK.toLocaleString("id-ID")} Kepala Keluarga dan {demografiStats.totalJiwa.toLocaleString("id-ID")} Jiwa terdata lengkap di Dusun Manis, Pahing, dan Wage.
                         </div>
                       </div>
                     </div>
@@ -2550,8 +2610,8 @@ export default function Home() {
                     <Users className="w-4 h-4" />
                   </div>
                   <div>
-                    <div className="text-xs sm:text-sm font-bold text-white">492 Kepala Keluarga</div>
-                    <div className="text-[10px] text-emerald-100/80">1.660 Jiwa (100% Sensus Terdata)</div>
+                    <div className="text-xs sm:text-sm font-bold text-white">{demografiStats.totalKK.toLocaleString("id-ID")} Kepala Keluarga</div>
+                    <div className="text-[10px] text-emerald-100/80">{demografiStats.totalJiwa.toLocaleString("id-ID")} Jiwa (100% Sensus Terdata)</div>
                   </div>
                 </div>
 
@@ -2681,8 +2741,8 @@ export default function Home() {
                         Dusun ketiga dengan luas wilayah terbesar di Desa Kadurama yaitu kurang lebih 39 hektar (3 RT / 1 RW). Sentra administrasi publik menaungi Kantor Balai Desa, KUA, gedung SD, 1 pondok pesantren, 4 unit mushola, serta Posyandu.
                       </p>
                       <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
-                        <div><div className="text-2xl sm:text-3xl font-black text-white">184</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
-                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">620</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">{demografiStats.manis.kk}</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">{demografiStats.manis.jiwa}</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
                         <div><div className="text-2xl sm:text-3xl font-black text-emerald-300">39 Ha</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Luas Wilayah</div></div>
                         <div><div className="text-2xl sm:text-3xl font-black text-white">3 / 1</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
                       </div>
@@ -2770,8 +2830,8 @@ export default function Home() {
                         Dusun pertama di Desa Kadurama dengan luas wilayah kurang lebih 27 hektar (3 RT / 1 RW). Menjadi sentra ketahanan pangan padi sawah desa, lapangan sepakbola Gelora Kadurama, 2 unit mushola peribadatan, gedung Sekolah Dasar (SD), TK, serta Posyandu.
                       </p>
                       <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
-                        <div><div className="text-2xl sm:text-3xl font-black text-white">162</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
-                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">548</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">{demografiStats.pahing.kk}</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">{demografiStats.pahing.jiwa}</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
                         <div><div className="text-2xl sm:text-3xl font-black text-emerald-300">27 Ha</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Luas Wilayah</div></div>
                         <div><div className="text-2xl sm:text-3xl font-black text-white">3 / 1</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
                       </div>
@@ -2859,8 +2919,8 @@ export default function Home() {
                         Dusun kedua di Desa Kadurama dengan luas wilayah kurang lebih 23 hektar (2 RT / 1 RW) di kontur sejuk lereng Gunung Ciremai. Memiliki sarana ibadah 1 masjid jami dan 1 mushola, institusi pendidikan keagamaan Pondok Pesantren, gedung PAUD, layanan Posyandu, serta mata air alami Cikaduran 45 L/dtk.
                       </p>
                       <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
-                        <div><div className="text-2xl sm:text-3xl font-black text-white">146</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
-                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">492</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">{demografiStats.wage.kk}</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">{demografiStats.wage.jiwa}</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
                         <div><div className="text-2xl sm:text-3xl font-black text-cyan-300">23 Ha</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Luas Wilayah</div></div>
                         <div><div className="text-2xl sm:text-3xl font-black text-white">2 / 1</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
                       </div>
@@ -2948,8 +3008,8 @@ export default function Home() {
                         Dusun ketiga dengan luas wilayah terbesar di Desa Kadurama yaitu kurang lebih 39 hektar (3 RT / 1 RW). Sentra administrasi publik menaungi Kantor Balai Desa, KUA, gedung SD, 1 pondok pesantren, 4 unit mushola, serta Posyandu.
                       </p>
                       <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
-                        <div><div className="text-2xl sm:text-3xl font-black text-white">184</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
-                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">620</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">{demografiStats.manis.kk}</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">{demografiStats.manis.jiwa}</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
                         <div><div className="text-2xl sm:text-3xl font-black text-emerald-300">39 Ha</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Luas Wilayah</div></div>
                         <div><div className="text-2xl sm:text-3xl font-black text-white">3 / 1</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
                       </div>
@@ -3037,8 +3097,8 @@ export default function Home() {
                         Dusun pertama di Desa Kadurama dengan luas wilayah kurang lebih 27 hektar (3 RT / 1 RW). Menjadi sentra ketahanan pangan padi sawah desa, lapangan sepakbola Gelora Kadurama, 2 unit mushola peribadatan, gedung Sekolah Dasar (SD), TK, serta Posyandu.
                       </p>
                       <div className="border-y border-white/15 py-4 my-5 grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 font-mono">
-                        <div><div className="text-2xl sm:text-3xl font-black text-white">162</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
-                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">548</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-white">{demografiStats.pahing.kk}</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Kepala Keluarga</div></div>
+                        <div><div className="text-2xl sm:text-3xl font-black text-[#eda50c]">{demografiStats.pahing.jiwa}</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Jiwa Warga</div></div>
                         <div><div className="text-2xl sm:text-3xl font-black text-emerald-300">27 Ha</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">Luas Wilayah</div></div>
                         <div><div className="text-2xl sm:text-3xl font-black text-white">3 / 1</div><div className="text-[11px] text-slate-300 font-sans mt-0.5">RT / RW</div></div>
                       </div>
@@ -3119,7 +3179,7 @@ export default function Home() {
                 <div>
                   <div className="text-xs font-extrabold text-slate-900">Distribusi Keseimbangan Wilayah 3 Dusun</div>
                   <div className="text-[11px] text-slate-500">
-                    Total 492 Kepala Keluarga dan 1.660 Jiwa terdata lengkap dalam basis sensus mikro desa.
+                    Total {demografiStats.totalKK.toLocaleString("id-ID")} Kepala Keluarga dan {demografiStats.totalJiwa.toLocaleString("id-ID")} Jiwa terdata lengkap dalam basis sensus mikro desa.
                   </div>
                 </div>
               </div>
@@ -3127,15 +3187,15 @@ export default function Home() {
               <div className="flex items-center gap-4 text-xs font-mono">
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#eda50c]" />
-                  <span className="text-slate-700 font-sans text-[11px]">Dusun I Pahing (27 Ha • 30.3%)</span>
+                  <span className="text-slate-700 font-sans text-[11px]">Dusun I Pahing (27 Ha • {pahingPercent}%)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#003733]" />
-                  <span className="text-slate-700 font-sans text-[11px]">Dusun II Wage (23 Ha • 25.8%)</span>
+                  <span className="text-slate-700 font-sans text-[11px]">Dusun II Wage (23 Ha • {wagePercent}%)</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2.5 h-2.5 rounded-full bg-[#009388]" />
-                  <span className="text-slate-700 font-sans text-[11px]">Dusun III Manis (39 Ha • 43.8%)</span>
+                  <span className="text-slate-700 font-sans text-[11px]">Dusun III Manis (39 Ha • {manisPercent}%)</span>
                 </div>
               </div>
             </div>
@@ -3177,8 +3237,8 @@ export default function Home() {
                 </div>
                 <div className="pl-6">
                   <div className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Kependudukan</div>
-                  <div className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">492 <span className="text-xs font-sans font-normal text-slate-500">KK</span></div>
-                  <div className="text-[11px] text-slate-500 mt-0.5">1.720 Jiwa Tersebar</div>
+                  <div className="text-xl font-extrabold text-slate-900 font-mono mt-0.5">{demografiStats.totalKK.toLocaleString("id-ID")} <span className="text-xs font-sans font-normal text-slate-500">KK</span></div>
+                  <div className="text-[11px] text-slate-500 mt-0.5">{demografiStats.totalJiwa.toLocaleString("id-ID")} Jiwa Tersebar</div>
                 </div>
               </div>
 
@@ -3279,7 +3339,18 @@ export default function Home() {
                     const activePoi = gisSelectedPoiId
                       ? POI_POINTS.find((p) => p.id === gisSelectedPoiId)
                       : null;
-                    const dInfo = DUSUN_REGISTRY_DATA[gisSelectedDusun] || DUSUN_REGISTRY_DATA.all;
+                    const rawInfo = DUSUN_REGISTRY_DATA[gisSelectedDusun] || DUSUN_REGISTRY_DATA.all;
+                    const dInfo = {
+                      ...rawInfo,
+                      kk:
+                        gisSelectedDusun === "all"
+                          ? `${demografiStats.totalKK.toLocaleString("id-ID")} KK`
+                          : `${(demografiStats[gisSelectedDusun]?.kk ?? 0).toLocaleString("id-ID")} KK`,
+                      pop:
+                        gisSelectedDusun === "all"
+                          ? `${demografiStats.totalJiwa.toLocaleString("id-ID")} Jiwa`
+                          : `${(demografiStats[gisSelectedDusun]?.jiwa ?? 0).toLocaleString("id-ID")} Jiwa`,
+                    };
 
                     if (activePoi) {
                       return (
@@ -3374,6 +3445,16 @@ export default function Home() {
                             <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Luas Wilayah</div>
                             <div className="font-bold text-slate-800 text-xs mt-1 font-mono">{dInfo.area}</div>
                             <div className="text-[10px] text-[#009388]">100% Batas Geospasial</div>
+                          </div>
+                          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Populasi Jiwa</div>
+                            <div className="font-bold text-[#eda50c] text-xs mt-1 font-mono">{dInfo.pop}</div>
+                            <div className="text-[10px] text-slate-500">Warga Terdaftar</div>
+                          </div>
+                          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+                            <div className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">Kepala Keluarga</div>
+                            <div className="font-bold text-slate-800 text-xs mt-1 font-mono">{dInfo.kk}</div>
+                            <div className="text-[10px] text-emerald-600">Sensus Mikro Terpadu</div>
                           </div>
                         </div>
 

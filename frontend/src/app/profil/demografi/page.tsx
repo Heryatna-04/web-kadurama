@@ -154,20 +154,62 @@ export default function DemografiPage() {
     };
   });
 
-  // Pekerjaan distribution
+  // Normalisasi & Analisis Pekerjaan
+  const normalizeJobTitle = (raw?: string | null): string => {
+    if (!raw || !raw.trim()) return "Belum / Tidak Bekerja";
+    const s = raw.trim().toLowerCase();
+    if (s.includes("belum/tidak bekerja / pelajar") || s.includes("belum / tidak bekerja / pelajar")) return "Belum Bekerja / Pelajar";
+    if (s.includes("belum") && s.includes("bekerja")) return "Belum / Tidak Bekerja";
+    if (s.includes("pelajar") || s.includes("mahasiswa")) return "Pelajar / Mahasiswa";
+    if (s.includes("mengurus rumah tangga") || s.includes("irt")) return "Mengurus Rumah Tangga";
+    if (s.includes("buruh harian") || s.includes("buruh lepas")) return "Buruh Harian Lepas";
+    if (s.includes("buruh tani") || s.includes("buruh perkebunan")) return "Buruh Tani / Perkebunan";
+    if (s.includes("petani") || s.includes("pekebun")) return "Petani / Pekebun";
+    if (s.includes("karyawanswasta") || s.includes("karyawan swasta")) return "Karyawan Swasta";
+    if (s.includes("karyawan bumn") || s.includes("bumn")) return "Karyawan BUMN";
+    if (s.includes("karyawan honorer") || s.includes("honorer")) return "Tenaga Honorer";
+    if (s.includes("wiraswasta") || s.includes("wirausaha")) return "Wiraswasta";
+    if (s.includes("pedagang") || s.includes("perdagangan")) return "Pedagang";
+    if (s.includes("pns") || s.includes("pegawai negeri")) return "Pegawai Negeri Sipil (PNS)";
+    if (s.includes("guru") || s.includes("dosen")) return "Guru / Tenaga Pendidik";
+    if (s.includes("pensiunan")) return "Pensiunan";
+    if (s.includes("sopir") || s.includes("supir")) return "Sopir / Pengemudi";
+    if (s.includes("perangkat desa")) return "Perangkat Desa";
+    if (s.includes("tni") || s.includes("polri") || s.includes("polisi")) return "TNI / Polri";
+    if (s.includes("tukang")) return "Tukang Bangunan / Kayu";
+    return raw.trim().replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.slice(1).toLowerCase());
+  };
+
   const jobMap: Record<string, number> = {};
   residents.forEach((r) => {
-    const job = r.pekerjaan?.trim() || "Lainnya / Belum Bekerja";
+    const job = normalizeJobTitle(r.pekerjaan);
     jobMap[job] = (jobMap[job] || 0) + 1;
   });
 
   const pekerjaanStats = Object.entries(jobMap)
-    .map(([bidang, jumlah]) => ({
+    .map(([bidang, count]) => ({
       bidang,
-      jumlah: `${jumlah} Jiwa`,
-      persen: totalPenduduk > 0 ? Number(((jumlah / totalPenduduk) * 100).toFixed(1)) : 0,
+      count,
+      jumlah: `${count.toLocaleString("id-ID")} Jiwa`,
+      persen: totalPenduduk > 0 ? Number(((count / totalPenduduk) * 100).toFixed(1)) : 0,
     }))
-    .sort((a, b) => b.persen - a.persen);
+    .sort((a, b) => b.count - a.count);
+
+  // Sektor Produktif & Statistik Rata-rata Ketenagakerjaan
+  const totalKategoriPekerjaan = pekerjaanStats.length;
+  const nonProductiveKeys = ["Belum / Tidak Bekerja", "Belum Bekerja / Pelajar", "Pelajar / Mahasiswa", "Mengurus Rumah Tangga"];
+  const totalBekerja = pekerjaanStats
+    .filter((p) => !nonProductiveKeys.includes(p.bidang))
+    .reduce((acc, curr) => acc + curr.count, 0);
+  const persenBekerja = totalPenduduk > 0 ? ((totalBekerja / totalPenduduk) * 100).toFixed(1) : "0";
+
+  const totalDomestikPelajar = pekerjaanStats
+    .filter((p) => ["Mengurus Rumah Tangga", "Pelajar / Mahasiswa", "Belum Bekerja / Pelajar"].includes(p.bidang))
+    .reduce((acc, curr) => acc + curr.count, 0);
+  const persenDomestikPelajar = totalPenduduk > 0 ? ((totalDomestikPelajar / totalPenduduk) * 100).toFixed(1) : "0";
+
+  const rataRataJiwaPerPekerjaan = totalKategoriPekerjaan > 0 ? Math.round(totalPenduduk / totalKategoriPekerjaan) : 0;
+  const rasioGenderBps = totalPerempuan > 0 ? ((totalLaki / totalPerempuan) * 100).toFixed(1) : "100";
 
   const stats = [
     {
@@ -255,6 +297,88 @@ export default function DemografiPage() {
             <span>
               <strong>Pembaruan Otomatis:</strong> Data statistik ini dihitung dinamis secara real-time dari {totalPenduduk} warga ({totalKK} KK) yang telah terverifikasi dalam database kependudukan Desa Kadurama.
             </span>
+          </div>
+
+          {/* Komparasi Statistik Gender (Laki-laki vs Perempuan) */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <div className="text-xs font-bold text-[#009388] uppercase tracking-wider">
+                  Komposisi Kependudukan Berdasarkan Jenis Kelamin
+                </div>
+                <h3 className="text-xl font-extrabold text-slate-900 mt-0.5">
+                  Statistik Rasio Gender Warga Desa Kadurama
+                </h3>
+              </div>
+              <div className="text-xs text-slate-500 font-mono bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                Total: <strong className="text-slate-900">{loading ? "..." : totalPenduduk.toLocaleString("id-ID")}</strong> Jiwa
+              </div>
+            </div>
+
+            {/* Bar Visual Progress Rasio Gender */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between text-xs font-bold">
+                <div className="flex items-center gap-2 text-cyan-800">
+                  <span className="w-3 h-3 rounded-full bg-cyan-600" />
+                  <span>Laki-Laki: {loading ? "..." : totalLaki.toLocaleString("id-ID")} Jiwa ({persenLaki}%)</span>
+                </div>
+                <div className="flex items-center gap-2 text-rose-800">
+                  <span>Perempuan: {loading ? "..." : totalPerempuan.toLocaleString("id-ID")} Jiwa ({persenPerempuan}%)</span>
+                  <span className="w-3 h-3 rounded-full bg-rose-500" />
+                </div>
+              </div>
+
+              {/* Stacked Percentage Bar */}
+              <div className="w-full h-5 rounded-full overflow-hidden flex bg-slate-100 p-0.5 border border-slate-200 shadow-inner">
+                <div
+                  className="h-full rounded-l-full bg-gradient-to-r from-cyan-600 to-cyan-500 transition-all duration-700 relative group"
+                  style={{ width: `${persenLaki}%` }}
+                  title={`Laki-laki: ${totalLaki} Jiwa (${persenLaki}%)`}
+                />
+                <div
+                  className="h-full rounded-r-full bg-gradient-to-r from-rose-400 to-rose-500 transition-all duration-700 relative group"
+                  style={{ width: `${persenPerempuan}%` }}
+                  title={`Perempuan: ${totalPerempuan} Jiwa (${persenPerempuan}%)`}
+                />
+              </div>
+
+              <div className="flex items-center justify-between text-[11px] text-slate-400 font-mono">
+                <span>0% Laki-laki</span>
+                <span className="text-slate-600 font-bold bg-slate-100 px-2.5 py-0.5 rounded-md border border-slate-200">
+                  Rasio Gender: {rasioGenderBps} Laki-laki per 100 Perempuan
+                </span>
+                <span>100% Perempuan</span>
+              </div>
+            </div>
+
+            {/* Grid 2 Card Detail Gender */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+              <div className="p-4 rounded-2xl bg-cyan-50/70 border border-cyan-200 flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-cyan-800">Populasi Laki-Laki</div>
+                  <div className="text-2xl font-black text-cyan-950 mt-0.5">
+                    {loading ? "..." : totalLaki.toLocaleString("id-ID")} <span className="text-xs font-normal text-cyan-700">Jiwa</span>
+                  </div>
+                  <div className="text-[11px] text-cyan-700 mt-0.5 font-medium">Porsi {persenLaki}% dari total warga terdata</div>
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-cyan-600 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-cyan-600/20">
+                  L
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-rose-50/70 border border-rose-200 flex items-center justify-between">
+                <div>
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-rose-800">Populasi Perempuan</div>
+                  <div className="text-2xl font-black text-rose-950 mt-0.5">
+                    {loading ? "..." : totalPerempuan.toLocaleString("id-ID")} <span className="text-xs font-normal text-rose-700">Jiwa</span>
+                  </div>
+                  <div className="text-[11px] text-rose-700 mt-0.5 font-medium">Porsi {persenPerempuan}% dari total warga terdata</div>
+                </div>
+                <div className="w-12 h-12 rounded-2xl bg-rose-500 text-white flex items-center justify-center font-bold text-lg shadow-md shadow-rose-500/20">
+                  P
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Dusun Breakdown */}
@@ -370,11 +494,11 @@ export default function DemografiPage() {
                 <div className="text-3xl font-black font-mono mt-1 text-slate-900">
                   47 <span className="text-lg font-sans font-medium text-slate-500">Ha</span>
                 </div>
-                <div className="text-xs text-amber-600 font-bold mt-1">
+                <div className="text-xs text-[#eda50c] font-bold mt-1">
                   52,8% Porsi Total Wilayah
                 </div>
                 <div className="mt-3 pt-3 border-t border-slate-200/80 text-[11px] text-slate-500">
-                  Permukiman warga, pekarangan, tegalan & fasilitas umum desa
+                  Permukiman warga, pekarangan, fasilitas umum & perhutani
                 </div>
               </div>
             </div>
@@ -513,37 +637,109 @@ export default function DemografiPage() {
             </div>
           </div>
 
-          {/* Pekerjaan Stats */}
-          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs">
-            <h3 className="text-xl font-extrabold text-slate-900 mb-2">
-              Mata Pencaharian Warga Terdaftar
-            </h3>
-            <p className="text-xs text-slate-500 mb-6">
-              Distribusi profesi dan lapangan pekerjaan warga yang telah terinput ke dalam sistem.
-            </p>
-
-            {pekerjaanStats.length === 0 ? (
-              <p className="text-xs text-slate-400 italic">Belum ada data mata pencaharian terdata.</p>
-            ) : (
-              <div className="space-y-4">
-                {pekerjaanStats.map((pek, idx) => (
-                  <div key={idx} className="space-y-1.5">
-                    <div className="flex justify-between items-center text-xs">
-                      <span className="font-bold text-slate-800">{pek.bidang}</span>
-                      <span className="font-mono text-slate-600 font-bold">
-                        {pek.jumlah} ({pek.persen}%)
-                      </span>
-                    </div>
-                    <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                      <div
-                        className="bg-[#009388] h-full rounded-full transition-all duration-500"
-                        style={{ width: `${Math.max(pek.persen, 5)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+          {/* Pekerjaan Stats & Dashboard Ketenagakerjaan */}
+          <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-xs space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-100 pb-4">
+              <div>
+                <div className="text-xs font-bold text-[#009388] uppercase tracking-wider flex items-center gap-2">
+                  <Briefcase className="w-3.5 h-3.5" />
+                  Struktur Mata Pencaharian & Ketenagakerjaan
+                </div>
+                <h3 className="text-xl font-extrabold text-slate-900 mt-0.5">
+                  Statistik Distribusi Profesi Warga Desa Kadurama
+                </h3>
               </div>
-            )}
+              <div className="text-xs text-slate-500 font-mono bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200">
+                Total: <strong className="text-slate-900">{totalKategoriPekerjaan}</strong> Klasifikasi Profesi
+              </div>
+            </div>
+
+            {/* 3 Metric Card Statistik Pekerjaan */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200">
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-800">
+                    Sektor Produktif / Bekerja
+                  </div>
+                  <Briefcase className="w-4 h-4 text-[#009388]" />
+                </div>
+                <div className="text-2xl font-black text-emerald-950 mt-1">
+                  {loading ? "..." : totalBekerja.toLocaleString("id-ID")} <span className="text-xs font-normal text-emerald-700">Jiwa</span>
+                </div>
+                <div className="text-[11px] text-emerald-700 mt-0.5 font-medium">
+                  {persenBekerja}% dari total populasi terdata (Buruh, Swasta, Wiraswasta, Petani, Pedagang, PNS)
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-amber-800">
+                    Domestik & Pelajar
+                  </div>
+                  <Home className="w-4 h-4 text-amber-700" />
+                </div>
+                <div className="text-2xl font-black text-amber-950 mt-1">
+                  {loading ? "..." : totalDomestikPelajar.toLocaleString("id-ID")} <span className="text-xs font-normal text-amber-700">Jiwa</span>
+                </div>
+                <div className="text-[11px] text-amber-700 mt-0.5 font-medium">
+                  {persenDomestikPelajar}% porsi Ibu Rumah Tangga (IRT) dan Pelajar/Mahasiswa
+                </div>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200">
+                <div className="flex items-center justify-between">
+                  <div className="text-[11px] font-bold uppercase tracking-wider text-slate-600">
+                    Rata-Rata per Profesi
+                  </div>
+                  <TrendingUp className="w-4 h-4 text-slate-500" />
+                </div>
+                <div className="text-2xl font-black text-slate-900 mt-1">
+                  ~{loading ? "..." : rataRataJiwaPerPekerjaan} <span className="text-xs font-normal text-slate-500">Jiwa / Bidang</span>
+                </div>
+                <div className="text-[11px] text-slate-500 mt-0.5 font-medium">
+                  Rata-rata sebaran warga pada {totalKategoriPekerjaan} klasifikasi lapangan usaha
+                </div>
+              </div>
+            </div>
+
+            {/* List Distribusi Lengkap Pekerjaan */}
+            <div>
+              <div className="text-xs font-bold text-slate-700 uppercase tracking-wider mb-4 flex items-center justify-between">
+                <span>Peringkat & Persentase Profesi Terdaftar</span>
+                <span className="text-[11px] text-slate-400 font-normal">Urutan berdasarkan frekuensi terbanyak</span>
+              </div>
+
+              {pekerjaanStats.length === 0 ? (
+                <p className="text-xs text-slate-400 italic">Belum ada data mata pencaharian terdata.</p>
+              ) : (
+                <div className="space-y-3.5">
+                  {pekerjaanStats.map((pek, idx) => (
+                    <div key={idx} className="p-3.5 rounded-2xl bg-slate-50/70 border border-slate-100 hover:border-slate-300 transition-colors space-y-2">
+                      <div className="flex justify-between items-center text-xs">
+                        <div className="flex items-center gap-2.5">
+                          <span className="w-6 h-6 rounded-lg bg-white border border-slate-200 text-slate-600 font-mono text-[11px] font-bold flex items-center justify-center flex-shrink-0">
+                            #{idx + 1}
+                          </span>
+                          <span className="font-bold text-slate-800 text-sm">{pek.bidang}</span>
+                        </div>
+                        <div className="flex items-center gap-2 font-mono">
+                          <span className="font-extrabold text-slate-900">{pek.jumlah}</span>
+                          <span className="text-xs font-bold text-[#009388] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                            {pek.persen}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="w-full bg-slate-200/80 h-2.5 rounded-full overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-[#009388] to-emerald-500 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${Math.max(pek.persen, 1.5)}%` }}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </section>
       </main>
