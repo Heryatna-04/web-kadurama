@@ -72,6 +72,7 @@ export interface PilarStrategis {
   pilarTitle: string;
   pilarDesc: string;
   badgeColor: string;
+  numBadgeColor: string;
   dotColor: string;
   items: MisiItem[];
 }
@@ -81,7 +82,8 @@ export const PILAR_STRATEGIS_DATA: PilarStrategis[] = [
     pilarNumber: "PILAR 1",
     pilarTitle: "Tata Kelola & Akuntabilitas",
     pilarDesc: "Pemerintahan transparan, musyawarah desa berkesinambungan, dan birokrasi terencana.",
-    badgeColor: "bg-[#003733] text-white border border-[#005851]",
+    badgeColor: "bg-emerald-100/80 text-[#003733] border border-emerald-300/80",
+    numBadgeColor: "bg-emerald-100 text-[#003733] border-emerald-300/80",
     dotColor: "bg-[#009388]",
     items: [
       {
@@ -105,7 +107,8 @@ export const PILAR_STRATEGIS_DATA: PilarStrategis[] = [
     pilarNumber: "PILAR 2",
     pilarTitle: "Layanan Publik, SDM & Budaya",
     pilarDesc: "Pelayanan warga berkualitas, peningkatan mutu SDM perangkat, dan etika masyarakat ramah.",
-    badgeColor: "bg-[#003733] text-white border border-[#005851]",
+    badgeColor: "bg-amber-100/80 text-amber-950 border border-amber-300/80",
+    numBadgeColor: "bg-amber-100 text-amber-950 border-amber-300/80",
     dotColor: "bg-[#eda50c]",
     items: [
       {
@@ -134,7 +137,8 @@ export const PILAR_STRATEGIS_DATA: PilarStrategis[] = [
     pilarNumber: "PILAR 3",
     pilarTitle: "Ekonomi Pertanian & Sinergi",
     pilarDesc: "Fondasi sektor tani yang kokoh serta sinergi terarah dengan program Kabupaten Kuningan.",
-    badgeColor: "bg-[#003733] text-white border border-[#005851]",
+    badgeColor: "bg-cyan-100/80 text-cyan-950 border border-cyan-300/80",
+    numBadgeColor: "bg-cyan-100 text-cyan-950 border-cyan-300/80",
     dotColor: "bg-teal-700",
     items: [
       {

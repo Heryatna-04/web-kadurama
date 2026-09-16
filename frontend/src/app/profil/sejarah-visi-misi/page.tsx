@@ -438,18 +438,20 @@ export default function SejarahVisiMisiPage() {
                         </p>
                       </div>
 
-                      {/* Poin Misi: Baris Bersih dengan Pembungkus Angka Dark Accent */}
-                      <div className="divide-y divide-slate-100 pt-1">
+                      {/* Poin Misi dengan Nomor 1, 2, 3 Rapi dan Bernuansa Lembut */}
+                      <div className="space-y-3 pt-3">
                         {pilar.items.map((misi) => (
                           <div
                             key={misi.nomor}
-                            className="py-3 first:pt-2 last:pb-0 space-y-1"
+                            className="p-3.5 rounded-2xl bg-slate-50/80 border border-slate-200/70 hover:bg-slate-50 hover:border-slate-300 transition-colors space-y-1"
                           >
                             <div className="flex items-center gap-2.5">
-                              <span className="w-6 h-6 rounded-md bg-slate-900 text-white font-mono font-black text-xs flex items-center justify-center shrink-0 shadow-2xs border border-slate-800">
+                              <span
+                                className={`w-6 h-6 rounded-lg font-mono font-black text-xs flex items-center justify-center shrink-0 border shadow-2xs ${pilar.numBadgeColor}`}
+                              >
                                 {misi.nomor}
                               </span>
-                              <h5 className="text-xs sm:text-[13px] font-extrabold text-slate-900 leading-tight">
+                              <h5 className="text-xs sm:text-[13px] font-bold text-slate-900 leading-tight">
                                 {misi.title}
                               </h5>
                             </div>
