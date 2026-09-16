@@ -22,7 +22,7 @@ export default function LayananKatalogPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKategori, setSelectedKategori] = useState<string>("Semua");
 
-  const categories = ["Semua", "Kesejahteraan", "Kependudukan", "Usaha", "Umum"];
+  const categories = ["Semua", "Kependudukan", "Kesejahteraan", "Usaha", "Pertanahan", "Umum"];
 
   const filteredServices = DAFTAR_LAYANAN_SURAT.filter((s) => {
     const matchesSearch =
@@ -88,7 +88,7 @@ export default function LayananKatalogPage() {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari surat (SKTM, SKU, Domisili)..."
+                placeholder="Cari surat (SKTM, SKU, Kematian, Lahir, Tanah, Domisili, Haji, Waris)..."
                 className="w-full pl-10 pr-4 py-2 rounded-xl bg-slate-50 border border-slate-200 text-slate-900 placeholder:text-slate-400 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#009388]"
               />
             </div>
