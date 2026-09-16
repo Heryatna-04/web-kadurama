@@ -47,21 +47,21 @@ export default function CivicFooter() {
             </h4>
             <ul className="space-y-2.5 text-xs text-slate-300">
               <li>
-                <Link href="/dusun/manis" className="hover:text-emerald-300 transition flex items-center justify-between">
-                  <span>Dusun I • Manis</span>
-                  <span className="text-[10px] text-slate-400">Pusat Desa</span>
-                </Link>
-              </li>
-              <li>
                 <Link href="/dusun/pahing" className="hover:text-emerald-300 transition flex items-center justify-between">
-                  <span>Dusun II • Pahing</span>
-                  <span className="text-[10px] text-slate-400">Lumbung Padi</span>
+                  <span>Dusun I • Pahing</span>
+                  <span className="text-[10px] text-slate-400">Olahraga & Padi</span>
                 </Link>
               </li>
               <li>
                 <Link href="/dusun/wage" className="hover:text-emerald-300 transition flex items-center justify-between">
-                  <span>Dusun III • Wage</span>
-                  <span className="text-[10px] text-slate-400">Mata Air Alami</span>
+                  <span>Dusun II • Wage</span>
+                  <span className="text-[10px] text-slate-400">Religi & Air</span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/dusun/manis" className="hover:text-emerald-300 transition flex items-center justify-between">
+                  <span>Dusun III • Manis</span>
+                  <span className="text-[10px] text-slate-400">KUA & Pendidikan</span>
                 </Link>
               </li>
               <li className="pt-2 border-t border-white/10">

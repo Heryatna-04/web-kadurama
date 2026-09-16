@@ -137,9 +137,9 @@ export default function PetaPage() {
               <span className="text-xs text-emerald-200 font-semibold mr-1">Fokus Wilayah:</span>
               {[
                 { key: "all", label: "Seluruh Desa Kadurama" },
-                { key: "manis", label: "Dusun I Manis" },
-                { key: "pahing", label: "Dusun II Pahing" },
-                { key: "wage", label: "Dusun III Wage" },
+                { key: "pahing", label: "Dusun I Pahing" },
+                { key: "wage", label: "Dusun II Wage" },
+                { key: "manis", label: "Dusun III Manis" },
               ].map((pill) => (
                 <button
                   key={pill.key}

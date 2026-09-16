@@ -219,28 +219,28 @@ export default function CivicNavbar({ onOpenAdminLogin }: CivicNavbarProps) {
                           Halaman Khusus Dusun
                         </div>
                         <a
-                          href="/dusun/manis"
-                          onClick={() => setActiveDropdown(null)}
-                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
-                        >
-                          <span>Dusun I • Manis</span>
-                          <span className="text-[10px] text-slate-400 font-mono">Pusat Desa &rarr;</span>
-                        </a>
-                        <a
                           href="/dusun/pahing"
                           onClick={() => setActiveDropdown(null)}
                           className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
                         >
-                          <span>Dusun II • Pahing</span>
-                          <span className="text-[10px] text-slate-400 font-mono">Lumbung Padi &rarr;</span>
+                          <span>Dusun I • Pahing</span>
+                          <span className="text-[10px] text-slate-400 font-mono">Olahraga & Padi &rarr;</span>
                         </a>
                         <a
                           href="/dusun/wage"
                           onClick={() => setActiveDropdown(null)}
                           className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
                         >
-                          <span>Dusun III • Wage</span>
-                          <span className="text-[10px] text-slate-400 font-mono">Mata Air & Lereng &rarr;</span>
+                          <span>Dusun II • Wage</span>
+                          <span className="text-[10px] text-slate-400 font-mono">Religi & Air &rarr;</span>
+                        </a>
+                        <a
+                          href="/dusun/manis"
+                          onClick={() => setActiveDropdown(null)}
+                          className="flex items-center justify-between px-3 py-1.5 rounded-lg text-xs font-medium hover:bg-slate-50 hover:text-[#009388] transition"
+                        >
+                          <span>Dusun III • Manis</span>
+                          <span className="text-[10px] text-slate-400 font-mono">KUA & Pendidikan &rarr;</span>
                         </a>
                       </div>
                     </div>
@@ -382,13 +382,6 @@ export default function CivicNavbar({ onOpenAdminLogin }: CivicNavbarProps) {
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Wilayah 3 Dusun:</span>
             <div className="grid grid-cols-3 gap-1.5 mt-2">
               <Link
-                href="/dusun/manis"
-                onClick={() => setMobileMenuOpen(false)}
-                className="py-1.5 px-2 text-center text-xs font-bold rounded-lg border bg-slate-50 text-slate-700 border-slate-200 hover:bg-[#e6f7f5] hover:text-[#009388]"
-              >
-                Manis
-              </Link>
-              <Link
                 href="/dusun/pahing"
                 onClick={() => setMobileMenuOpen(false)}
                 className="py-1.5 px-2 text-center text-xs font-bold rounded-lg border bg-slate-50 text-slate-700 border-slate-200 hover:bg-[#e6f7f5] hover:text-[#009388]"
@@ -401,6 +394,13 @@ export default function CivicNavbar({ onOpenAdminLogin }: CivicNavbarProps) {
                 className="py-1.5 px-2 text-center text-xs font-bold rounded-lg border bg-slate-50 text-slate-700 border-slate-200 hover:bg-[#e6f7f5] hover:text-[#009388]"
               >
                 Wage
+              </Link>
+              <Link
+                href="/dusun/manis"
+                onClick={() => setMobileMenuOpen(false)}
+                className="py-1.5 px-2 text-center text-xs font-bold rounded-lg border bg-slate-50 text-slate-700 border-slate-200 hover:bg-[#e6f7f5] hover:text-[#009388]"
+              >
+                Manis
               </Link>
             </div>
           </div>

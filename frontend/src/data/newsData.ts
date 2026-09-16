@@ -74,7 +74,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     content: [
       "Pemerintah Desa Kadurama kembali menuntaskan penyaluran program Bantuan Langsung Tunai Dana Desa (BLT-DD) untuk periode Triwulan III Tahun Anggaran 2026. Penyaluran diselenggarakan secara transparan di Aula Pertemuan Balai Desa Kadurama dengan pendampingan langsung oleh Babinsa, Bhabinkamtibmas, dan Pendamping Lokal Desa.",
       "Sebanyak 45 Keluarga Penerima Manfaat (KPM) yang tercantum dalam Surat Keputusan Kuwu telah menerima alokasi bantuan tunai sebesar Rp 300.000 per bulan, sehingga total yang diterima setiap KPM pada tahap ini adalah Rp 900.000 (Juli, Agustus, September).",
-      "Kepala Dusun I (Manis), Kepala Dusun II (Pahing), dan Kepala Dusun III (Wage) bertindak sebagai verifikator lapangan guna memastikan tidak ada tumpang tindih dengan penerima Program Keluarga Harapan (PKH) atau Bantuan Pangan Non Tunai (BPNT) Kementerian Sosial.",
+      "Kepala Dusun I (Pahing), Kepala Dusun II (Wage), dan Kepala Dusun III (Manis) bertindak sebagai verifikator lapangan guna memastikan tidak ada tumpang tindih dengan penerima Program Keluarga Harapan (PKH) atau Bantuan Pangan Non Tunai (BPNT) Kementerian Sosial.",
       "Bagi warga lansia tunggal dan penyandang disabilitas berat yang berhalangan hadir di balai desa, jajaran perangkat desa bersama perawat desa langsung mengantarkan bantuan tunai tersebut ke rumah masing-masing (door-to-door service)."
     ],
     status: "Terbit",
@@ -148,7 +148,7 @@ export const NEWS_ARTICLES: NewsArticle[] = [
     category: "Kegiatan",
     date: "18 Agustus 2026",
     author: "Rohmat Hidayat",
-    authorRole: "Kepala Dusun II Pahing",
+    authorRole: "Kepala Dusun I Pahing",
     readTime: "3 menit baca",
     summary: "Kelompok Tani Sri Mukti Dusun Pahing membuktikan keunggulan pupuk hayati mandiri dengan hasil panen gabah kering panen yang melimpah.",
     content: [
