@@ -1427,43 +1427,43 @@ interface APBDesBidang {
 const INITIAL_APBDES_BIDANG: APBDesBidang[] = [
   {
     id: 1,
-    nama: "Penyelenggaraan Pemdes",
-    persen: 85,
-    pagu: 485600000,
-    realisasi: 412760000,
-    keterangan: "Siltap pamong, operasional kantor balai desa, kearsipan, dan operasional BPD.",
+    nama: "Penyelenggaraan Pemerintahan Desa",
+    persen: 0,
+    pagu: 543725227,
+    realisasi: 0,
+    keterangan: "Siltap & tunjangan Kuwu/perangkat, operasional kantor, jaminan sosial ketenagakerjaan, dan tunjangan BPD.",
   },
   {
     id: 2,
-    nama: "Pelaksanaan Pembangunan",
-    persen: 78,
-    pagu: 562400000,
-    realisasi: 438672000,
-    keterangan: "Rabat beton jalan tani Dusun Pahing, drainase pemukiman, dan renovasi poskesdes.",
+    nama: "Pelaksanaan Pembangunan Desa",
+    persen: 0,
+    pagu: 221727000,
+    realisasi: 0,
+    keterangan: "Pembangunan posyandu, rabat beton/hotmix jalan desa, sanitasi, dan penerangan jalan umum desa.",
   },
   {
     id: 3,
-    nama: "Pembinaan Kemasyarakatan",
-    persen: 88,
-    pagu: 145000000,
-    realisasi: 127600000,
-    keterangan: "Kegiatan keagamaan, pembinaan linmas desa, dan sarana olahraga Karang Taruna.",
+    nama: "Pembinaan Kemasyarakatan Desa",
+    persen: 0,
+    pagu: 21000000,
+    realisasi: 0,
+    keterangan: "Pembinaan ketenteraman, kelembagaan masyarakat, keagamaan, serta kepemudaan & olahraga.",
   },
   {
     id: 4,
-    nama: "Pemberdayaan Masyarakat",
-    persen: 81,
-    pagu: 185800000,
-    realisasi: 150498000,
-    keterangan: "Pelatihan UMKM olahan pangan lokal dan bantuan modal bibit sapi perah dusun wage.",
+    nama: "Pemberdayaan Masyarakat Desa",
+    persen: 0,
+    pagu: 20000000,
+    realisasi: 0,
+    keterangan: "Peningkatan kapasitas aparatur desa, ketahanan pangan hewani/nabati, dan pelatihan UMKM.",
   },
   {
     id: 5,
-    nama: "Penanggulangan Bencana & Darurat",
-    persen: 75,
-    pagu: 84000000,
-    realisasi: 63000000,
-    keterangan: "Bantuan darurat keluarga pra-sejahtera dan kesiapsiagaan mitigasi cuaca ekstrem.",
+    nama: "Penanggulangan Bencana & Mendesak",
+    persen: 0,
+    pagu: 50000000,
+    realisasi: 0,
+    keterangan: "Bantuan Langsung Tunai Dana Desa (BLT-DD) dan kesiapsiagaan tanggap darurat bencana.",
   },
 ];
 
@@ -1776,9 +1776,9 @@ export default function Home() {
 
   // APBDes 2026 Transparansi States
   const [apbdesTotals, setApbdesTotals] = useState({
-    pendapatan: 1485240000,
-    belanja: 1462800000,
-    serapan: 82.4,
+    pendapatan: 898152227,
+    belanja: 856452227,
+    serapan: 0,
   });
   const [apbdesBidangList, setApbdesBidangList] = useState<APBDesBidang[]>(INITIAL_APBDES_BIDANG);
   const [editingBidang, setEditingBidang] = useState<APBDesBidang | null>(null);
@@ -1929,6 +1929,7 @@ export default function Home() {
           supabase
             .from("apbdes_sectors")
             .select("*")
+            .eq("tahun", 2026)
             .eq("is_deleted", false)
             .order("id", { ascending: true }),
           supabase.from("residents").select("*", { count: "exact", head: true }).ilike("dusun", "%pahing%"),
@@ -1980,9 +1981,9 @@ export default function Home() {
 
         if (summaryData) {
           setApbdesTotals({
-            pendapatan: Number(summaryData.total_pendapatan) || 1488500000,
-            belanja: Number(summaryData.total_belanja) || 1445000000,
-            serapan: Number(summaryData.persen_realisasi_belanja) || 79.5,
+            pendapatan: Number(summaryData.total_pendapatan) || 898152227,
+            belanja: Number(summaryData.total_belanja) || 856452227,
+            serapan: Number(summaryData.persen_realisasi_belanja) || 0,
           });
         }
 
@@ -2493,95 +2494,57 @@ export default function Home() {
                 </div>
               </div>
 
-              {/* Kolom Kanan: Highlight Box Kuningan dengan Aksen Kuning Emas Khas (Col 5) */}
+              {/* Kolom Kanan: Civic Crest & Identitas Resmi Kuningan (Col 5) */}
               <div className="lg:col-span-5 relative" id="hero-gate-card">
-                {/* Amber Accent Ambient Glow */}
-                <div className="absolute -inset-2 bg-gradient-to-tr from-[#eda50c]/30 via-[#009388]/20 to-transparent rounded-3xl blur-2xl pointer-events-none" />
+                {/* Amber & Emerald Ambient Glow */}
+                <div className="absolute -inset-3 bg-gradient-to-tr from-[#eda50c]/30 via-[#009388]/25 to-transparent rounded-3xl blur-3xl pointer-events-none" />
 
-                <div className="relative bg-white/10 backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-white/20 hover:border-[#eda50c]/50 transition-all duration-300 shadow-2xl space-y-5 text-white">
-                  {/* Top Gold Accent Bar */}
+                <div className="relative bg-white/[0.09] hover:bg-white/[0.13] backdrop-blur-md rounded-3xl p-6 sm:p-8 border border-white/20 hover:border-[#eda50c]/50 transition-all duration-300 shadow-2xl space-y-5 text-white flex flex-col items-center text-center group">
+                  {/* Top Gold Accent Line */}
                   <div className="absolute top-0 inset-x-0 h-1 bg-gradient-to-r from-transparent via-[#eda50c] to-transparent rounded-t-3xl" />
 
-                  {/* Header Card: KD Emblem + Pemerintah Desa */}
-                  <div className="flex items-center justify-between pb-4 border-b border-white/15">
-                    <div className="flex items-center gap-3">
-                      <div className="w-11 h-11 rounded-2xl bg-[#eda50c] text-slate-950 flex items-center justify-center font-extrabold text-lg shadow-lg shadow-[#eda50c]/30 flex-shrink-0">
-                        KD
-                      </div>
-                      <div>
-                        <div className="text-xs font-bold uppercase tracking-wider text-[#eda50c]">
-                          Pemerintah Desa
-                        </div>
-                        <div className="text-sm sm:text-base font-extrabold text-white">
-                          Kadurama, Ciawigebang
-                        </div>
-                      </div>
+                  {/* Official Emblem: Lambang Kabupaten Kuningan */}
+                  <div className="relative pt-2">
+                    <div className="absolute inset-0 bg-gradient-to-tr from-[#eda50c]/30 to-emerald-400/20 rounded-full blur-xl pointer-events-none" />
+                    <img
+                      src="/logo-kuningan.png"
+                      alt="Lambang Resmi Kabupaten Kuningan"
+                      className="relative w-28 sm:w-32 h-auto drop-shadow-[0_12px_24px_rgba(0,0,0,0.45)] transition-transform duration-500 group-hover:scale-105 mx-auto"
+                    />
+                  </div>
+
+                  {/* Hierarki Pemerintahan & Tipografi Resmi */}
+                  <div className="space-y-1">
+                    <div className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.25em] text-[#eda50c]">
+                      Pemerintah Kabupaten Kuningan
                     </div>
-                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-[#eda50c]/20 border border-[#eda50c]/40 text-[#eda50c] text-[10px] font-bold">
-                      <Award className="w-3 h-3" />
-                      <span>Desa Mandiri</span>
+                    <h2 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
+                      DESA KADURAMA
+                    </h2>
+                    <p className="text-xs sm:text-sm text-emerald-100/90 font-medium">
+                      Kecamatan Ciawigebang &bull; Kode Pos 45591
+                    </p>
+                  </div>
+
+                  {/* Status Badges: Desa Mandiri & Layanan Aktif */}
+                  <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#eda50c]/20 border border-[#eda50c]/40 text-[#eda50c] text-xs font-bold">
+                      <Award className="w-3.5 h-3.5" />
+                      <span>Desa Mandiri (IDM)</span>
+                    </span>
+                    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 border border-emerald-400/30 text-emerald-300 text-xs font-semibold">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>Loket Buka 07.30 - 15.00 WIB</span>
                     </span>
                   </div>
 
-                  {/* Point List with Yellow Accent Checkmarks (from index.html) */}
-                  <div className="space-y-3.5 text-xs text-emerald-50">
-                    <div className="flex items-start gap-2.5">
-                      <span className="text-[#eda50c] font-bold text-sm leading-none mt-0.5">✓</span>
-                      <div>
-                        <div className="font-bold text-white text-xs sm:text-[13px]">
-                          Layanan Langsung di Kantor Desa
-                        </div>
-                        <div className="text-[11px] text-emerald-100/80 mt-0.5 leading-relaxed">
-                          Warga datang langsung membawa syarat dokumen asli dan fotokopi ke loket pemdes.
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2.5">
-                      <span className="text-[#eda50c] font-bold text-sm leading-none mt-0.5">✓</span>
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <div className="font-bold text-white text-xs sm:text-[13px]">
-                            Jam Buka Loket Kantor
-                          </div>
-                          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-400/30">
-                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                            Buka
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-emerald-100/80 mt-0.5">
-                          Senin - Jumat pukul 07.30 - 15.00 WIB (Sabtu dan Minggu libur).
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2.5">
-                      <span className="text-[#eda50c] font-bold text-sm leading-none mt-0.5">✓</span>
-                      <div>
-                        <div className="font-bold text-white text-xs sm:text-[13px]">
-                          Sensus Mikro 3 Dusun Harmonis
-                        </div>
-                        <div className="text-[11px] text-emerald-100/80 mt-0.5 leading-relaxed">
-                          {demografiStats.totalKK.toLocaleString("id-ID")} Kepala Keluarga dan {demografiStats.totalJiwa.toLocaleString("id-ID")} Jiwa terdata lengkap di Dusun Manis, Pahing, dan Wage.
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-2.5 pt-1 border-t border-white/10">
-                      <span className="text-[#eda50c] font-bold text-sm leading-none mt-0.5">✓</span>
-                      <div>
-                        <div className="font-bold text-white text-xs sm:text-[13px]">
-                          Motto Kuningan Terpadu
-                        </div>
-                        <div className="text-[11px] text-[#eda50c] italic font-medium mt-0.5">
-                          &quot;Melesat Ngudag Jaman, Ngakar Kuat Purwadaksi&quot;
-                        </div>
-                      </div>
-                    </div>
+                  {/* Semboyan Daerah Kuningan */}
+                  <div className="w-full py-2.5 px-4 rounded-2xl bg-black/25 border border-white/10 text-xs text-amber-200/95 italic font-medium leading-relaxed">
+                    &ldquo;Melesat Ngudag Jaman, Ngakar Kuat Purwadaksi&rdquo;
                   </div>
 
-                  {/* Card Footer: Alamat Balai Desa & Lokasi Link */}
-                  <div className="pt-3 border-t border-white/15 flex items-center justify-between text-[11px] text-emerald-100/80">
+                  {/* Card Footer: Balai Desa & Navigasi Lokasi */}
+                  <div className="w-full pt-3 border-t border-white/15 flex items-center justify-between text-[11px] sm:text-xs text-emerald-100/80">
                     <span className="flex items-center gap-1.5">
                       <MapPin className="w-3.5 h-3.5 text-[#eda50c]" />
                       <span>Jl. Desa Kadurama No. 01</span>
@@ -2590,7 +2553,7 @@ export default function Home() {
                       href="#geografis"
                       className="text-[#eda50c] hover:text-amber-300 font-bold flex items-center gap-1 transition-colors"
                     >
-                      <span>Petunjuk Lokasi</span>
+                      <span>Lihat Peta Wilayah</span>
                       <ChevronRight className="w-3 h-3" />
                     </a>
                   </div>

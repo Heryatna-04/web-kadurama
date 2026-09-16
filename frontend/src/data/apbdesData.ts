@@ -1,5 +1,6 @@
 export interface APBDesSector {
   id: number;
+  tahun?: number;
   nama: string;
   persen: number;
   pagu: number;
@@ -8,141 +9,266 @@ export interface APBDesSector {
   subKegiatan: {
     nama: string;
     anggaran: number;
-    realisasi: number;
-    status: string;
+    realisasi?: number;
+    status?: string;
   }[];
 }
 
 export interface APBDesRevenue {
   id: string;
+  tahun?: number;
   sumber: string;
   kategori: string;
   target: number;
   realisasi: number;
   persen: number;
+  keterangan?: string;
 }
 
+// =============================================================================
+// APBDES 2026 (ANGGARAN MURNI KEPALA DESA SAMIR SYARIFUDIN)
+// =============================================================================
 export const APBDES_TOTAL_SUMMARY = {
   tahun: 2026,
-  totalPendapatan: 1488500000,
-  totalBelanja: 1445000000,
-  totalRealisasiBelanja: 1148782000,
-  persenRealisasiBelanja: 79.5,
-  surplusDefisit: 43500000,
-  silpaTahunLalu: 28400000
+  totalPendapatan: 898152227,
+  totalBelanja: 856452227,
+  totalRealisasiBelanja: 0,
+  persenRealisasiBelanja: 0,
+  surplusDefisit: 41700000,
+  pembiayaanNetto: 41700000,
+  silpaTahunLalu: 0,
 };
 
 export const APBDES_REVENUES: APBDesRevenue[] = [
   {
-    id: "REV-001",
-    sumber: "Dana Desa (APBN)",
-    kategori: "Transfer Pusat",
-    target: 875000000,
-    realisasi: 875000000,
-    persen: 100
-  },
-  {
-    id: "REV-002",
-    sumber: "Alokasi Dana Desa (ADD Kab. Kuningan)",
-    kategori: "Transfer Daerah",
-    target: 420000000,
-    realisasi: 315000000,
-    persen: 75
-  },
-  {
-    id: "REV-003",
-    sumber: "Bagi Hasil Pajak & Retribusi Daerah",
-    kategori: "Transfer Daerah",
-    target: 68500000,
-    realisasi: 51375000,
-    persen: 75
-  },
-  {
-    id: "REV-004",
+    id: "REV-2026-001",
+    tahun: 2026,
     sumber: "Pendapatan Asli Desa (PADes)",
     kategori: "Pendapatan Asli",
-    target: 85000000,
-    realisasi: 72800000,
-    persen: 85.6
+    target: 55200000,
+    realisasi: 0,
+    persen: 0,
+    keterangan: "Bagi hasil BUMDes & pengelolaan tanah kas desa",
   },
   {
-    id: "REV-005",
-    sumber: "Bantuan Keuangan Provinsi Jawa Barat",
+    id: "REV-2026-002",
+    tahun: 2026,
+    sumber: "Dana Desa (DD APBN)",
+    kategori: "Transfer Pusat",
+    target: 312599000,
+    realisasi: 0,
+    persen: 0,
+    keterangan: "Pembangunan infrastruktur & ketahanan pangan",
+  },
+  {
+    id: "REV-2026-003",
+    tahun: 2026,
+    sumber: "Alokasi Dana Desa (ADD Kab. Kuningan)",
+    kategori: "Transfer Daerah",
+    target: 136947000,
+    realisasi: 0,
+    persen: 0,
+    keterangan: "Siltap & tunjangan aparatur serta operasional pemdes",
+  },
+  {
+    id: "REV-2026-004",
+    tahun: 2026,
+    sumber: "Bantuan Keuangan Provinsi (BKP Jabar)",
     kategori: "Transfer Provinsi",
-    target: 40000000,
-    realisasi: 40000000,
-    persen: 100
-  }
+    target: 130000000,
+    realisasi: 0,
+    persen: 0,
+    keterangan: "Bantuan Pemprov Jabar untuk program desa",
+  },
+  {
+    id: "REV-2026-005",
+    tahun: 2026,
+    sumber: "Bagi Hasil Pajak & Retribusi Daerah",
+    kategori: "Transfer Daerah",
+    target: 36006227,
+    realisasi: 0,
+    persen: 0,
+    keterangan: "Bagi hasil pajak dan retribusi Kabupaten Kuningan",
+  },
+  {
+    id: "REV-2026-006",
+    tahun: 2026,
+    sumber: "Pendapatan Bunga Bank & Lain-lain",
+    kategori: "Lain-lain",
+    target: 1200000,
+    realisasi: 0,
+    persen: 0,
+    keterangan: "Jasa giro kas rekening desa",
+  },
 ];
 
 export const APBDES_SECTORS: APBDesSector[] = [
   {
     id: 1,
-    nama: "Penyelenggaraan Pemerintahan Desa",
-    persen: 85,
-    pagu: 485600000,
-    realisasi: 412760000,
-    keterangan: "Penghasilan tetap dan tunjangan perangkat desa, operasional balai desa, kearsipan, serta tunjangan BPD.",
+    tahun: 2026,
+    nama: "Bidang Penyelenggaraan Pemerintahan Desa",
+    persen: 0,
+    pagu: 543725227,
+    realisasi: 0,
+    keterangan:
+      "Siltap & tunjangan Kades/Perangkat, operasional BPD, RT/RW, rehab kantor desa, dan pengembangan SID.",
     subKegiatan: [
-      { nama: "Penghasilan Tetap & Tunjangan Kepala Desa & Perangkat", anggaran: 288000000, realisasi: 240000000, status: "Tepat Waktu" },
-      { nama: "Operasional Kantor Balai Desa & Listrik / Internet", anggaran: 54000000, realisasi: 45000000, status: "Berjalan Lancar" },
-      { nama: "Operasional dan Tunjangan Kinerja BPD", anggaran: 48000000, realisasi: 40000000, status: "Berjalan Lancar" },
-      { nama: "Penyusunan Profil Desa & Sensus SDGs Mandiri", anggaran: 95600000, realisasi: 87760000, status: "Hampir Rampung" }
-    ]
+      { nama: "Penghasilan Tetap dan Tunjangan Kepala Desa", anggaran: 55505960 },
+      { nama: "Penghasilan Tetap dan Tunjangan Perangkat Desa", anggaran: 358474480 },
+      { nama: "Penyediaan Jaminan Sosial Kepala Desa & Perangkat Desa", anggaran: 1584000 },
+      { nama: "Operasional Pemerintahan Desa", anggaran: 19834787 },
+      { nama: "Penyediaan Tunjangan BPD", anggaran: 18100000 },
+      { nama: "Penyediaan Operasional BPD", anggaran: 10900000 },
+      { nama: "Penyediaan Insentif/Operasional RT/RW", anggaran: 2054000 },
+      { nama: "Operasional Kegiatan Bersumber Dana Desa (DD)", anggaran: 9300000 },
+      { nama: "Pembangunan/Rehabilitasi/Prasarana Kantor Desa", anggaran: 25000000 },
+      { nama: "Penyusunan, Penataan dan Pemutakhiran Profil Desa", anggaran: 2700000 },
+      { nama: "Penyusunan Dokumen Perencanaan Desa (RPJMDes, RKPDes, APBDes)", anggaran: 6000000 },
+      { nama: "Penyelenggaraan Musyawarah Desa Lainnya", anggaran: 11000000 },
+      { nama: "Pengembangan Sistem Informasi Desa (SID)", anggaran: 7872000 },
+      { nama: "Dukungan Administrasi SID dan Penjaringan Perangkat Desa", anggaran: 5000000 },
+      { nama: "Administrasi Pajak Bumi dan Bangunan (PBB)", anggaran: 10000000 },
+    ],
   },
   {
     id: 2,
-    nama: "Pelaksanaan Pembangunan Desa",
-    persen: 78,
-    pagu: 562400000,
-    realisasi: 438672000,
-    keterangan: "Pembangunan rabat beton jalan usaha tani Dusun Pahing, drainase pemukiman Dusun Wage, dan renovasi Pustu.",
+    tahun: 2026,
+    nama: "Bidang Pelaksanaan Pembangunan Desa",
+    persen: 0,
+    pagu: 201627000,
+    realisasi: 0,
+    keterangan:
+      "Pembangunan/peningkatan pengerasan jalan desa, sarana posyandu, PAUD desa, dan pengelolaan sampah.",
     subKegiatan: [
-      { nama: "Rabat Beton Jalan Usaha Tani Dusun Pahing (650m)", anggaran: 185000000, realisasi: 185000000, status: "100% Selesai" },
-      { nama: "Rehabilitasi Drainase Pemukiman Dusun Wage (320m)", anggaran: 84500000, realisasi: 77740000, status: "Tahap Akhir (92%)" },
-      { nama: "Pemasangan Lampu Penerangan Jalan Umum (PJU) Tenaga Surya", anggaran: 62900000, realisasi: 62900000, status: "100% Selesai" },
-      { nama: "Perluasan Saluran Pipa Air Bersih Mata Air Cikaduran", anggaran: 120000000, realisasi: 68032000, status: "Sedang Berjalan" },
-      { nama: "Stimulan Bedah Rumah Tidak Layak Huni (8 Unit)", anggaran: 110000000, realisasi: 45000000, status: "Tahap II Berjalan" }
-    ]
+      { nama: "Pembangunan/Rehabilitasi/Peningkatan Pengerasan Jalan Desa", anggaran: 98000000 },
+      { nama: "Penyelenggaraan Posyandu Balita & Lansia", anggaran: 55000000 },
+      { nama: "Pemeliharaan Fasilitas Pengelolaan Sampah Desa", anggaran: 18000000 },
+      { nama: "Penyuluhan dan Pelatihan bagi Pendidikan Masyarakat", anggaran: 13000000 },
+      { nama: "Penyelenggaraan PAUD Desa", anggaran: 8627000 },
+      { nama: "Pengasuhan Bersama atau Bina Keluarga Balita (BKB)", anggaran: 8000000 },
+      { nama: "Penyelenggaraan Informasi Publik Desa", anggaran: 1000000 },
+    ],
   },
   {
     id: 3,
-    nama: "Pembinaan Kemasyarakatan Desa",
-    persen: 88,
-    pagu: 145000000,
-    realisasi: 127600000,
-    keterangan: "Pembinaan poskamling ketertiban dusun, kegiatan kepemudaan Karang Taruna, dan festival olahraga desa.",
-    subKegiatan: [
-      { nama: "Pengadaan Perlengkapan Poskamling Terpadu 3 Dusun", anggaran: 35000000, realisasi: 32000000, status: "100% Selesai" },
-      { nama: "Pekan Olahraga & Seni Warga Kadurama di Gelora Dusun Pahing", anggaran: 45000000, realisasi: 45000000, status: "100% Selesai" },
-      { nama: "Pelatihan Kesiapsiagaan Bencana & Kebakaran Warga", anggaran: 25000000, realisasi: 21600000, status: "Selesai" },
-      { nama: "Bantuan Sarana Kelompok Pengajian & Keagamaan", anggaran: 40000000, realisasi: 29000000, status: "Berjalan Sesuai Jadwal" }
-    ]
+    tahun: 2026,
+    nama: "Bidang Pembinaan Kemasyarakatan",
+    persen: 0,
+    pagu: 0,
+    realisasi: 0,
+    keterangan: "Kegiatan pembinaan kelembagaan, kepemudaan, seni budaya & keagamaan.",
+    subKegiatan: [],
   },
   {
     id: 4,
-    nama: "Pemberdayaan Masyarakat Desa",
-    persen: 71,
-    pagu: 132000000,
-    realisasi: 93720000,
-    keterangan: "Pelatihan UMKM olahan ubi jalar, pengadaan bibit pupuk hayati organik, dan permodalan BUMDes Bina Mandiri.",
+    tahun: 2026,
+    nama: "Bidang Pemberdayaan Masyarakat",
+    persen: 0,
+    pagu: 78000000,
+    realisasi: 0,
+    keterangan:
+      "Pemeliharaan saluran irigasi tersier pertanian, pemasaran UMKM & pelatihan pemberdayaan perempuan.",
     subKegiatan: [
-      { nama: "Pelatihan Pemasaran Digital & QRIS bagi 25 UMKM Olahan Pangan", anggaran: 32000000, realisasi: 28500000, status: "Selesai" },
-      { nama: "Penyertaan Modal Usaha BUMDes Bina Mandiri (Unit Pangan)", anggaran: 50000000, realisasi: 50000000, status: "Terealisasi" },
-      { nama: "Bantuan Bibit Padi Organik Inpari 32 & Pupuk Organik Cair", anggaran: 30000000, realisasi: 15220000, status: "Musim Tanam II" },
-      { nama: "Bantuan Pakan Tambahan & Vaksinasi Ternak Sapi Perah", anggaran: 20000000, realisasi: 0, status: "Jadwal Triwulan IV" }
-    ]
+      { nama: "Pemeliharaan Saluran Irigasi Tersier / Sederhana", anggaran: 54000000 },
+      { nama: "Pelatihan Penyuluhan Pemberdayaan Perempuan", anggaran: 10000000 },
+      { nama: "Pengembangan Sarana Pemasaran Usaha Mikro (UMKM) & Koperasi", anggaran: 10000000 },
+      { nama: "Peningkatan Kapasitas Kepala Desa", anggaran: 2000000 },
+      { nama: "Peningkatan Kapasitas BPD", anggaran: 2000000 },
+    ],
   },
   {
     id: 5,
-    nama: "Penanggulangan Bencana & Mendesak",
-    persen: 64,
-    pagu: 120000000,
-    realisasi: 76800000,
-    keterangan: "Bantuan Langsung Tunai (BLT) Dana Desa untuk 45 KPM rentan desil 1-2 serta kesiapsiagaan darurat.",
+    tahun: 2026,
+    nama: "Bidang Penanggulangan Bencana & Mendesak",
+    persen: 0,
+    pagu: 33100000,
+    realisasi: 0,
+    keterangan: "Kegiatan mitigasi bencana serta penanganan keadaan darurat mendesak warga.",
     subKegiatan: [
-      { nama: "Penyaluran BLT Dana Desa (45 KPM x Rp 300.000 x 9 Bulan)", anggaran: 108000000, realisasi: 76800000, status: "Tahap III Disalurkan" },
-      { nama: "Dana Cadangan Tanggap Darurat Bencana Cuaca Ekstrem", anggaran: 12000000, realisasi: 0, status: "Siaga Kas Desa" }
-    ]
-  }
+      { nama: "Kegiatan Penanggulangan Bencana Desa", anggaran: 25000000 },
+      { nama: "Penanganan Keadaan Mendesak Desa", anggaran: 8100000 },
+    ],
+  },
+];
+
+// =============================================================================
+// ILPPD 2025 (LAPORAN REALISASI PERTANGGUNGJAWABAN PENYELENGGARAAN PEMERINTAHAN DESA)
+// =============================================================================
+export const ILPPD_2025_SUMMARY = {
+  tahun: 2025,
+  totalPendapatanAnggaran: 1477514768,
+  totalPendapatanRealisasi: 1477820277,
+  totalBelanjaAnggaran: 1291201368,
+  totalBelanjaRealisasi: 1291506827,
+  surplusDefisitAnggaran: 186313400,
+  surplusDefisitRealisasi: 186316400,
+  pengeluaranPembiayaan: 186313400,
+  cadanganPilkades: 9200000,
+  penyertaanBumdes: 177113400,
+};
+
+export const ILPPD_2025_SECTORS: APBDesSector[] = [
+  {
+    id: 1,
+    tahun: 2025,
+    nama: "1. Bidang Penyelenggaraan Pemerintahan Desa",
+    pagu: 684010768,
+    realisasi: 601076227,
+    persen: 87.88,
+    keterangan: "Realisasi Siltap Kades/Perangkat, operasional kantor balai desa & BPD.",
+    subKegiatan: [
+      { nama: "Siltap & Tunjangan Kepala Desa", anggaran: 55505960, realisasi: 55505960 },
+      { nama: "Siltap & Tunjangan Perangkat Desa", anggaran: 358474480, realisasi: 358474480 },
+      { nama: "Operasional Kantor & Kelembagaan BPD", anggaran: 270030328, realisasi: 187095787 },
+    ],
+  },
+  {
+    id: 2,
+    tahun: 2025,
+    nama: "2. Bidang Pelaksanaan Pembangunan Desa",
+    pagu: 337960600,
+    realisasi: 428410600,
+    persen: 126.76,
+    keterangan: "Pembangunan rabat beton jalan lingkungan 3 dusun, drainase pemukiman & sarana posyandu.",
+    subKegiatan: [
+      { nama: "Pembangunan Jalan Rabat Beton & Drainase", anggaran: 237960600, realisasi: 328410600 },
+      { nama: "Penyelenggaraan Posyandu Balita & Kesehatan", anggaran: 100000000, realisasi: 100000000 },
+    ],
+  },
+  {
+    id: 3,
+    tahun: 2025,
+    nama: "3. Bidang Pembinaan Kemasyarakatan",
+    pagu: 0,
+    realisasi: 0,
+    persen: 0,
+    keterangan: "Kegiatan pembinaan kemasyarakatan TA 2025.",
+    subKegiatan: [],
+  },
+  {
+    id: 4,
+    tahun: 2025,
+    nama: "4. Bidang Pemberdayaan Masyarakat",
+    pagu: 164785000,
+    realisasi: 157575000,
+    persen: 95.62,
+    keterangan: "Program ketahanan pangan desa, irigasi pertanian & pelatihan kelompok tani.",
+    subKegiatan: [
+      { nama: "Ketahanan Pangan & Irigasi Pertanian", anggaran: 124785000, realisasi: 120575000 },
+      { nama: "Pelatihan Kelompok Tani & UMKM Desa", anggaran: 40000000, realisasi: 37000000 },
+    ],
+  },
+  {
+    id: 5,
+    tahun: 2025,
+    nama: "5. Bidang Penanggulangan Bencana & Mendesak",
+    pagu: 104445000,
+    realisasi: 104445000,
+    persen: 100.0,
+    keterangan: "Penyaluran Bantuan Langsung Tunai Dana Desa (BLT-DD) 100% tepat sasaran & tanggap darurat.",
+    subKegiatan: [
+      { nama: "Penyaluran BLT Dana Desa (100% Terserap)", anggaran: 96345000, realisasi: 96345000 },
+      { nama: "Penanganan Keadaan Mendesak Desa", anggaran: 8100000, realisasi: 8100000 },
+    ],
+  },
 ];

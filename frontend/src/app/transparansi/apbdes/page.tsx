@@ -6,10 +6,13 @@ import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
 import { createClient } from "@/lib/supabase/client";
 import {
-  APBDES_TOTAL_SUMMARY as DEFAULT_SUMMARY,
+  APBDES_TOTAL_SUMMARY,
   APBDES_REVENUES,
-  APBDES_SECTORS as DEFAULT_SECTORS,
+  APBDES_SECTORS,
+  ILPPD_2025_SUMMARY,
+  ILPPD_2025_SECTORS,
   APBDesSector,
+  APBDesRevenue,
 } from "@/data/apbdesData";
 import {
   PieChart,
@@ -21,73 +24,110 @@ import {
   DollarSign,
   Layers,
   FileSpreadsheet,
-  RefreshCw,
+  FileText,
+  Calendar,
+  Building2,
+  AlertCircle,
 } from "lucide-react";
 
 export default function TransparansiApbdesPage() {
+  const [selectedYear, setSelectedYear] = useState<number>(2026);
   const [activeSectorId, setActiveSectorId] = useState<number>(1);
   const [loading, setLoading] = useState(true);
-  const [summary, setSummary] = useState(DEFAULT_SUMMARY);
-  const [sectors, setSectors] = useState<APBDesSector[]>(DEFAULT_SECTORS);
+
+  // States APBDes / ILPPD
+  const [summary, setSummary] = useState(APBDES_TOTAL_SUMMARY);
+  const [sectors, setSectors] = useState<APBDesSector[]>(APBDES_SECTORS);
+  const [revenues, setRevenues] = useState<APBDesRevenue[]>(APBDES_REVENUES);
 
   useEffect(() => {
-    async function loadApbdesData() {
+    async function loadData() {
+      setLoading(true);
       try {
         const supabase = createClient();
-        const [{ data: summaryData }, { data: sectorsData }] = await Promise.all([
+        const [
+          { data: summaryData },
+          { data: sectorsData },
+          { data: revenuesData },
+        ] = await Promise.all([
           supabase
             .from("apbdes_summary")
             .select("*")
-            .eq("tahun", 2026)
+            .eq("tahun", selectedYear)
             .maybeSingle(),
           supabase
             .from("apbdes_sectors")
             .select("*")
+            .eq("tahun", selectedYear)
             .eq("is_deleted", false)
+            .order("id", { ascending: true }),
+          supabase
+            .from("apbdes_revenues")
+            .select("*")
+            .eq("tahun", selectedYear)
             .order("id", { ascending: true }),
         ]);
 
         if (summaryData) {
           setSummary({
-            tahun: summaryData.tahun || 2026,
-            totalPendapatan: Number(summaryData.total_pendapatan) || DEFAULT_SUMMARY.totalPendapatan,
-            totalBelanja: Number(summaryData.total_belanja) || DEFAULT_SUMMARY.totalBelanja,
-            totalRealisasiBelanja: Number(summaryData.total_realisasi_belanja) || DEFAULT_SUMMARY.totalRealisasiBelanja,
-            persenRealisasiBelanja: Number(summaryData.persen_realisasi_belanja) || DEFAULT_SUMMARY.persenRealisasiBelanja,
-            surplusDefisit: Number(summaryData.surplus_defisit) || DEFAULT_SUMMARY.surplusDefisit,
-            silpaTahunLalu: Number(summaryData.silpa_tahun_lalu) || DEFAULT_SUMMARY.silpaTahunLalu,
+            tahun: summaryData.tahun,
+            totalPendapatan: Number(summaryData.total_pendapatan),
+            totalBelanja: Number(summaryData.total_belanja),
+            totalRealisasiBelanja: Number(summaryData.total_realisasi_belanja),
+            persenRealisasiBelanja: Number(summaryData.persen_realisasi_belanja),
+            surplusDefisit: Number(summaryData.surplus_defisit),
+            pembiayaanNetto: 41700000,
+            silpaTahunLalu: Number(summaryData.silpa_tahun_lalu),
           });
+        } else {
+          setSummary(selectedYear === 2026 ? APBDES_TOTAL_SUMMARY : (ILPPD_2025_SUMMARY as any));
         }
 
         if (sectorsData && sectorsData.length > 0) {
-          const mappedSectors: APBDesSector[] = sectorsData.map((s: any) => {
-            const defaultMatch = DEFAULT_SECTORS.find((ds) => ds.id === s.id);
-            return {
-              id: s.id,
-              nama: s.nama,
-              persen: Number(s.persen) || 0,
-              pagu: Number(s.pagu) || 0,
-              realisasi: Number(s.realisasi) || 0,
-              keterangan: s.keterangan || "",
-              subKegiatan:
-                Array.isArray(s.sub_kegiatan) && s.sub_kegiatan.length > 0
-                  ? s.sub_kegiatan
-                  : defaultMatch?.subKegiatan || [],
-            };
-          });
-          setSectors(mappedSectors);
+          const mapped: APBDesSector[] = sectorsData.map((s: any) => ({
+            id: s.id,
+            tahun: s.tahun,
+            nama: s.nama,
+            persen: Number(s.persen) || 0,
+            pagu: Number(s.pagu) || 0,
+            realisasi: Number(s.realisasi) || 0,
+            keterangan: s.keterangan || "",
+            subKegiatan: Array.isArray(s.sub_kegiatan) ? s.sub_kegiatan : [],
+          }));
+          setSectors(mapped);
+          setActiveSectorId(mapped[0]?.id || 1);
+        } else {
+          setSectors(selectedYear === 2026 ? APBDES_SECTORS : ILPPD_2025_SECTORS);
+          setActiveSectorId(1);
+        }
+
+        if (revenuesData && revenuesData.length > 0) {
+          const mappedRev: APBDesRevenue[] = revenuesData.map((r: any) => ({
+            id: `REV-${r.id}`,
+            tahun: r.tahun,
+            sumber: r.nama,
+            kategori: r.kategori,
+            target: Number(r.anggaran),
+            realisasi: Number(r.realisasi),
+            persen: r.anggaran > 0 ? Number(((r.realisasi / r.anggaran) * 100).toFixed(1)) : 0,
+            keterangan: r.keterangan,
+          }));
+          setRevenues(mappedRev);
+        } else {
+          setRevenues(selectedYear === 2026 ? APBDES_REVENUES : []);
         }
       } catch (err) {
-        console.warn("Gagal memuat APBDes dari Supabase, gunakan data default:", err);
+        console.warn("Gagal memuat APBDes dari Supabase:", err);
       } finally {
         setLoading(false);
       }
     }
 
-    loadApbdesData();
-  }, []);
+    loadData();
+  }, [selectedYear]);
 
-  const formatRupiah = (val: number) => {
+  const formatRupiah = (val?: number | null) => {
+    if (val === undefined || val === null) return "Rp 0";
     return new Intl.NumberFormat("id-ID", {
       style: "currency",
       currency: "IDR",
@@ -95,7 +135,7 @@ export default function TransparansiApbdesPage() {
     }).format(val);
   };
 
-  const selectedSector = sectors.find((s) => s.id === activeSectorId) || sectors[0] || DEFAULT_SECTORS[0];
+  const selectedSector = sectors.find((s) => s.id === activeSectorId) || sectors[0];
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
@@ -107,63 +147,112 @@ export default function TransparansiApbdesPage() {
           <div className="absolute inset-0 bg-[radial-gradient(#009388_1px,transparent_1px)] [background-size:16px_16px] opacity-15" />
 
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            {/* Breadcrumb */}
             <div className="flex items-center gap-2 text-xs text-emerald-200/80 mb-4 font-mono">
               <Link href="/" className="hover:text-white transition">Beranda</Link>
               <ChevronRight className="w-3.5 h-3.5 text-emerald-400" />
-              <span className="text-white font-semibold">Transparansi Anggaran</span>
+              <span className="text-white font-semibold">Transparansi Anggaran Desa</span>
             </div>
 
-            <div className="max-w-3xl space-y-3">
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-bold uppercase tracking-wider">
-                  <PieChart className="w-3.5 h-3.5" />
-                  Akuntabilitas Publik Siskeudes
-                </span>
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 text-xs font-medium">
-                  <ShieldCheck className="w-3.5 h-3.5" />
-                  Sinkronisasi Realtime Supabase
-                </span>
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6">
+              <div className="max-w-3xl space-y-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 text-xs font-bold uppercase tracking-wider">
+                    <PieChart className="w-3.5 h-3.5" />
+                    Keterbukaan Informasi Publik Siskeudes
+                  </span>
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-cyan-500/20 text-cyan-300 border border-cyan-400/30 text-xs font-semibold">
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    Terverifikasi Pemdes Kadurama
+                  </span>
+                </div>
+                <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
+                  {selectedYear === 2026
+                    ? "APBDes Kadurama TA 2026"
+                    : "Laporan Realisasi ILPPD TA 2025"}
+                </h1>
+                <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal max-w-2xl">
+                  {selectedYear === 2026
+                    ? "Rincian resmi Anggaran Pendapatan dan Belanja Desa (APBDes) Tahun Anggaran 2026 yang telah disahkan Kepala Desa Samir Syarifudin dan BPD Desa Kadurama."
+                    : "Informasi Laporan Penyelenggaraan Pemerintahan Desa (ILPPD) Tahun Anggaran 2025 yang memuat realisasi fisik dan pertanggungjawaban anggaran."}
+                </p>
               </div>
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-                APBDes Kadurama {summary.tahun}
-              </h1>
-              <p className="text-sm sm:text-base text-slate-200 leading-relaxed font-normal">
-                Keterbukaan informasi keuangan Anggaran Pendapatan dan Belanja Desa (APBDes) Tahun Anggaran {summary.tahun}. Transparan, akuntabel, dan berorientasi pada kemakmuran warga 3 dusun.
-              </p>
+
+              {/* Year / Document Switcher Tabs */}
+              <div className="p-1.5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/20 flex items-center gap-1.5 self-start lg:self-auto shrink-0 shadow-lg">
+                <button
+                  onClick={() => setSelectedYear(2026)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    selectedYear === 2026
+                      ? "bg-[#009388] text-white shadow-md ring-1 ring-white/30"
+                      : "text-emerald-100 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <FileSpreadsheet className="w-3.5 h-3.5 text-[#eda50c]" />
+                  <span>APBDes Murni 2026</span>
+                </button>
+                <button
+                  onClick={() => setSelectedYear(2025)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-2 ${
+                    selectedYear === 2025
+                      ? "bg-[#009388] text-white shadow-md ring-1 ring-white/30"
+                      : "text-emerald-100 hover:text-white hover:bg-white/10"
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5 text-cyan-300" />
+                  <span>Laporan ILPPD 2025</span>
+                </button>
+              </div>
             </div>
 
             {/* Quick KPI Stat Cards */}
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-10">
               <div className="bg-white/10 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/15">
-                <div className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider">Total Pendapatan</div>
-                <div className="text-xl sm:text-2xl font-black text-white mt-1 font-mono">
-                  {formatRupiah(summary.totalPendapatan)}
+                <div className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider">
+                  {selectedYear === 2026 ? "Pagu Pendapatan 2026" : "Realisasi Pendapatan 2025"}
                 </div>
-                <div className="text-[11px] text-slate-300 mt-0.5">APBN, ADD & PADes</div>
+                <div className="text-xl sm:text-2xl font-black text-white mt-1 font-mono">
+                  {loading ? "..." : formatRupiah(selectedYear === 2026 ? summary.totalPendapatan : 1477820277)}
+                </div>
+                <div className="text-[11px] text-emerald-200/80 mt-0.5">
+                  {selectedYear === 2026 ? "PADes, Dana Desa, ADD & BKP" : "Anggaran: Rp 1.477.514.768"}
+                </div>
               </div>
 
               <div className="bg-white/10 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/15">
-                <div className="text-[11px] font-bold text-[#eda50c] uppercase tracking-wider">Pagu Belanja</div>
+                <div className="text-[11px] font-bold text-[#eda50c] uppercase tracking-wider">
+                  {selectedYear === 2026 ? "Pagu Belanja 2026" : "Realisasi Belanja 2025"}
+                </div>
                 <div className="text-xl sm:text-2xl font-black text-[#eda50c] mt-1 font-mono">
-                  {formatRupiah(summary.totalBelanja)}
+                  {loading ? "..." : formatRupiah(selectedYear === 2026 ? summary.totalBelanja : 1291506827)}
                 </div>
-                <div className="text-[11px] text-slate-300 mt-0.5">5 Bidang Penyelenggaraan</div>
+                <div className="text-[11px] text-amber-200/80 mt-0.5">
+                  {selectedYear === 2026 ? "Alokasi 5 Bidang Belanja" : "Anggaran: Rp 1.291.201.368"}
+                </div>
               </div>
 
               <div className="bg-white/10 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/15">
-                <div className="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">Realisasi Berjalan</div>
+                <div className="text-[11px] font-bold text-cyan-300 uppercase tracking-wider">
+                  Surplus Anggaran
+                </div>
                 <div className="text-xl sm:text-2xl font-black text-cyan-300 mt-1 font-mono">
-                  {formatRupiah(summary.totalRealisasiBelanja)}
+                  {loading ? "..." : formatRupiah(selectedYear === 2026 ? 41700000 : 186313400)}
                 </div>
-                <div className="text-[11px] text-slate-300 mt-0.5">Progres {summary.persenRealisasiBelanja}% (Triwulan III)</div>
+                <div className="text-[11px] text-cyan-200/80 mt-0.5">
+                  {selectedYear === 2026 ? "Dialokasikan ke Pembiayaan" : "Kondisi Keuangan Sehat"}
+                </div>
               </div>
 
               <div className="bg-white/10 backdrop-blur-md p-4 sm:p-5 rounded-2xl border border-white/15">
-                <div className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider">Surplus / SiLPA</div>
-                <div className="text-xl sm:text-2xl font-black text-white mt-1 font-mono">
-                  {formatRupiah(summary.surplusDefisit)}
+                <div className="text-[11px] font-bold text-emerald-300 uppercase tracking-wider">
+                  Pengeluaran Pembiayaan
                 </div>
-                <div className="text-[11px] text-slate-300 mt-0.5">Kondisi Kas Sehat</div>
+                <div className="text-xl sm:text-2xl font-black text-white mt-1 font-mono">
+                  {loading ? "..." : formatRupiah(selectedYear === 2026 ? 41700000 : 186313400)}
+                </div>
+                <div className="text-[11px] text-slate-300 mt-0.5">
+                  {selectedYear === 2026 ? "BUMDes (35 Jt) & Pilkades (6,7 Jt)" : "BUMDes & Cadangan Pilkades"}
+                </div>
               </div>
             </div>
           </div>
@@ -171,51 +260,90 @@ export default function TransparansiApbdesPage() {
 
         {/* Breakdown Content */}
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-10">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Sisi Kiri: Sumber Pendapatan (5 Cols) */}
             <div className="lg:col-span-5 space-y-6">
-              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs">
-                <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
-                  <TrendingUp className="w-5 h-5 text-[#009388]" />
-                  <span>Struktur Sumber Pendapatan</span>
-                </h3>
-                <p className="text-xs text-slate-500 mt-1">
-                  Realisasi penerimaan dana transfer pemerintah pusat, kabupaten, dan PADes.
-                </p>
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs space-y-5">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#009388] uppercase tracking-wider">
+                    <TrendingUp className="w-4 h-4" />
+                    <span>Sumber Pendapatan ({selectedYear})</span>
+                  </div>
+                  <h3 className="font-extrabold text-slate-900 text-lg mt-0.5">
+                    Struktur Penerimaan Dana Desa
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">
+                    {selectedYear === 2026
+                      ? "Pagu target ketetapan pendapatan desa tahun berjalan."
+                      : "Laporan realisasi pencairan dana transfer & PADes TA 2025."}
+                  </p>
+                </div>
 
-                <div className="mt-6 space-y-4">
-                  {APBDES_REVENUES.map((rev) => (
-                    <div key={rev.id} className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 space-y-2">
+                <div className="space-y-3.5">
+                  {revenues.map((rev) => (
+                    <div
+                      key={rev.id}
+                      className="p-3.5 rounded-2xl bg-slate-50 border border-slate-100 hover:border-slate-300 transition-colors space-y-2"
+                    >
                       <div className="flex justify-between items-start text-xs">
                         <div>
                           <div className="font-bold text-slate-900">{rev.sumber}</div>
-                          <div className="text-[11px] text-slate-500">{rev.kategori}</div>
+                          <div className="text-[11px] text-slate-500">{rev.keterangan || rev.kategori}</div>
                         </div>
-                        <span className="font-mono font-bold text-[#009388] text-xs">
-                          {rev.persen}%
+                        <span className="font-mono font-bold text-[#009388] text-xs shrink-0 ml-2">
+                          {selectedYear === 2026
+                            ? `${((rev.target / summary.totalPendapatan) * 100).toFixed(1)}% Porsi`
+                            : `${rev.persen}% Serap`}
                         </span>
                       </div>
-                      <div className="flex justify-between items-center text-xs font-mono">
-                        <span className="text-slate-500 text-[11px]">Target: {formatRupiah(rev.target)}</span>
-                        <span className="font-bold text-slate-800">{formatRupiah(rev.realisasi)}</span>
-                      </div>
-                      <div className="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
-                        <div
-                          className="bg-[#009388] h-full rounded-full transition-all duration-500"
-                          style={{ width: `${Math.min(rev.persen, 100)}%` }}
-                        />
+                      <div className="flex justify-between items-center text-xs font-mono pt-1 border-t border-slate-200/60">
+                        <span className="text-slate-400 text-[11px]">
+                          {selectedYear === 2026 ? "Pagu Ditetapkan:" : "Realisasi Dana:"}
+                        </span>
+                        <span className="font-bold text-slate-800">
+                          {formatRupiah(selectedYear === 2026 ? rev.target : rev.realisasi || rev.target)}
+                        </span>
                       </div>
                     </div>
                   ))}
                 </div>
 
-                <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+                {/* Ringkasan Pembiayaan Netto Card */}
+                <div className="p-4 rounded-2xl bg-[#003733] text-white space-y-2.5 shadow-sm border border-[#005851]">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-[#eda50c]">
+                      Pos Pembiayaan Netto
+                    </span>
+                    <span className="text-xs font-mono font-bold text-emerald-300">
+                      {formatRupiah(selectedYear === 2026 ? 41700000 : 186313400)}
+                    </span>
+                  </div>
+                  <div className="text-xs text-emerald-100/90 leading-relaxed">
+                    {selectedYear === 2026 ? (
+                      <ul className="space-y-1 text-[11px]">
+                        <li>• Penyertaan Modal BUMDes: <strong>Rp 35.000.000</strong></li>
+                        <li>• Pembentukan Dana Cadangan Pilkades: <strong>Rp 6.700.000</strong></li>
+                      </ul>
+                    ) : (
+                      <ul className="space-y-1 text-[11px]">
+                        <li>• Penyertaan Modal BUMDes TA 2025: <strong>Rp 177.113.400</strong></li>
+                        <li>• Cadangan Pilkades & Purnabakti: <strong>Rp 9.200.000</strong></li>
+                      </ul>
+                    )}
+                  </div>
+                </div>
+
+                <div className="pt-2">
                   <button
-                    onClick={() => alert("Mengunduh Rincian APBDes 2026 Format PDF resmi.")}
-                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#003733] hover:bg-[#005851] text-white text-xs font-bold transition shadow-xs"
+                    onClick={() =>
+                      alert(
+                        `Mengunduh salinan berkas resmi format PDF TA ${selectedYear} Desa Kadurama...`
+                      )
+                    }
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-[#003733] hover:bg-[#002825] text-white text-xs font-bold transition shadow-xs border border-[#005851]"
                   >
                     <Download className="w-4 h-4 text-[#eda50c]" />
-                    <span>Unduh Dokumen APBDes 2026 (PDF)</span>
+                    <span>Unduh Salinan Dokumen TA {selectedYear} (PDF)</span>
                   </button>
                 </div>
               </div>
@@ -223,94 +351,109 @@ export default function TransparansiApbdesPage() {
 
             {/* Sisi Kanan: Realisasi 5 Bidang Belanja (7 Cols) */}
             <div className="lg:col-span-7 space-y-6">
-              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
-                  <div>
-                    <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
-                      <Layers className="w-5 h-5 text-[#eda50c]" />
-                      <span>Realisasi Belanja per Bidang</span>
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Pilih bidang untuk meninjau rincian kegiatan fisik dan operasional.
-                    </p>
+              <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-7 shadow-xs space-y-6">
+                <div>
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#eda50c] uppercase tracking-wider">
+                    <Layers className="w-4 h-4" />
+                    <span>Rincian 5 Bidang Belanja ({selectedYear})</span>
                   </div>
+                  <h3 className="font-extrabold text-slate-900 text-lg mt-0.5">
+                    Alokasi Pembangunan & Penyelenggaraan Desa
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Klik bidang untuk melihat daftar sub-kegiatan dan alokasi anggarannya.
+                  </p>
                 </div>
 
                 {/* Tabs Bidang */}
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mb-6">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   {sectors.map((sector) => (
                     <button
                       key={sector.id}
                       onClick={() => setActiveSectorId(sector.id)}
-                      className={`p-3 rounded-2xl text-left border transition ${
+                      className={`p-3.5 rounded-2xl text-left border transition-all ${
                         activeSectorId === sector.id
-                          ? "bg-[#003733] text-white border-[#003733] shadow-md"
+                          ? "bg-[#003733] text-white border-[#003733] shadow-md ring-1 ring-emerald-400/40"
                           : "bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100"
                       }`}
                     >
-                      <div className="text-[10px] font-bold uppercase tracking-wider opacity-80">
-                        Bidang 0{sector.id}
+                      <div className="flex items-center justify-between">
+                        <span className="text-[10px] font-bold uppercase tracking-wider opacity-80 font-mono">
+                          Bidang 0{sector.id}
+                        </span>
+                        <span
+                          className={`text-xs font-mono font-bold ${
+                            activeSectorId === sector.id ? "text-[#eda50c]" : "text-[#009388]"
+                          }`}
+                        >
+                          {formatRupiah(sector.pagu)}
+                        </span>
                       </div>
-                      <div className="font-bold text-xs mt-0.5 line-clamp-1">{sector.nama}</div>
-                      <div className="text-xs font-mono font-bold text-[#eda50c] mt-1">
-                        {sector.persen}% Serap
-                      </div>
+                      <div className="font-bold text-xs mt-1 line-clamp-1">{sector.nama}</div>
                     </button>
                   ))}
                 </div>
 
-                {/* Detail Bidang Terpilih */}
-                <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-4">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div>
-                      <span className="text-[10px] font-bold uppercase tracking-wider text-[#009388]">
-                        Bidang 0{selectedSector.id}
-                      </span>
-                      <h4 className="font-extrabold text-slate-900 text-base">
-                        {selectedSector.nama}
-                      </h4>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-xs font-mono font-black text-[#009388]">
-                        {formatRupiah(selectedSector.realisasi)}
+                {/* Detail Bidang Terpilih & Daftar Sub Kegiatan */}
+                {selectedSector && (
+                  <div className="bg-slate-50 rounded-2xl p-5 border border-slate-200 space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                      <div>
+                        <span className="text-[10px] font-bold uppercase tracking-wider text-[#009388] font-mono">
+                          Bidang 0{selectedSector.id}
+                        </span>
+                        <h4 className="font-extrabold text-slate-900 text-base">
+                          {selectedSector.nama}
+                        </h4>
+                        <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                          {selectedSector.keterangan}
+                        </p>
                       </div>
-                      <div className="text-[11px] text-slate-500 font-mono">
-                        Pagu: {formatRupiah(selectedSector.pagu)}
-                      </div>
-                    </div>
-                  </div>
-
-                  <p className="text-xs text-slate-600 leading-relaxed">
-                    {selectedSector.keterangan}
-                  </p>
-
-                  <div className="space-y-2.5 pt-2">
-                    <div className="text-[11px] font-bold uppercase tracking-wider text-slate-700">
-                      Rincian Sub-Kegiatan:
-                    </div>
-                    {selectedSector.subKegiatan && selectedSector.subKegiatan.length > 0 ? (
-                      selectedSector.subKegiatan.map((sub, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-white p-3 rounded-xl border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs"
-                        >
-                          <div>
-                            <div className="font-bold text-slate-900">{sub.nama}</div>
-                            <span className="inline-block mt-0.5 px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
-                              {sub.status}
-                            </span>
-                          </div>
-                          <div className="text-right sm:flex-shrink-0 font-mono">
-                            <div className="font-bold text-slate-900">{formatRupiah(sub.realisasi)}</div>
-                            <div className="text-[10px] text-slate-400">Pagu: {formatRupiah(sub.anggaran)}</div>
-                          </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-sm sm:text-base font-mono font-black text-[#009388]">
+                          {formatRupiah(selectedSector.pagu)}
                         </div>
-                      ))
-                    ) : (
-                      <p className="text-xs text-slate-400 italic">Belum ada rincian sub-kegiatan tercatat.</p>
-                    )}
+                        <div className="text-[10px] text-slate-500 uppercase font-semibold">
+                          Total Pagu Bidang
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Sub-Kegiatan List */}
+                    <div className="space-y-2">
+                      <div className="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                        Rincian Item Sub-Kegiatan Resmi:
+                      </div>
+
+                      {selectedSector.subKegiatan && selectedSector.subKegiatan.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedSector.subKegiatan.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="p-3 rounded-xl bg-white border border-slate-200/80 flex items-center justify-between text-xs gap-3 shadow-2xs"
+                            >
+                              <div className="flex items-start gap-2 min-w-0">
+                                <span className="font-mono text-[11px] font-bold text-slate-400 shrink-0 mt-0.5">
+                                  #{idx + 1}
+                                </span>
+                                <span className="font-medium text-slate-800 leading-snug">
+                                  {item.nama}
+                                </span>
+                              </div>
+                              <span className="font-mono font-bold text-slate-900 text-xs shrink-0 pl-2">
+                                {formatRupiah(item.anggaran)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-4 rounded-xl bg-white border border-slate-200 text-center text-xs text-slate-500 italic">
+                          Alokasi anggaran belanja pada bidang ini adalah Rp 0 untuk Tahun Anggaran {selectedYear}.
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </div>
