@@ -100,6 +100,11 @@ export default function DusunDetailPage() {
               <span className="px-3 py-1 rounded-full bg-[#eda50c] text-slate-950 text-xs font-bold uppercase tracking-wider">
                 {dusun.number}
               </span>
+              {slug !== "wage" && (
+                <span className="px-3 py-1 rounded-full bg-amber-500/20 border border-amber-400/40 text-amber-300 text-xs font-bold">
+                  Data Belum Lengkap
+                </span>
+              )}
             </div>
           </div>
         </div>

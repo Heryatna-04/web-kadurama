@@ -2264,10 +2264,20 @@ export default function MasterPanelPage() {
                             </td>
                             <td className="py-3.5 px-4 text-slate-600">{res.pekerjaan}</td>
                             <td className="py-3.5 px-4 font-semibold text-slate-700">{res.hubunganKeluarga}</td>
-                            <td className="py-3.5 px-4">
-                              <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">
-                                {res.status}
-                              </span>
+                            <td className="py-3.5 px-4 space-y-1">
+                              <div>
+                                <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">
+                                  {res.status}
+                                </span>
+                              </div>
+                              {(!res.nik || res.nik.startsWith("TEMP-") || !res.noKk || !res.ttl || res.ttl === "Kuningan" || !res.pekerjaan || res.pekerjaan.toLowerCase().includes("tidak tahu") || !res.rt || !res.rw) && (
+                                <div>
+                                  <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 font-bold text-[9px] border border-amber-200" title="Data kependudukan warga ini belum lengkap (perlu verifikasi NIK/No KK/TTL/RT/RW)">
+                                    <AlertTriangle className="w-2.5 h-2.5 text-amber-600" />
+                                    <span>Data Belum Lengkap</span>
+                                  </span>
+                                </div>
+                              )}
                             </td>
                             <td className="py-3.5 px-4 text-right">
                               {canModify(res.dusun) ? (

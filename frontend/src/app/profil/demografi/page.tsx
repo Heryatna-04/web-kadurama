@@ -243,9 +243,16 @@ export default function DemografiPage() {
                       <span className="text-xs font-bold text-[#009388] uppercase tracking-wider">
                         {dsn.name}
                       </span>
-                      <span className="text-[11px] font-mono font-bold text-slate-700 bg-white px-2 py-0.5 rounded-md border border-slate-200">
-                        {dsn.area}
-                      </span>
+                      <div className="flex items-center gap-1.5">
+                        {dsn.jiwa === 0 && !loading && (
+                          <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full">
+                            Data Belum Lengkap
+                          </span>
+                        )}
+                        <span className="text-[11px] font-mono font-bold text-slate-700 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                          {dsn.area}
+                        </span>
+                      </div>
                     </div>
                     <div className="text-2xl font-black text-slate-900 mt-1">
                       {loading ? "..." : dsn.jiwa} <span className="text-xs font-normal text-slate-500">Jiwa</span>
