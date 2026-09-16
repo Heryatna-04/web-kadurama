@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import Link from "next/link";
 import dynamic from "next/dynamic";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
+import type { CivicPoint } from "@/components/CivicGisMap";
 import {
   MapPin,
   Layers,
@@ -32,6 +33,14 @@ const CivicGisMap = dynamic(() => import("@/components/CivicGisMap"), {
 export default function PetaPage() {
   const [selectedDusun, setSelectedDusun] = useState<"all" | "manis" | "pahing" | "wage">("all");
   const [selectedPoiId, setSelectedPoiId] = useState<string | number | null>("balai-desa");
+
+  const handleSelectDusun = useCallback((d: "all" | "manis" | "pahing" | "wage") => {
+    setSelectedDusun(d);
+  }, []);
+
+  const handleSelectPoi = useCallback((poi: CivicPoint | null) => {
+    setSelectedPoiId(poi ? poi.id : null);
+  }, []);
 
   const FACILITIES = [
     {
@@ -139,8 +148,8 @@ export default function PetaPage() {
                 <CivicGisMap
                   selectedDusun={selectedDusun}
                   selectedPoiId={selectedPoiId}
-                  onSelectDusun={(d) => setSelectedDusun(d)}
-                  onSelectPoi={(poi) => setSelectedPoiId(poi ? poi.id : null)}
+                  onSelectDusun={handleSelectDusun}
+                  onSelectPoi={handleSelectPoi}
                   showOuterBoundary={true}
                   showDusunBoundaries={false}
                   showWaterways={false}

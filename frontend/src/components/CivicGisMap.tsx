@@ -59,20 +59,20 @@ interface CivicGisMapProps {
   showWaterways?: boolean;
 }
 
-export default function CivicGisMap({
+function CivicGisMapComponent({
   selectedDusun = "all",
   selectedPoiId = null,
   onSelectDusun,
   onSelectPoi,
   basemapMode: externalBasemapMode,
   onToggleBasemap,
-  showOuterBoundary = true,
 }: CivicGisMapProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<LeafletMap | null>(null);
   const tileLayerRef = useRef<TileLayer | null>(null);
   const poiGroupRef = useRef<LayerGroup | null>(null);
   const boundaryLayerRef = useRef<Polygon | null>(null);
+  const coordsSpanRef = useRef<HTMLSpanElement>(null);
 
   // Stable callback refs to prevent map re-initialization on parent re-renders
   const onSelectDusunRef = useRef(onSelectDusun);
@@ -84,10 +84,7 @@ export default function CivicGisMap({
 
   const [internalBasemap, setInternalBasemap] = useState<"satellite" | "streets">("satellite");
   const activeBasemap = externalBasemapMode || internalBasemap;
-
-  const [cursorCoords, setCursorCoords] = useState<string>(
-    `${BALAI_DESA_LOCATION.lat.toFixed(5)}, ${BALAI_DESA_LOCATION.lng.toFixed(5)}`
-  );
+  const currentBasemapRef = useRef<"satellite" | "streets">("satellite");
 
   const handleBasemapChange = (mode: "satellite" | "streets") => {
     setInternalBasemap(mode);
@@ -139,6 +136,7 @@ export default function CivicGisMap({
         zoomControl: false,
         scrollWheelZoom: false,
         attributionControl: false,
+        fadeAnimation: false, // Prevents tile flickering/blinking during load & zoom
       });
 
       // Zoom Control (Bottom Right)
@@ -150,18 +148,21 @@ export default function CivicGisMap({
 
       const tileLayer = L.tileLayer(initialLayerUrl, {
         maxZoom: 19,
+        keepBuffer: 8,
+        updateWhenZooming: false,
         attribution: "© OpenStreetMap / Esri ArcGIS",
       }).addTo(map);
 
       tileLayerRef.current = tileLayer;
+      currentBasemapRef.current = "satellite";
 
-      // 100% Official Kemendagri Boundary Polygon (125 points)
+      // 100% Official Kemendagri Boundary Polygon (125 points) - Calm, stable rendering (0 flicker)
       const boundary = L.polygon(KADURAMA_OFFICIAL_BOUNDARY, {
         color: "#009388",
         weight: 2.5,
         opacity: 0.95,
         fillColor: "#009388",
-        fillOpacity: 0.12,
+        fillOpacity: 0.15,
         dashArray: "6, 6",
       });
 
@@ -171,23 +172,8 @@ export default function CivicGisMap({
           <div class="text-[10px] text-[#009388] font-medium">GIS Dukcapil Kemendagri • Ref: 32.08.10.2002</div>
           <div class="text-[9px] text-slate-500 mt-0.5">125 Titik Koordinat Presisi</div>
         </div>`,
-        { sticky: true }
+        { direction: "top", offset: [0, -10] }
       );
-
-      boundary.on("mouseover", () => {
-        boundary.setStyle({
-          weight: 3.5,
-          fillOpacity: 0.22,
-          color: "#00bba7",
-        });
-      });
-      boundary.on("mouseout", () => {
-        boundary.setStyle({
-          weight: 2.5,
-          fillOpacity: 0.12,
-          color: "#009388",
-        });
-      });
 
       boundary.addTo(map);
       boundaryLayerRef.current = boundary;
@@ -202,14 +188,14 @@ export default function CivicGisMap({
         console.warn("fitBounds initial:", err);
       }
 
-      // Group for Official Verified Marker (Kantor Balai Desa)
+      // Group for Official Verified Marker (Kantor Balai Desa) - Calm static glow, 0 blinking
       const poiGroup = L.layerGroup().addTo(map);
       poiGroupRef.current = poiGroup;
 
       OFFICIAL_POINTS.forEach((poi) => {
         const pinHtml = `
           <div class="relative flex items-center justify-center cursor-pointer group">
-            <div class="absolute w-9 h-9 rounded-full bg-[#eda50c]/40 animate-ping"></div>
+            <div class="absolute w-8 h-8 rounded-full bg-[#eda50c]/25"></div>
             <div class="relative w-8 h-8 rounded-full bg-[#eda50c] border-2 border-white shadow-xl flex items-center justify-center transition-transform transform group-hover:scale-110">
               <svg class="w-4 h-4 text-[#005851]" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/>
@@ -247,15 +233,15 @@ export default function CivicGisMap({
         poiGroup.addLayer(marker);
       });
 
-      // Throttled real-time coordinates tracking
+      // Direct DOM update for coordinates (Zero React Re-renders on mousemove!)
       let lastMoveTime = 0;
       map.on("mousemove", (e) => {
         const now = Date.now();
-        if (now - lastMoveTime < 120) return;
+        if (now - lastMoveTime < 80) return;
         lastMoveTime = now;
-        const lat = e.latlng.lat.toFixed(5);
-        const lng = e.latlng.lng.toFixed(5);
-        setCursorCoords(`${lat}, ${lng}`);
+        if (coordsSpanRef.current) {
+          coordsSpanRef.current.textContent = `${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
+        }
       });
 
       mapRef.current = map;
@@ -276,9 +262,12 @@ export default function CivicGisMap({
     };
   }, []); // Run ONLY once on mount! Never destroy/recreate on parent re-renders!
 
-  // Update Basemap Layer when mode changes
+  // Update Basemap Layer ONLY when mode actually changes
   useEffect(() => {
     if (!mapRef.current || !tileLayerRef.current) return;
+    if (currentBasemapRef.current === activeBasemap) return; // Skip redundant reloads!
+
+    currentBasemapRef.current = activeBasemap;
 
     import("leaflet").then((L) => {
       if (!mapRef.current || !tileLayerRef.current) return;
@@ -292,6 +281,8 @@ export default function CivicGisMap({
 
       const newLayer = L.tileLayer(newUrl, {
         maxZoom: 19,
+        keepBuffer: 8,
+        updateWhenZooming: false,
         attribution: "© OpenStreetMap / Esri ArcGIS",
       }).addTo(mapRef.current);
 
@@ -340,7 +331,7 @@ export default function CivicGisMap({
   }, [selectedDusun, selectedPoiId]);
 
   return (
-    <div className="relative w-full h-full min-h-[460px] bg-slate-900 select-none">
+    <div className="relative w-full h-full min-h-[460px] bg-slate-900 select-none overflow-hidden [contain:paint]">
       <div ref={containerRef} className="w-full h-full min-h-[460px] z-10" />
 
       {/* Modern Floating Header Bar (Top-Right): Fit Wilayah + Basemap Switcher */}
@@ -385,10 +376,10 @@ export default function CivicGisMap({
         </div>
       </div>
 
-      {/* Floating Info Badge Top-Left */}
+      {/* Floating Info Badge Top-Left - Solid dot, 0 blinking */}
       <div className="absolute top-3 left-3 z-[1000] pointer-events-none hidden sm:flex items-center gap-2">
         <div className="bg-white/95 backdrop-blur-md px-3 py-1.5 rounded-xl border border-slate-200/80 shadow-md flex items-center gap-2 text-[11px] font-semibold text-slate-800">
-          <span className="w-2 h-2 rounded-full bg-[#009388] animate-pulse"></span>
+          <span className="w-2 h-2 rounded-full bg-[#009388]"></span>
           <span>Desa Kadurama • GIS Dukcapil Kemendagri</span>
         </div>
       </div>
@@ -398,7 +389,9 @@ export default function CivicGisMap({
         <div className="flex items-center gap-3">
           <span className="text-slate-400">
             Koordinat:{" "}
-            <span className="font-mono text-emerald-400 font-semibold">{cursorCoords}</span>
+            <span ref={coordsSpanRef} className="font-mono text-emerald-400 font-semibold">
+              {BALAI_DESA_LOCATION.lat.toFixed(5)}, {BALAI_DESA_LOCATION.lng.toFixed(5)}
+            </span>
           </span>
           <span className="text-slate-600 hidden sm:inline">|</span>
           <span className="text-slate-400 hidden sm:inline">
@@ -410,3 +403,6 @@ export default function CivicGisMap({
     </div>
   );
 }
+
+const CivicGisMap = React.memo(CivicGisMapComponent);
+export default CivicGisMap;

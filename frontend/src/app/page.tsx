@@ -1731,6 +1731,22 @@ export default function Home() {
   const [gisSelectedPoiId, setGisSelectedPoiId] = useState<string | number | null>("balai-desa");
   const [gisBasemapMode, setGisBasemapMode] = useState<"satellite" | "streets">("satellite");
 
+  const handleGisToggleBasemap = useCallback((m: "satellite" | "streets") => {
+    setGisBasemapMode(m);
+  }, []);
+
+  const handleGisSelectDusun = useCallback((d: "all" | "manis" | "pahing" | "wage") => {
+    setGisSelectedDusun(d);
+    setGisSelectedPoiId(null);
+  }, []);
+
+  const handleGisSelectPoi = useCallback((p: CivicPoint) => {
+    setGisSelectedPoiId(p.id);
+    if (p.dusun !== "all") {
+      setGisSelectedDusun(p.dusun);
+    }
+  }, []);
+
   // Admin Panel States
   const [adminTab, setAdminTab] = useState<
     "sensus" | "residents" | "berita" | "apbdes"
@@ -3151,7 +3167,7 @@ export default function Home() {
               {/* CONSOLE TOP TOOLBAR */}
               <div className="px-5 py-3.5 bg-slate-50/80 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 rounded-full bg-[#009388] animate-pulse" />
+                  <div className="w-2.5 h-2.5 rounded-full bg-[#009388]" />
                   <span className="font-bold text-slate-800 text-xs">
                     Peta Batas Wilayah & Titik Sentral Desa Kadurama
                   </span>
@@ -3179,17 +3195,9 @@ export default function Home() {
                       selectedDusun={gisSelectedDusun}
                       selectedPoiId={gisSelectedPoiId}
                       basemapMode={gisBasemapMode}
-                      onToggleBasemap={(m) => setGisBasemapMode(m)}
-                      onSelectDusun={(d) => {
-                        setGisSelectedDusun(d);
-                        setGisSelectedPoiId(null);
-                      }}
-                      onSelectPoi={(p) => {
-                        setGisSelectedPoiId(p.id);
-                        if (p.dusun !== "all") {
-                          setGisSelectedDusun(p.dusun);
-                        }
-                      }}
+                      onToggleBasemap={handleGisToggleBasemap}
+                      onSelectDusun={handleGisSelectDusun}
+                      onSelectPoi={handleGisSelectPoi}
                     />
                   ) : (
                     <div className="w-full h-full min-h-[480px] bg-slate-900 flex flex-col items-center justify-center text-slate-300 text-xs p-6 text-center">
