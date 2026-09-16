@@ -535,7 +535,7 @@ export const INITIAL_SENSUS_KK: SensusKK[] = [
       adaAnakPutusSekolah: false,
     },
     bansosAktif: "Tidak Ada (Non-Bansos)",
-    surveyorKadus: "Ahmad Dahlan (Kadus Manis)",
+    surveyorKadus: "Jamaludin (Kadus Manis)",
     tanggalSensus: "10 September 2026",
     catatanVerifikasi: "Kondisi ekonomi mandiri, aktif membayar PBB tahunan.",
   },
@@ -572,7 +572,7 @@ export const INITIAL_SENSUS_KK: SensusKK[] = [
       adaAnakPutusSekolah: false,
     },
     bansosAktif: "BLT Dana Desa",
-    surveyorKadus: "Rohmat Hidayat (Kadus Pahing)",
+    surveyorKadus: "Trida Sentosa (Kadus Pahing)",
     tanggalSensus: "11 September 2026",
     catatanVerifikasi: "Lantai ruang tengah masih tanah merah, balita usia 2 tahun terindikasi berat badan kurang, perlu intervensi PMT Posyandu.",
   },
@@ -609,7 +609,7 @@ export const INITIAL_SENSUS_KK: SensusKK[] = [
       adaAnakPutusSekolah: false,
     },
     bansosAktif: "BPNT",
-    surveyorKadus: "Agus Setiawan (Kadus Wage)",
+    surveyorKadus: "Andri Rukmana (Kadus Wage)",
     tanggalSensus: "09 September 2026",
     catatanVerifikasi: "Keluarga tertib pajak, menerima bantuan sembako rutin BPNT.",
   },
@@ -646,7 +646,7 @@ export const INITIAL_SENSUS_KK: SensusKK[] = [
       adaAnakPutusSekolah: false,
     },
     bansosAktif: "Tidak Ada (Non-Bansos)",
-    surveyorKadus: "Ahmad Dahlan (Kadus Manis)",
+    surveyorKadus: "Jamaludin (Kadus Manis)",
     tanggalSensus: "08 September 2026",
     catatanVerifikasi: "Ekonomi mapan, rumah sangat layak dan sanitasi memenuhi standar kesehatan.",
   },
@@ -683,7 +683,7 @@ export const INITIAL_SENSUS_KK: SensusKK[] = [
       adaAnakPutusSekolah: false,
     },
     bansosAktif: "Tidak Ada (Non-Bansos)",
-    surveyorKadus: "Rohmat Hidayat (Kadus Pahing)",
+    surveyorKadus: "Trida Sentosa (Kadus Pahing)",
     tanggalSensus: "10 September 2026",
     catatanVerifikasi: "Kelompok tani mandiri, berkontribusi aktif dalam ketahanan pangan dusun.",
   },
@@ -720,7 +720,7 @@ export const INITIAL_SENSUS_KK: SensusKK[] = [
       adaAnakPutusSekolah: false,
     },
     bansosAktif: "PKH",
-    surveyorKadus: "Rohmat Hidayat (Kadus Pahing)",
+    surveyorKadus: "Trida Sentosa (Kadus Pahing)",
     tanggalSensus: "12 September 2026",
     catatanVerifikasi: "Prioritas tertinggi Bedah Rumah (RTLH). Tinggal bersama ibu lansia berusia 76 tahun dengan atap bocor parah dan sanitasi belum ada.",
   },
@@ -757,7 +757,7 @@ export const INITIAL_SENSUS_KK: SensusKK[] = [
       adaAnakPutusSekolah: false,
     },
     bansosAktif: "Tidak Ada (Non-Bansos)",
-    surveyorKadus: "Agus Setiawan (Kadus Wage)",
+    surveyorKadus: "Andri Rukmana (Kadus Wage)",
     tanggalSensus: "11 September 2026",
     catatanVerifikasi: "Memiliki 3 ekor sapi perah produktif, memanfaatkan air dari mata air Cikaduran.",
   },
@@ -794,7 +794,7 @@ export const INITIAL_SENSUS_KK: SensusKK[] = [
       adaAnakPutusSekolah: false,
     },
     bansosAktif: "Bansos Lansia",
-    surveyorKadus: "Agus Setiawan (Kadus Wage)",
+    surveyorKadus: "Andri Rukmana (Kadus Wage)",
     tanggalSensus: "12 September 2026",
     catatanVerifikasi: "Kepala keluarga lansia usia 68 tahun dengan keterbatasan mobilitas fisik, rumah berdinding bilik bambu lapuk.",
   },
@@ -831,7 +831,7 @@ export const INITIAL_SENSUS_KK: SensusKK[] = [
       adaAnakPutusSekolah: false,
     },
     bansosAktif: "Tidak Ada (Non-Bansos)",
-    surveyorKadus: "Ahmad Dahlan (Kadus Manis)",
+    surveyorKadus: "Jamaludin (Kadus Manis)",
     tanggalSensus: "09 September 2026",
     catatanVerifikasi: "Pelaku UMKM rengginang & keripik ubi khas Kadurama.",
   },
@@ -868,7 +868,7 @@ export const INITIAL_SENSUS_KK: SensusKK[] = [
       adaAnakPutusSekolah: false,
     },
     bansosAktif: "PKH",
-    surveyorKadus: "Ahmad Dahlan (Kadus Manis)",
+    surveyorKadus: "Jamaludin (Kadus Manis)",
     tanggalSensus: "13 September 2026",
     catatanVerifikasi: "Atap seng bocor di bagian dapur, balita usia 18 bulan masuk pantauan posyandu dusun manis.",
   },
@@ -905,7 +905,7 @@ export const INITIAL_SENSUS_KK: SensusKK[] = [
       adaAnakPutusSekolah: false,
     },
     bansosAktif: "Tidak Ada (Non-Bansos)",
-    surveyorKadus: "Rohmat Hidayat (Kadus Pahing)",
+    surveyorKadus: "Trida Sentosa (Kadus Pahing)",
     tanggalSensus: "08 September 2026",
     catatanVerifikasi: "Keluarga mandiri, mengelola sawah produktif seluas 140 bata.",
   },
@@ -942,7 +942,7 @@ export const INITIAL_SENSUS_KK: SensusKK[] = [
       adaAnakPutusSekolah: false,
     },
     bansosAktif: "BPNT",
-    surveyorKadus: "Agus Setiawan (Kadus Wage)",
+    surveyorKadus: "Andri Rukmana (Kadus Wage)",
     tanggalSensus: "10 September 2026",
     catatanVerifikasi: "Membuka bengkel tambal ban kecil di rumah, pembayaran PBB tertib.",
   },
@@ -1148,7 +1148,7 @@ export const DUSUN_REGISTRY_DATA: Record<
     tag: "Wilayah Administratif",
     name: "Desa Kadurama",
     sub: "Kecamatan Ciawigebang, Kabupaten Kuningan",
-    lead: "Suhendra, S.Sos",
+    lead: "Samir Syarifudin",
     leadRole: "Kepala Desa Kadurama",
     area: "89.0 Hektar",
     kk: "492 KK",
@@ -1165,7 +1165,7 @@ export const DUSUN_REGISTRY_DATA: Record<
     tag: "Dusun I (Pertanian & Olahraga)",
     name: "Dusun Pahing",
     sub: "Lumbung Pangan & Gelora Olahraga Desa",
-    lead: "Rohmat Hidayat",
+    lead: "Trida Sentosa",
     leadRole: "Kepala Dusun I Pahing",
     area: "27.0 Hektar",
     kk: "162 KK",
@@ -1182,7 +1182,7 @@ export const DUSUN_REGISTRY_DATA: Record<
     tag: "Dusun II (Konservasi & Religi)",
     name: "Dusun Wage",
     sub: "Mata Air Cikaduran & Pendidikan Santri",
-    lead: "Agus Setiawan",
+    lead: "Andri Rukmana",
     leadRole: "Kepala Dusun II Wage",
     area: "23.0 Hektar",
     kk: "146 KK",
@@ -1199,7 +1199,7 @@ export const DUSUN_REGISTRY_DATA: Record<
     tag: "Dusun III (Pemerintahan & Pelayanan Publik)",
     name: "Dusun Manis",
     sub: "Pusat Pelayanan Publik, Balai Desa & KUA",
-    lead: "Ahmad Dahlan",
+    lead: "Jamaludin",
     leadRole: "Kepala Dusun III Manis",
     area: "39.0 Hektar",
     kk: "184 KK",
@@ -2165,11 +2165,11 @@ export default function Home() {
       bansosAktif: "Tidak Ada (Non-Bansos)",
       surveyorKadus:
         adminKadusRole === "Manis"
-          ? "Ahmad Dahlan (Kadus Manis)"
+          ? "Jamaludin (Kadus Manis)"
           : adminKadusRole === "Pahing"
-            ? "Rohmat Hidayat (Kadus Pahing)"
+            ? "Trida Sentosa (Kadus Pahing)"
             : adminKadusRole === "Wage"
-              ? "Agus Setiawan (Kadus Wage)"
+              ? "Andri Rukmana (Kadus Wage)"
               : "Operator Balai Desa",
       tanggalSensus: "15 September 2026",
       catatanVerifikasi: "Hasil sensus verifikasi lapangan oleh Kepala Dusun.",
@@ -2707,7 +2707,7 @@ export default function Home() {
                     <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                       <div className="flex items-center gap-2.5 text-slate-200">
                         <span className="w-2 h-2 rounded-full bg-[#009388]" />
-                        <span>Kepala Dusun III: <strong className="text-white">Bpk. Ahmad Dahlan</strong></span>
+                        <span>Kepala Dusun III: <strong className="text-white">Bpk. Jamaludin</strong></span>
                         <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 03 / RW 01</span>
                       </div>
                       <div className="flex items-center gap-2.5">
@@ -2796,7 +2796,7 @@ export default function Home() {
                     <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                       <div className="flex items-center gap-2.5 text-slate-200">
                         <span className="w-2 h-2 rounded-full bg-[#eda50c]" />
-                        <span>Kepala Dusun I: <strong className="text-white">Bpk. Rohmat Hidayat</strong></span>
+                        <span>Kepala Dusun I: <strong className="text-white">Bpk. Trida Sentosa</strong></span>
                         <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 03 / RW 01</span>
                       </div>
                       <div className="flex items-center gap-2.5">
@@ -2885,7 +2885,7 @@ export default function Home() {
                     <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                       <div className="flex items-center gap-2.5 text-slate-200">
                         <span className="w-2 h-2 rounded-full bg-[#009388]" />
-                        <span>Kepala Dusun II: <strong className="text-white">Bpk. Agus Setiawan</strong></span>
+                        <span>Kepala Dusun II: <strong className="text-white">Bpk. Andri Rukmana</strong></span>
                         <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 02 / RW 01</span>
                       </div>
                       <div className="flex items-center gap-2.5">
@@ -2974,7 +2974,7 @@ export default function Home() {
                     <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                       <div className="flex items-center gap-2.5 text-slate-200">
                         <span className="w-2 h-2 rounded-full bg-[#009388]" />
-                        <span>Kepala Dusun III: <strong className="text-white">Bpk. Ahmad Dahlan</strong></span>
+                        <span>Kepala Dusun III: <strong className="text-white">Bpk. Jamaludin</strong></span>
                         <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 03 / RW 01</span>
                       </div>
                       <div className="flex items-center gap-2.5">
@@ -3063,7 +3063,7 @@ export default function Home() {
                     <div className="pt-4 border-t border-white/15 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
                       <div className="flex items-center gap-2.5 text-slate-200">
                         <span className="w-2 h-2 rounded-full bg-[#eda50c]" />
-                        <span>Kepala Dusun I: <strong className="text-white">Bpk. Rohmat Hidayat</strong></span>
+                        <span>Kepala Dusun I: <strong className="text-white">Bpk. Trida Sentosa</strong></span>
                         <span className="text-slate-400">• Wilayah Kerja RT 01 s.d. RT 03 / RW 01</span>
                       </div>
                       <div className="flex items-center gap-2.5">
@@ -3585,9 +3585,9 @@ export default function Home() {
                     Pimpinan Pemerintah Desa
                   </div>
                   <h3 className="text-2xl sm:text-4xl font-extrabold text-white mt-1 uppercase">
-                    SUHENDRA, S.Sos
+                    SAMIR SYARIFUDIN
                   </h3>
-                  <p className="text-xs font-mono text-emerald-200 mt-0.5">NIP. 19780412 200501 1 008</p>
+                  <p className="text-xs font-mono text-emerald-200 mt-0.5">Kepala Desa (Kuwu) Kadurama</p>
                 </div>
 
                 <blockquote className="text-sm sm:text-base text-emerald-100 italic border-l-2 border-[#eda50c] pl-4 py-1 leading-relaxed">
@@ -3605,7 +3605,7 @@ export default function Home() {
                   </div>
                   <div>
                     <span className="text-emerald-300 block text-[11px]">Wilayah Koordinasi</span>
-                    <span className="font-semibold text-[#eda50c]">3 Dusun & 21 RT</span>
+                    <span className="font-semibold text-[#eda50c]">3 Dusun (8 RT & 3 RW)</span>
                   </div>
                 </div>
               </div>
@@ -3617,7 +3617,7 @@ export default function Home() {
               <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden group hover:border-[#009388] hover:shadow-lg transition">
                 <div className="relative h-72 overflow-hidden bg-slate-800">
                   <img
-                    src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=500&q=80"
+                    src="https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=500&q=80"
                     alt="Sekretaris Desa"
                     className="w-full h-full object-cover grayscale contrast-125 group-hover:grayscale-0 group-hover:scale-105 transition-all duration-500"
                   />
@@ -3629,15 +3629,14 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="p-5">
-                  <h4 className="font-extrabold text-slate-900 text-base uppercase">DADANG KURNIA</h4>
+                  <h4 className="font-extrabold text-slate-900 text-base uppercase">SUMIATI, SE</h4>
                   <div className="text-xs font-semibold text-[#009388] mt-0.5">Sekretaris Desa</div>
                   <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
-                    Koordinator administrasi umum, perencanaan pembangunan, dan verifikasi basis data sensus desa.
+                    Koordinator administrasi umum, tata kelola regulasi perdes, perumusan APBDes, dan verifikasi basis data sensus desa.
                   </p>
                 </div>
               </div>
 
-              {/* Kadus Manis */}
               {/* Kadus I Pahing */}
               <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden group hover:border-[#009388] hover:shadow-lg transition">
                 <div className="relative h-72 overflow-hidden bg-slate-800">
@@ -3654,7 +3653,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="p-5">
-                  <h4 className="font-extrabold text-slate-900 text-base uppercase">ROHMAT HIDAYAT</h4>
+                  <h4 className="font-extrabold text-slate-900 text-base uppercase">TRIDA SENTOSA</h4>
                   <div className="text-xs font-semibold text-[#009388] mt-0.5">Kepala Dusun Pahing</div>
                   <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
                     Penanggung jawab ketenteraman wilayah Dusun I Pahing (3 RT / 1 RW), pengelola sarana olahraga Gelora Kadurama, serta pengawasan fasilitas pendidikan SD & TK.
@@ -3678,7 +3677,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="p-5">
-                  <h4 className="font-extrabold text-slate-900 text-base uppercase">AGUS SETIAWAN</h4>
+                  <h4 className="font-extrabold text-slate-900 text-base uppercase">ANDRI RUKMANA</h4>
                   <div className="text-xs font-semibold text-[#009388] mt-0.5">Kepala Dusun Wage</div>
                   <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
                     Pengawal kelestarian mata air alami Cikaduran, pembina kerukunan religi pondok pesantren, masjid, mushola, serta pengayom Dusun II Wage (2 RT / 1 RW).
@@ -3702,7 +3701,7 @@ export default function Home() {
                   </div>
                 </div>
                 <div className="p-5">
-                  <h4 className="font-extrabold text-slate-900 text-base uppercase">AHMAD DAHLAN</h4>
+                  <h4 className="font-extrabold text-slate-900 text-base uppercase">JAMALUDIN</h4>
                   <div className="text-xs font-semibold text-[#009388] mt-0.5">Kepala Dusun Manis</div>
                   <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
                     Penanggung jawab ketenteraman wilayah gerbang desa Dusun III Manis (3 RT / 1 RW), koordinasi pelayanan publik di Balai Desa, KUA, serta pembinaan lembaga sosial.

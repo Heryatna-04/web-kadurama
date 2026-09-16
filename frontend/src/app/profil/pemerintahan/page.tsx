@@ -22,6 +22,7 @@ export default function PemerintahanPage() {
   const sekretariatList = PAMONG_LIST.filter((p) => p.category === "Sekretariat" && !p.role.includes("Kuwu"));
   const teknisList = PAMONG_LIST.filter((p) => p.category === "Pelaksana Teknis");
   const kewilayahanList = PAMONG_LIST.filter((p) => p.category === "Kewilayahan");
+  const lpmList = PAMONG_LIST.filter((p) => p.category === "LPM");
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">
@@ -115,7 +116,7 @@ export default function PemerintahanPage() {
                   </div>
                   <div>
                     <span className="text-emerald-300 block text-[11px]">Wilayah Koordinasi</span>
-                    <span className="font-semibold text-[#eda50c]">3 Dusun & 21 RT</span>
+                    <span className="font-semibold text-[#eda50c]">3 Dusun (8 RT & 3 RW)</span>
                   </div>
                 </div>
               </div>
@@ -313,6 +314,46 @@ export default function PemerintahanPage() {
                         </Link>
                       )}
                     </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* TINGKAT 6: LEMBAGA PEMBERDAYAAN MASYARAKAT (LPM) */}
+          <div className="space-y-4">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-xl bg-[#eda50c] text-slate-950 font-bold flex items-center justify-center text-xs">
+                VI
+              </div>
+              <div>
+                <h2 className="text-lg font-bold text-slate-900 uppercase tracking-wide">
+                  Lembaga Pemberdayaan Masyarakat (LPM)
+                </h2>
+                <p className="text-xs text-slate-500">Lembaga kemasyarakatan mitra pemerintah desa dalam menumbuhkan prakarsa dan gotong royong warga</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {lpmList.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white rounded-3xl border border-slate-200 p-6 shadow-xs hover:border-[#eda50c] transition flex flex-col justify-between"
+                >
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-amber-50 text-amber-900 border border-amber-200 uppercase">
+                        {item.role}
+                      </span>
+                      <Award className="w-4 h-4 text-[#eda50c]" />
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-slate-900 text-base">{item.name}</h4>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">{item.bio}</p>
+                    </div>
+                  </div>
+                  <div className="mt-4 pt-3 border-t border-slate-100 text-[11px] text-slate-400 font-medium">
+                    {item.workArea}
                   </div>
                 </div>
               ))}
