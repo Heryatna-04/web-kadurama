@@ -77,7 +77,7 @@ export default function CivicNavbar({ onOpenAdminLogin }: CivicNavbarProps) {
           <Link href="/" className="flex items-center gap-3.5 min-w-0 group">
             <div className="relative w-11 h-11 flex-shrink-0 flex items-center justify-center">
               <Image
-                src="/logo-kuningan.png"
+                src="/logo-kuningan-sm.webp"
                 alt="Logo Kabupaten Kuningan"
                 width={40}
                 height={40}

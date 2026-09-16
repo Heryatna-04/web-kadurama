@@ -215,7 +215,11 @@ export default function CivicGisMap({
           iconAnchor: [10, 10]
         });
 
-        const marker = L.marker([poi.lat, poi.lng], { icon });
+        const marker = L.marker([poi.lat, poi.lng], {
+          icon,
+          title: `${poi.name} - ${poi.cat}`,
+          alt: `${poi.name} - ${poi.cat}`,
+        });
         marker.on("click", () => {
           onSelectPoi(poi);
         });

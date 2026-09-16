@@ -1,0 +1,26 @@
+{
+  "type": "FeatureCollection",
+  "generator": "Overpass API OSM Extractor (Desa Kadurama)",
+  "copyright": "The data included in this document is from www.openstreetmap.org. OpenStreetMap contributors (ODbL).",
+  "timestamp": "2026-09-16T11:18:04.948Z",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "node/1308679792",
+      "properties": {
+        "admin_level": "7",
+        "name": "Kadurama",
+        "place": "village",
+        "ref": "32.08.10.2002",
+        "wikidata": "Q12488440"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          108.5985313,
+          -6.9787612
+        ]
+      }
+    }
+  ]
+}

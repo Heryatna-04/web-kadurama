@@ -15,7 +15,7 @@ export default function CivicFooter() {
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 relative flex-shrink-0 flex items-center justify-center bg-white/10 rounded-xl p-1 border border-white/20">
                 <Image
-                  src="/logo-kuningan.png"
+                  src="/logo-kuningan-sm.webp"
                   alt="Logo Kabupaten Kuningan"
                   width={32}
                   height={32}
@@ -27,7 +27,7 @@ export default function CivicFooter() {
                   DESA KADURAMA
                 </div>
                 <div className="text-[11px] text-emerald-300 font-mono">
-                  Kode Desa: 32.08.15.2001
+                  Kode Desa: 32.08.10.2002
                 </div>
               </div>
             </div>

@@ -1785,105 +1785,148 @@ export default function Home() {
   const [isEditBidangModalOpen, setIsEditBidangModalOpen] = useState(false);
   const [isEditTotalsModalOpen, setIsEditTotalsModalOpen] = useState(false);
 
-  // GSAP Animations Effect
+  // GSAP Animations Effect (Desktop & Tablet Optimized)
   useEffect(() => {
     let ctx: any;
     const initGsap = async () => {
       try {
+        // Cek preferensi accessibility reduced-motion
+        if (typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+          return;
+        }
+
         const { gsap } = await import("gsap");
         const { ScrollTrigger } = await import("gsap/ScrollTrigger");
         gsap.registerPlugin(ScrollTrigger);
 
         ctx = gsap.context(() => {
-          // Hero Timeline Entrance
+          // 1. Hero Entrance Timeline
           const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
           tl.fromTo(
             "#hero-badge",
-            { opacity: 0, y: -20 },
-            { opacity: 1, y: 0, duration: 0.7 }
+            { opacity: 0, y: -16 },
+            { opacity: 1, y: 0, duration: 0.6 }
           )
             .fromTo(
               "#hero-title",
-              { opacity: 0, y: 30 },
-              { opacity: 1, y: 0, duration: 0.8 },
-              "-=0.4"
+              { opacity: 0, y: 24 },
+              { opacity: 1, y: 0, duration: 0.7 },
+              "-=0.3"
             )
             .fromTo(
               "#hero-desc",
-              { opacity: 0, y: 20 },
-              { opacity: 1, y: 0, duration: 0.7 },
-              "-=0.5"
+              { opacity: 0, y: 16 },
+              { opacity: 1, y: 0, duration: 0.6 },
+              "-=0.4"
             )
             .fromTo(
               "#hero-actions",
-              { opacity: 0, y: 20 },
-              { opacity: 1, y: 0, duration: 0.7 },
-              "-=0.5"
+              { opacity: 0, y: 16 },
+              { opacity: 1, y: 0, duration: 0.6 },
+              "-=0.4"
             )
             .fromTo(
               "#hero-gate-card",
-              { opacity: 0, scale: 0.94, y: 30 },
-              { opacity: 1, scale: 1, y: 0, duration: 1 },
-              "-=0.6"
+              { opacity: 0, scale: 0.96, y: 20 },
+              { opacity: 1, scale: 1, y: 0, duration: 0.8 },
+              "-=0.5"
             );
 
-          // APBDes ScrollTrigger Animation
-          const apbdesEl = document.getElementById("apbdes");
-          if (apbdesEl) {
-            ScrollTrigger.create({
-              trigger: apbdesEl,
-              start: "top 75%",
-              once: true,
-              onEnter: () => {
-                // Animate progress bar
-                gsap.fromTo(
-                  "#apbdes-progress-bar",
-                  { width: "0%" },
-                  { width: "82.4%", duration: 1.6, ease: "power2.out" }
-                );
+          // Hanya aktifkan ScrollTrigger pada layar Tablet & Desktop (>= 768px)
+          // Menjaga skor Lighthouse mobile tetap tinggi tanpa overhead main-thread
+          if (window.innerWidth >= 768) {
+            // 2. APBDes ScrollTrigger Animation
+            const apbdesEl = document.getElementById("apbdes");
+            if (apbdesEl) {
+              ScrollTrigger.create({
+                trigger: apbdesEl,
+                start: "top 75%",
+                once: true,
+                onEnter: () => {
+                  // Animate progress bar (Belanja 856.4M / Pendapatan 898.1M = 95.4%)
+                  gsap.fromTo(
+                    "#apbdes-progress-bar",
+                    { width: "0%" },
+                    { width: "95.4%", duration: 1.4, ease: "power2.out" }
+                  );
 
-                // Animate numbers
-                const pObj = { val: 0 };
-                gsap.to(pObj, {
-                  val: 1485240000,
-                  duration: 2,
-                  ease: "power2.out",
-                  onUpdate: () => {
-                    const el = document.getElementById("apbdes-pendapatan-val");
-                    if (el) el.innerText = "Rp " + Math.floor(pObj.val).toLocaleString("id-ID");
-                  },
-                });
+                  // Animate numbers resmi APBDes 2026
+                  const pObj = { val: 0 };
+                  gsap.to(pObj, {
+                    val: 898152227,
+                    duration: 1.8,
+                    ease: "power2.out",
+                    onUpdate: () => {
+                      const el = document.getElementById("apbdes-pendapatan-val");
+                      if (el) el.innerText = "Rp " + Math.floor(pObj.val).toLocaleString("id-ID");
+                    },
+                  });
 
-                const bObj = { val: 0 };
-                gsap.to(bObj, {
-                  val: 1462800000,
-                  duration: 2,
-                  ease: "power2.out",
-                  onUpdate: () => {
-                    const el = document.getElementById("apbdes-belanja-val");
-                    if (el) el.innerText = "Rp " + Math.floor(bObj.val).toLocaleString("id-ID");
-                  },
-                });
+                  const bObj = { val: 0 };
+                  gsap.to(bObj, {
+                    val: 856452227,
+                    duration: 1.8,
+                    ease: "power2.out",
+                    onUpdate: () => {
+                      const el = document.getElementById("apbdes-belanja-val");
+                      if (el) el.innerText = "Rp " + Math.floor(bObj.val).toLocaleString("id-ID");
+                    },
+                  });
 
-                const sObj = { val: 0 };
-                gsap.to(sObj, {
-                  val: 82.4,
-                  duration: 2,
-                  ease: "power2.out",
-                  onUpdate: () => {
-                    const el = document.getElementById("apbdes-serapan-val");
-                    if (el) el.innerText = sObj.val.toFixed(1) + "%";
-                  },
-                });
+                  const sObj = { val: 0 };
+                  gsap.to(sObj, {
+                    val: 95.4,
+                    duration: 1.8,
+                    ease: "power2.out",
+                    onUpdate: () => {
+                      const el = document.getElementById("apbdes-serapan-val");
+                      if (el) el.innerText = sObj.val.toFixed(1) + "%";
+                    },
+                  });
 
-                // Animate 5 bidang cards
-                gsap.fromTo(
-                  ".apbdes-bidang-card",
-                  { opacity: 0, y: 20 },
-                  { opacity: 1, y: 0, stagger: 0.1, duration: 0.7, ease: "power2.out" }
-                );
-              },
-            });
+                  // Animate 5 bidang cards
+                  gsap.fromTo(
+                    ".apbdes-bidang-card",
+                    { opacity: 0, y: 20 },
+                    { opacity: 1, y: 0, stagger: 0.08, duration: 0.6, ease: "power2.out" }
+                  );
+                },
+              });
+            }
+
+            // 3. Layanan Warga Reveal
+            const layananEl = document.getElementById("layanan-warga");
+            if (layananEl) {
+              ScrollTrigger.create({
+                trigger: layananEl,
+                start: "top 75%",
+                once: true,
+                onEnter: () => {
+                  gsap.fromTo(
+                    ".civic-service-card",
+                    { opacity: 0, y: 20 },
+                    { opacity: 1, y: 0, stagger: 0.08, duration: 0.6, ease: "power2.out" }
+                  );
+                },
+              });
+            }
+
+            // 4. Warta Berita Reveal
+            const beritaEl = document.getElementById("berita");
+            if (beritaEl) {
+              ScrollTrigger.create({
+                trigger: beritaEl,
+                start: "top 75%",
+                once: true,
+                onEnter: () => {
+                  gsap.fromTo(
+                    ".warta-news-card",
+                    { opacity: 0, y: 20 },
+                    { opacity: 1, y: 0, stagger: 0.1, duration: 0.6, ease: "power2.out" }
+                  );
+                },
+              });
+            }
           }
         });
       } catch (err) {
@@ -2434,9 +2477,12 @@ export default function Home() {
 
           {/* 2. Landmark Gerbang Kabupaten Kuningan (2x Size di Tengah, Kiri Kanan Putih Menyatu Tanpa Blocking) */}
           <div className="absolute inset-x-0 bottom-0 w-full flex items-end justify-center pointer-events-none select-none z-0 mix-blend-multiply opacity-80 overflow-hidden">
-            <img
-              src="/kuningan-gate-wide.png"
+            <Image
+              src="/kuningan-gate-wide.webp"
               alt="Landmark Gerbang Kabupaten Kuningan"
+              width={2560}
+              height={358}
+              priority
               className="w-full h-[280px] sm:h-[320px] md:h-[360px] object-cover object-bottom select-none [mask-image:linear-gradient(to_top,black_80%,transparent)] filter brightness-105 contrast-110"
             />
           </div>
@@ -2506,9 +2552,12 @@ export default function Home() {
                   {/* Official Emblem: Lambang Kabupaten Kuningan */}
                   <div className="relative pt-2">
                     <div className="absolute inset-0 bg-gradient-to-tr from-[#eda50c]/35 to-emerald-400/20 rounded-full blur-2xl pointer-events-none" />
-                    <img
-                      src="/logo-kuningan.png"
+                    <Image
+                      src="/logo-kuningan-sm.webp"
                       alt="Lambang Resmi Kabupaten Kuningan"
+                      width={176}
+                      height={235}
+                      priority
                       className="relative w-36 sm:w-44 h-auto drop-shadow-[0_16px_32px_rgba(0,0,0,0.5)] transition-transform duration-500 group-hover:scale-105 mx-auto"
                     />
                   </div>
@@ -3098,7 +3147,7 @@ export default function Home() {
             </div>
 
             {/* SLIDE INDICATOR PILL DOTS DIRECTLY BENEATH STAGE */}
-            <div className="py-4 flex items-center justify-center gap-2.5">
+            <div className="py-4 flex items-center justify-center gap-1.5">
               {[0, 1, 2].map((idx) => {
                 const isActive = currentDusunRealIndex === idx;
                 return (
@@ -3106,11 +3155,16 @@ export default function Home() {
                     key={idx}
                     onClick={() => handleDotClick(idx)}
                     aria-label={`Lihat Dusun ${idx + 1}`}
-                    className={`transition-all duration-300 cursor-pointer ${isActive
-                      ? "w-10 h-2.5 rounded-full bg-[#009388] shadow-md shadow-[#009388]/30"
-                      : "w-2.5 h-2.5 rounded-full bg-slate-300 hover:bg-slate-400"
+                    className="min-w-[36px] min-h-[36px] p-2 flex items-center justify-center cursor-pointer rounded-full transition-colors hover:bg-slate-100"
+                  >
+                    <span
+                      className={`transition-all duration-300 block ${
+                        isActive
+                          ? "w-10 h-2.5 rounded-full bg-[#009388] shadow-md shadow-[#009388]/30"
+                          : "w-2.5 h-2.5 rounded-full bg-slate-300 hover:bg-slate-400"
                       }`}
-                  />
+                    />
+                  </button>
                 );
               })}
             </div>
@@ -3489,7 +3543,7 @@ export default function Home() {
               {CIVIC_SERVICES_DATA.slice(0, 5).map((srv) => (
                 <div
                   key={srv.id}
-                  className="bg-slate-50 rounded-2xl border border-slate-200 p-5 hover:border-[#009388]/50 hover:shadow-md transition flex flex-col justify-between group"
+                  className="civic-service-card bg-slate-50 rounded-2xl border border-slate-200 p-5 hover:border-[#009388]/50 hover:shadow-md transition flex flex-col justify-between group"
                 >
                   <div>
                     <div className="flex items-center justify-between gap-2 mb-2.5">
@@ -3535,7 +3589,7 @@ export default function Home() {
               ))}
 
               {/* Kartu ke-6: CTA Khusus "Lihat Selengkapnya" */}
-              <div className="bg-gradient-to-br from-[#003733] via-[#00423d] to-[#002825] text-white rounded-2xl p-5 border border-[#005851] shadow-xs flex flex-col justify-between hover:border-[#eda50c]/60 hover:shadow-lg transition-all duration-300 group">
+              <div className="civic-service-card bg-gradient-to-br from-[#003733] via-[#00423d] to-[#002825] text-white rounded-2xl p-5 border border-[#005851] shadow-xs flex flex-col justify-between hover:border-[#eda50c]/60 hover:shadow-lg transition-all duration-300 group">
                 <div>
                   <div className="flex items-center justify-between gap-2 mb-3">
                     <span className="px-2.5 py-0.5 rounded-md text-[10px] font-mono font-bold bg-[#eda50c] text-slate-950 shadow-2xs">
@@ -4010,7 +4064,7 @@ export default function Home() {
               return (
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
                   {/* 1 ARTIKEL UTAMA / BESAR (7 Cols) */}
-                  <article className="lg:col-span-7 bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:shadow-md transition flex flex-col justify-between group">
+                  <article className="warta-news-card lg:col-span-7 bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:shadow-md transition flex flex-col justify-between group">
                     <div>
                       <div className="h-64 sm:h-72 bg-slate-200 overflow-hidden relative">
                         <img
@@ -4056,7 +4110,7 @@ export default function Home() {
                   <div className="lg:col-span-5 flex flex-col justify-between gap-5">
                     {/* 1 ARTIKEL SEDANG (Horizontal Card) */}
                     {mediumItem && (
-                      <article className="bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:shadow-md transition group p-5 flex flex-col justify-between">
+                      <article className="warta-news-card bg-slate-50 border border-slate-200 rounded-3xl overflow-hidden hover:shadow-md transition group p-5 flex flex-col justify-between">
                         <div className="flex flex-col sm:flex-row gap-4">
                           <div className="w-full sm:w-32 h-28 flex-shrink-0 rounded-2xl overflow-hidden bg-slate-200 relative">
                             <img
@@ -4096,7 +4150,7 @@ export default function Home() {
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 flex-1">
                       {/* 1 ARTIKEL KECIL (Posyandu & Gizi) */}
                       {smallItem && (
-                        <article className="bg-slate-50 border border-slate-200 rounded-3xl p-4 hover:shadow-md transition group flex flex-col justify-between">
+                        <article className="warta-news-card bg-slate-50 border border-slate-200 rounded-3xl p-4 hover:shadow-md transition group flex flex-col justify-between">
                           <div>
                             <div className="flex items-center justify-between gap-1 mb-2">
                               <span className="text-[9px] font-bold px-2 py-0.5 rounded uppercase bg-emerald-100 text-[#005851]">

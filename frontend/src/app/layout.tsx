@@ -2,6 +2,8 @@ import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import "leaflet/dist/leaflet.css";
+import "lenis/dist/lenis.css";
+import SmoothScroll from "@/components/SmoothScroll";
 
 const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -47,8 +49,8 @@ export const metadata: Metadata = {
   creator: "Pemerintah Desa Kadurama",
   publisher: "Pemerintah Desa Kadurama",
   icons: {
-    icon: "/logo-kuningan.png",
-    apple: "/logo-kuningan.png",
+    icon: "/logo-kuningan-sm.webp",
+    apple: "/logo-kuningan-sm.webp",
   },
   openGraph: {
     type: "website",
@@ -60,9 +62,9 @@ export const metadata: Metadata = {
       "Akses data kependudukan riil 3 dusun, transparansi anggaran APBDes 2026, arsip warta kegiatan desa, dan panduan syarat administrasi warga secara terbuka.",
     images: [
       {
-        url: "/logo-kuningan.png",
-        width: 1107,
-        height: 1476,
+        url: "/logo-kuningan-sm.webp",
+        width: 400,
+        height: 533,
         alt: "Lambang Resmi Kabupaten Kuningan - Pemerintah Desa Kadurama",
       },
     ],
@@ -72,7 +74,7 @@ export const metadata: Metadata = {
     title: "Pemerintah Desa Kadurama - Kab. Kuningan",
     description:
       "Portal Resmi Informasi Publik dan Pelayanan Administrasi Warga Desa Kadurama, Ciawigebang, Kuningan.",
-    images: ["/logo-kuningan.png"],
+    images: ["/logo-kuningan-sm.webp"],
   },
   robots: {
     index: true,
@@ -99,8 +101,8 @@ export default function RootLayout({
     name: "Pemerintah Desa Kadurama",
     alternateName: ["Pemdes Kadurama", "Desa Kadurama"],
     url: siteUrl,
-    logo: `${siteUrl}/logo-kuningan.png`,
-    image: `${siteUrl}/kuningan-gate.png`,
+    logo: `${siteUrl}/logo-kuningan-sm.webp`,
+    image: `${siteUrl}/kuningan-gate-wide.webp`,
     description:
       "Pemerintah Desa Kadurama, Kecamatan Ciawigebang, Kabupaten Kuningan, Provinsi Jawa Barat.",
     address: {
@@ -135,7 +137,9 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans antialiased bg-slate-50 text-slate-800">
-        {children}
+        <SmoothScroll>
+          {children}
+        </SmoothScroll>
       </body>
     </html>
   );
