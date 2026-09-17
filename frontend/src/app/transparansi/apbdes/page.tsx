@@ -41,6 +41,10 @@ export default function TransparansiApbdesPage() {
   const [revenues, setRevenues] = useState<APBDesRevenue[]>(APBDES_REVENUES);
 
   useEffect(() => {
+    document.title = `Transparansi APBDes & Realisasi Anggaran ${selectedYear} | Desa Kadurama Kuningan`;
+  }, [selectedYear]);
+
+  useEffect(() => {
     async function loadData() {
       setLoading(true);
       try {

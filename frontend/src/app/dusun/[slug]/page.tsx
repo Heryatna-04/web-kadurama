@@ -3,12 +3,12 @@
 import React, { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import { useParams, notFound } from "next/navigation";
 import { DUSUN_DETAILS } from "@/data/dusunData";
 import { createClient } from "@/lib/supabase/client";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
+import CivicGisMap from "@/components/CivicGisMap";
 import {
   MapPin,
   Mountain,
@@ -32,17 +32,6 @@ import {
   Home as HomeIcon,
   CheckCircle2,
 } from "lucide-react";
-
-// Dynamic import for Leaflet GIS Map (SSR False)
-const CivicGisMap = dynamic(() => import("@/components/CivicGisMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full min-h-[420px] bg-slate-900 rounded-2xl flex flex-col items-center justify-center text-slate-400 gap-3">
-      <div className="w-8 h-8 border-2 border-[#009388] border-t-transparent rounded-full animate-spin" />
-      <span className="text-xs font-mono">Memuat Citra Satelit Dusun...</span>
-    </div>
-  ),
-});
 
 export default function DusunDetailPage() {
   const params = useParams();
@@ -93,6 +82,12 @@ export default function DusunDetailPage() {
     };
     fetchDusunLive();
   }, [slug, dusun.residentCount, dusun.kkCount]);
+
+  useEffect(() => {
+    if (dusun?.name) {
+      document.title = `${dusun.name} - Wilayah Kerja Kadus | Desa Kadurama Kuningan`;
+    }
+  }, [dusun]);
 
   return (
     <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">

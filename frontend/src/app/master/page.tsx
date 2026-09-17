@@ -209,6 +209,14 @@ export default function MasterPanelPage() {
     }
   }, []);
 
+  useEffect(() => {
+    if (currentUser) {
+      document.title = `Panel Data Center (${currentUser.role.toUpperCase()}) | Pemdes Kadurama`;
+    } else {
+      document.title = "Otorisasi Akses Pamong & Data Center | Pemdes Kadurama";
+    }
+  }, [currentUser]);
+
   // --------------------------------------------------------------------------
   // 2. FETCH DATA DARI SUPABASE
   // --------------------------------------------------------------------------

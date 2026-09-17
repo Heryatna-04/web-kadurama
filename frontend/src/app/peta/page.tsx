@@ -2,33 +2,10 @@
 
 import React, { useState, useCallback } from "react";
 import Link from "next/link";
-import dynamic from "next/dynamic";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
-import type { CivicPoint } from "@/components/CivicGisMap";
-import {
-  MapPin,
-  Layers,
-  ChevronRight,
-  ShieldCheck,
-  Building2,
-  Activity,
-  GraduationCap,
-  Sparkles,
-  Droplets,
-  ExternalLink,
-} from "lucide-react";
-
-// Dynamic import for Leaflet GIS Map (SSR safe)
-const CivicGisMap = dynamic(() => import("@/components/CivicGisMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-[580px] bg-slate-900 rounded-3xl flex flex-col items-center justify-center text-emerald-400 gap-3">
-      <div className="w-10 h-10 border-4 border-emerald-400 border-t-transparent rounded-full animate-spin" />
-      <span className="text-xs font-mono tracking-wider">Memuat Citra Satelit & Poligon GIS...</span>
-    </div>
-  ),
-});
+import CivicGisMap, { type CivicPoint } from "@/components/CivicGisMap";
+import { MapPin, ChevronRight, ExternalLink } from "lucide-react";
 
 export default function PetaPage() {
   const [selectedDusun, setSelectedDusun] = useState<"all" | "manis" | "pahing" | "wage">("all");
@@ -40,6 +17,10 @@ export default function PetaPage() {
 
   const handleSelectPoi = useCallback((poi: CivicPoint | null) => {
     setSelectedPoiId(poi ? poi.id : null);
+  }, []);
+
+  React.useEffect(() => {
+    document.title = "Peta Geospasial GIS Satelit & Batas Wilayah | Desa Kadurama Kuningan";
   }, []);
 
   const FACILITIES = [

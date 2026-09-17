@@ -22,6 +22,10 @@ export default function LayananKatalogPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedKategori, setSelectedKategori] = useState<string>("Semua");
 
+  React.useEffect(() => {
+    document.title = "Panduan & Syarat Layanan Administrasi Surat Warga | Desa Kadurama Kuningan";
+  }, []);
+
   const categories = ["Semua", "Kependudukan", "Kesejahteraan", "Usaha", "Pertanahan", "Umum"];
 
   const filteredServices = DAFTAR_LAYANAN_SURAT.filter((s) => {

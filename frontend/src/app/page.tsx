@@ -8,18 +8,7 @@ import CivicFooter from "@/components/CivicFooter";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { recordAuditLog } from "@/lib/supabase/audit";
-import dynamic from "next/dynamic";
-import { OFFICIAL_POINTS, POI_POINTS, type POIItem, type CivicPoint } from "@/components/CivicGisMap";
-
-const CivicGisMap = dynamic(() => import("@/components/CivicGisMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="w-full h-full min-h-[480px] bg-slate-900 flex flex-col items-center justify-center text-slate-400 text-xs">
-      <div className="w-6 h-6 border-2 border-[#009388] border-t-transparent rounded-full animate-spin mb-2" />
-      <span>Memuat Citra Satelit Desa Kadurama...</span>
-    </div>
-  ),
-});
+import CivicGisMap, { OFFICIAL_POINTS, POI_POINTS, type POIItem, type CivicPoint } from "@/components/CivicGisMap";
 import {
   FileText,
   Clock,
@@ -1801,24 +1790,9 @@ export default function Home() {
   const [isEditBidangModalOpen, setIsEditBidangModalOpen] = useState(false);
   const [isEditTotalsModalOpen, setIsEditTotalsModalOpen] = useState(false);
 
-  // Lazy mount for Leaflet Map to eliminate all initial bootup JS & tile downloads
-  const [isMapMounted, setIsMapMounted] = useState(false);
-  const mapSectionRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    if (!mapSectionRef.current || isMapMounted) return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting) {
-          setIsMapMounted(true);
-          observer.disconnect();
-        }
-      },
-      { rootMargin: "350px" }
-    );
-    observer.observe(mapSectionRef.current);
-    return () => observer.disconnect();
-  }, [isMapMounted]);
+  // Immediate mount for Leaflet Map to ensure stable 60fps rendering without DOM swap flashes
+  const isMapMounted = true;
+  const setIsMapMounted = (_v: boolean) => {};
 
   // Zero-Overhead APBDes Number Counter (Native requestAnimationFrame, 0 external bundle, 0 scroll lag)
   useEffect(() => {
@@ -3189,23 +3163,15 @@ export default function Home() {
               <div className="grid grid-cols-1 lg:grid-cols-12 min-h-[520px]">
 
                 {/* LEFT 8 COLS: LEAFLET MAP WORKSPACE */}
-                <div ref={mapSectionRef} className="lg:col-span-8 relative border-b lg:border-b-0 lg:border-r border-slate-200 h-[480px] lg:h-auto min-h-[480px]">
-                  {isMapMounted ? (
-                    <CivicGisMap
-                      selectedDusun={gisSelectedDusun}
-                      selectedPoiId={gisSelectedPoiId}
-                      basemapMode={gisBasemapMode}
-                      onToggleBasemap={handleGisToggleBasemap}
-                      onSelectDusun={handleGisSelectDusun}
-                      onSelectPoi={handleGisSelectPoi}
-                    />
-                  ) : (
-                    <div className="w-full h-full min-h-[480px] bg-slate-900 flex flex-col items-center justify-center text-slate-300 text-xs p-6 text-center">
-                      <div className="w-7 h-7 border-2 border-[#009388] border-t-transparent rounded-full animate-spin mb-2" />
-                      <span className="font-semibold text-slate-200">Citra Satelit & Peta GIS Kadurama</span>
-                      <span className="text-[11px] text-slate-400 mt-1">Memuat saat mendekati area peta...</span>
-                    </div>
-                  )}
+                <div className="lg:col-span-8 relative border-b lg:border-b-0 lg:border-r border-slate-200 h-[520px] lg:h-[600px] bg-slate-900">
+                  <CivicGisMap
+                    selectedDusun={gisSelectedDusun}
+                    selectedPoiId={gisSelectedPoiId}
+                    basemapMode={gisBasemapMode}
+                    onToggleBasemap={handleGisToggleBasemap}
+                    onSelectDusun={handleGisSelectDusun}
+                    onSelectPoi={handleGisSelectPoi}
+                  />
                 </div>
 
                 {/* RIGHT 4 COLS: OFFICIAL MONOGRAPHY REGISTRY SHEET */}

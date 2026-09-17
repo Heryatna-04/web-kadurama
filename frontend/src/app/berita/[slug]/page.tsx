@@ -80,6 +80,12 @@ export default function BeritaDetailPage({ params }: PageProps) {
     fetchArticle();
   }, [slug]);
 
+  useEffect(() => {
+    if (article?.title) {
+      document.title = `${article.title} | Desa Kadurama Kuningan`;
+    }
+  }, [article]);
+
   if (!article && !loading) {
     return (
       <div className="min-h-screen flex flex-col font-sans bg-slate-50 text-slate-900">

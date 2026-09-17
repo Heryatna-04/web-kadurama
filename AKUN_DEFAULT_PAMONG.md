@@ -43,3 +43,25 @@ Dokumen ini berisi daftar akun resmi dan kredensial default untuk mengakses **Pa
    * Pemetaan desil kemiskinan warga, keluarga rentan (RTLH, lansia tunggal, balita stunting), dan verifikasi penerima bansos (PKH, BPNT, BLT-DD).
 6. **Operator (`operator`):**
    * Input dan update harian administrasi kependudukan dan surat pengantar warga.
+
+---
+
+## 🔒 Prosedur Penggantian Kata Sandi Mandiri
+
+Setiap aparatur desa sangat disarankan untuk mengganti kata sandi default setelah pertama kali berhasil masuk demi keamanan data kependudukan warga:
+
+1. Masuk ke panel `/master` menggunakan email dinas dan sandi default `kadurama2026`.
+2. Di pojok kiri bawah sidebar panel admin, klik nama profil aparatur Anda.
+3. Pilih opsi **"Ubah Kata Sandi"** (Ikon Kunci).
+4. Masukkan kata sandi lama, kemudian buat kata sandi baru (minimal 8 karakter kombinasi huruf dan angka).
+5. Klik **"Simpan Sandi Baru"**. Sistem akan otomatis meng-hash kata sandi baru dan menyimpannya langsung ke database Supabase serta mencatat riwayat perubahan ke tabel `audit_logs`.
+
+---
+
+## 🌐 Checklist Persiapan Produksi (Deployment)
+
+- [x] Tombol dan modal pendaftaran akun mandiri telah dimatikan 100% dari antarmuka publik (`/master` dan `/login`).
+- [x] Favicon multi-resolusi (`favicon.ico`) dan Apple Touch Icon telah terpasang dengan lambang resmi Kabupaten Kuningan.
+- [x] Metadata Open Graph (`og-image.jpg` 1200x630) dan Twitter Card telah terkonfigurasi untuk tampilan pratinjau tautan WhatsApp/Media Sosial.
+- [x] Seluruh kueri kependudukan dan APBDes tersambung dengan aman ke Supabase PostgreSQL.
+- [ ] Atur environment variable `NEXT_PUBLIC_SITE_URL` pada dashboard Vercel/Hosting ke domain produksi final (contoh: `https://desakadurama.id`).

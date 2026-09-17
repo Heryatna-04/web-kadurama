@@ -47,32 +47,38 @@ export const metadata: Metadata = {
   creator: "Pemerintah Desa Kadurama",
   publisher: "Pemerintah Desa Kadurama",
   icons: {
-    icon: "/logo-kuningan-sm.webp",
-    apple: "/logo-kuningan-sm.webp",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/logo-kuningan-sm.webp", type: "image/webp" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
   openGraph: {
     type: "website",
     locale: "id_ID",
     url: siteUrl,
     siteName: "Pemerintah Desa Kadurama",
-    title: "Pemerintah Desa Kadurama - Menuju Desa Mandiri dan Transparan",
+    title: "Pemerintah Desa Kadurama - Kecamatan Ciawigebang, Kuningan",
     description:
-      "Akses data kependudukan riil 3 dusun, transparansi anggaran APBDes 2026, arsip warta kegiatan desa, dan panduan syarat administrasi warga secara terbuka.",
+      "Portal Resmi Informasi Publik, Transparansi APBDes 2026, Profil 3 Dusun, dan Panduan Layanan Administrasi Warga Desa Kadurama, Kec. Ciawigebang, Kab. Kuningan, Jawa Barat.",
     images: [
       {
-        url: "/logo-kuningan-sm.webp",
-        width: 400,
-        height: 533,
-        alt: "Lambang Resmi Kabupaten Kuningan - Pemerintah Desa Kadurama",
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Portal Resmi Pemerintah Desa Kadurama - Kabupaten Kuningan",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Pemerintah Desa Kadurama - Kab. Kuningan",
+    title: "Pemerintah Desa Kadurama - Kec. Ciawigebang, Kuningan",
     description:
-      "Portal Resmi Informasi Publik dan Pelayanan Administrasi Warga Desa Kadurama, Ciawigebang, Kuningan.",
-    images: ["/logo-kuningan-sm.webp"],
+      "Portal Resmi Informasi Publik, Transparansi APBDes 2026, Profil 3 Dusun, dan Panduan Layanan Administrasi Warga Desa Kadurama.",
+    images: ["/og-image.jpg"],
   },
   robots: {
     index: true,

@@ -26,6 +26,10 @@ export default function BeritaPage() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    document.title = "Kabar & Warta Informasi Resmi Desa | Desa Kadurama Kuningan";
+  }, []);
+
+  useEffect(() => {
     async function loadNews() {
       try {
         const supabase = createClient();

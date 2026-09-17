@@ -119,6 +119,7 @@ function CivicGisMapComponent({
     if (!containerRef.current || mapRef.current) return;
 
     let isMounted = true;
+    let resizeObserver: ResizeObserver | null = null;
 
     // Clean up any stale leaflet ID to prevent container reuse error
     if ((containerRef.current as unknown as { _leaflet_id?: number })._leaflet_id) {
@@ -142,15 +143,15 @@ function CivicGisMapComponent({
       // Zoom Control (Bottom Right)
       L.control.zoom({ position: "bottomright" }).addTo(map);
 
-      // Initial Basemap (Satellite)
+      // Initial Basemap (Satellite: High-Speed Esri CDN)
       const initialLayerUrl =
-        "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
+        "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}";
 
       const tileLayer = L.tileLayer(initialLayerUrl, {
         maxZoom: 19,
         keepBuffer: 8,
         updateWhenZooming: false,
-        attribution: "© OpenStreetMap / Esri ArcGIS",
+        attribution: "© Esri • ArcGIS World Imagery",
       }).addTo(map);
 
       tileLayerRef.current = tileLayer;
@@ -244,11 +245,25 @@ function CivicGisMapComponent({
         }
       });
 
+      // Ensure Leaflet tracks container size changes smoothly without flashing
+      if (typeof ResizeObserver !== "undefined" && containerRef.current) {
+        resizeObserver = new ResizeObserver(() => {
+          if (mapRef.current) {
+            mapRef.current.invalidateSize({ debounceMoveend: true });
+          }
+        });
+        resizeObserver.observe(containerRef.current);
+      }
+
       mapRef.current = map;
     });
 
     return () => {
       isMounted = false;
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+        resizeObserver = null;
+      }
       if (mapRef.current) {
         try {
           mapRef.current.stop();
@@ -276,14 +291,18 @@ function CivicGisMapComponent({
 
       const newUrl =
         activeBasemap === "satellite"
-          ? "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
-          : "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+          ? "https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"
+          : "https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png";
 
       const newLayer = L.tileLayer(newUrl, {
         maxZoom: 19,
+        subdomains: "abcd",
         keepBuffer: 8,
         updateWhenZooming: false,
-        attribution: "© OpenStreetMap / Esri ArcGIS",
+        attribution:
+          activeBasemap === "satellite"
+            ? "© Esri • ArcGIS World Imagery"
+            : "© OpenStreetMap contributors • CARTO",
       }).addTo(mapRef.current);
 
       tileLayerRef.current = newLayer;
