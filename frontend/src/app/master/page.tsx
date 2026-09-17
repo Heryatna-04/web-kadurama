@@ -19,6 +19,7 @@ import { NEWS_ARTICLES, ANNOUNCEMENTS_LIST, AGENDA_LIST } from "@/data/newsData"
 import {
   ClipboardCheck,
   Users,
+  UserCheck,
   PieChart,
   Newspaper,
   Bell,
@@ -225,6 +226,7 @@ export default function MasterPanelPage() {
   const [editingSensus, setEditingSensus] = useState<SensusKK | null>(null);
 
   const [isResidentModalOpen, setIsResidentModalOpen] = useState(false);
+  const [isEditingResidentExisting, setIsEditingResidentExisting] = useState(false);
   const [editingResident, setEditingResident] = useState<Resident | null>(null);
 
   const [selectedSensusForPdf, setSelectedSensusForPdf] = useState<SensusKK | null>(null);
@@ -856,6 +858,7 @@ export default function MasterPanelPage() {
         ? (currentUser.dusun as any)
         : "Manis";
 
+    setIsEditingResidentExisting(false);
     setEditingResident({
       nik: "",
       noKk: "",
@@ -879,54 +882,64 @@ export default function MasterPanelPage() {
   const handleSaveResident = async () => {
     if (!editingResident || !currentUser) return;
     if (!editingResident.nik.trim() || !editingResident.nama.trim()) {
-      alert("NIK dan Nama Warga wajib diisi!");
+      alert("NIK dan Nama Lengkap Warga wajib diisi!");
       return;
     }
 
-    const isNew = !residentsList.some((r) => r.nik === editingResident.nik);
+    const isNew = !isEditingResidentExisting;
+    const cleanNik = editingResident.nik.trim();
+    const cleanNoKk = editingResident.noKk.trim();
+
+    if (isNew && residentsList.some((r) => r.nik === cleanNik)) {
+      alert(`NIK ${cleanNik} sudah terdaftar dalam sistem! Harap periksa kembali.`);
+      return;
+    }
+
     const payload = {
-      nik: editingResident.nik,
-      no_kk: editingResident.noKk,
-      nama: editingResident.nama,
-      ttl: editingResident.ttl,
-      jenis_kelamin: editingResident.jenisKelamin,
-      pekerjaan: editingResident.pekerjaan,
-      agama: editingResident.agama,
-      status_perkawinan: editingResident.statusPerkawinan,
-      hubungan_keluarga: editingResident.hubunganKeluarga,
+      nik: cleanNik,
+      no_kk: cleanNoKk || "3208150000000000",
+      nama: editingResident.nama.trim(),
+      ttl: editingResident.ttl?.trim() || "Kuningan",
+      jenis_kelamin: editingResident.jenisKelamin || "Laki-laki",
+      pekerjaan: editingResident.pekerjaan?.trim() || "Belum Bekerja",
+      agama: editingResident.agama?.trim() || "Islam",
+      status_perkawinan: editingResident.statusPerkawinan?.trim() || "Kawin",
+      hubungan_keluarga: editingResident.hubunganKeluarga?.trim() || "Kepala Keluarga",
       dusun: editingResident.dusun,
-      rt: editingResident.rt,
-      rw: editingResident.rw,
-      alamat: editingResident.alamat,
-      status: editingResident.status,
-      sync_status: editingResident.syncStatus,
+      rt: editingResident.rt?.trim() || "01",
+      rw: editingResident.rw?.trim() || "01",
+      alamat: editingResident.alamat?.trim() || `Dusun ${editingResident.dusun}, Desa Kadurama`,
+      status: editingResident.status?.trim() || "Warga Tetap",
+      sync_status: editingResident.syncStatus?.trim() || "Tersinkronisasi",
       updated_by: currentUser.email,
     };
 
     try {
       if (isNew) {
-        await supabase.from("residents").insert([{ ...payload, created_by: currentUser.email }]);
+        const { error } = await supabase.from("residents").insert([{ ...payload, created_by: currentUser.email }]);
+        if (error) throw error;
         await recordAuditLog({
           actor_email: currentUser.email,
           actor_name: currentUser.nama,
           actor_role: currentUser.role,
           action: "CREATE",
           entity_type: "residents",
-          entity_id: editingResident.nik,
-          description: `Pendaftaran warga baru NIK ${editingResident.nik} (${editingResident.nama}) Dusun ${editingResident.dusun}`,
+          entity_id: cleanNik,
+          description: `Pendaftaran warga baru NIK ${cleanNik} (${payload.nama}) Dusun ${payload.dusun}`,
           new_data: payload,
         });
       } else {
-        const oldResident = residentsList.find((r) => r.nik === editingResident.nik);
-        await supabase.from("residents").update(payload).eq("nik", editingResident.nik);
+        const oldResident = residentsList.find((r) => r.nik === cleanNik);
+        const { error } = await supabase.from("residents").update(payload).eq("nik", cleanNik);
+        if (error) throw error;
         await recordAuditLog({
           actor_email: currentUser.email,
           actor_name: currentUser.nama,
           actor_role: currentUser.role,
           action: "UPDATE",
           entity_type: "residents",
-          entity_id: editingResident.nik,
-          description: `Memperbarui data warga NIK ${editingResident.nik} (${editingResident.nama})`,
+          entity_id: cleanNik,
+          description: `Memperbarui data warga NIK ${cleanNik} (${payload.nama})`,
           old_data: oldResident,
           new_data: payload,
         });
@@ -935,8 +948,9 @@ export default function MasterPanelPage() {
       setIsResidentModalOpen(false);
       showToast(isNew ? "Warga baru berhasil didaftarkan" : "Data warga berhasil diperbarui");
       fetchAllData();
-    } catch (err) {
-      alert("Gagal menyimpan data kependudukan.");
+    } catch (err: any) {
+      console.error(err);
+      alert(`Gagal menyimpan data kependudukan: ${err.message || "Terjadi kesalahan koneksi"}`);
     }
   };
 
@@ -2610,11 +2624,11 @@ export default function MasterPanelPage() {
                       <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
                         <tr>
                           <th className="py-3 px-4">NIK / No KK</th>
-                          <th className="py-3 px-4">Nama Lengkap</th>
+                          <th className="py-3 px-4">Nama Lengkap & Kelahiran</th>
+                          <th className="py-3 px-4">Jenis Kelamin & Agama</th>
                           <th className="py-3 px-4">Dusun / RT / RW</th>
-                          <th className="py-3 px-4">Pekerjaan</th>
-                          <th className="py-3 px-4">Hubungan Keluarga</th>
-                          <th className="py-3 px-4">Status</th>
+                          <th className="py-3 px-4">Pekerjaan & Keluarga</th>
+                          <th className="py-3 px-4">Status Warga</th>
                           <th className="py-3 px-4 text-right">Aksi</th>
                         </tr>
                       </thead>
@@ -2627,18 +2641,44 @@ export default function MasterPanelPage() {
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="font-bold text-slate-800">{res.nama}</div>
-                              <div className="text-[10px] text-slate-500">{res.ttl}</div>
+                              <div className="text-[11px] text-slate-500 flex items-center gap-1.5 mt-0.5">
+                                <Calendar className="w-3 h-3 text-slate-400 shrink-0" />
+                                <span>{res.ttl || "TTL Belum Diisi"}</span>
+                              </div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="flex items-center gap-1.5">
+                                <span className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                  res.jenisKelamin === "Perempuan"
+                                    ? "bg-pink-50 text-pink-700 border-pink-200"
+                                    : "bg-blue-50 text-blue-700 border-blue-200"
+                                }`}>
+                                  {res.jenisKelamin || "Laki-laki"}
+                                </span>
+                              </div>
+                              <div className="text-[11px] text-slate-500 mt-1">
+                                {res.agama || "Islam"}
+                              </div>
                             </td>
                             <td className="py-3.5 px-4">
                               <span className="font-semibold text-slate-800 block">Dusun {res.dusun}</span>
                               <span className="text-[10px] text-slate-400">RT {res.rt} / RW {res.rw}</span>
+                              {res.alamat && (
+                                <div className="text-[10px] text-slate-500 truncate max-w-[140px]" title={res.alamat}>
+                                  {res.alamat}
+                                </div>
+                              )}
                             </td>
-                            <td className="py-3.5 px-4 text-slate-600">{res.pekerjaan}</td>
-                            <td className="py-3.5 px-4 font-semibold text-slate-700">{res.hubunganKeluarga}</td>
+                            <td className="py-3.5 px-4">
+                              <div className="text-slate-800 font-semibold">{res.pekerjaan || "Belum Bekerja"}</div>
+                              <div className="text-[10px] text-slate-500 mt-0.5">
+                                {res.hubunganKeluarga || "Anggota Keluarga"} • <span className="text-slate-400">{res.statusPerkawinan || "-"}</span>
+                              </div>
+                            </td>
                             <td className="py-3.5 px-4 space-y-1">
                               <div>
                                 <span className="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold text-[10px] border border-emerald-200">
-                                  {res.status}
+                                  {res.status || "Warga Tetap"}
                                 </span>
                               </div>
                               {(!res.nik || res.nik.startsWith("TEMP-") || !res.noKk || !res.ttl || res.ttl === "Kuningan" || !res.pekerjaan || res.pekerjaan.toLowerCase().includes("tidak tahu") || !res.rt || !res.rw) && (
@@ -2655,7 +2695,19 @@ export default function MasterPanelPage() {
                                 <div className="flex items-center justify-end gap-1.5">
                                   <button
                                     onClick={() => {
-                                      setEditingResident(res);
+                                      setIsEditingResidentExisting(true);
+                                      setEditingResident({
+                                        ...res,
+                                        ttl: res.ttl || "Kuningan, ",
+                                        jenisKelamin: res.jenisKelamin || "Laki-laki",
+                                        pekerjaan: res.pekerjaan || "Wiraswasta",
+                                        agama: res.agama || "Islam",
+                                        statusPerkawinan: res.statusPerkawinan || "Kawin",
+                                        hubunganKeluarga: res.hubunganKeluarga || "Kepala Keluarga",
+                                        alamat: res.alamat || `Dusun ${res.dusun} RT ${res.rt} / RW ${res.rw}`,
+                                        status: res.status || "Warga Tetap",
+                                        syncStatus: res.syncStatus || "Tersinkronisasi",
+                                      });
                                       setIsResidentModalOpen(true);
                                     }}
                                     className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition"
@@ -3779,136 +3831,342 @@ export default function MasterPanelPage() {
       )}
 
       {/* =================================================================== */}
-      {/* MODAL INPUT / EDIT DATA WARGA                                      */}
+      {/* MODAL INPUT / EDIT DATA WARGA (SESUAI SKEMA DATABASE RESIDENTS)      */}
       {/* =================================================================== */}
       {isResidentModalOpen && editingResident && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-2xl max-w-xl w-full p-6 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl max-w-2xl w-full p-6 sm:p-7 shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto">
+            {/* Header */}
             <div className="flex items-center justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center">
+                <div className="w-10 h-10 rounded-xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center">
                   <Users className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-900">
-                    {residentsList.some((r) => r.nik === editingResident.nik)
-                      ? "Ubah Data Warga"
-                      : "Pendaftaran Warga Baru"}
+                    {isEditingResidentExisting ? "Ubah Data Warga Kependudukan" : "Pendaftaran Warga Baru"}
                   </h3>
-                  <p className="text-[11px] text-slate-500">Master Data Kependudukan Desa Kadurama</p>
+                  <p className="text-[11px] text-slate-500">
+                    Master Kependudukan SIAK • Desa Kadurama, Kec. Ciawigebang
+                  </p>
                 </div>
               </div>
               <button
                 onClick={() => setIsResidentModalOpen(false)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100"
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
-            <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">NIK (16 Digit)</label>
-                <input
-                  type="text"
-                  value={editingResident.nik}
-                  onChange={(e) => setEditingResident({ ...editingResident, nik: e.target.value })}
-                  placeholder="320815..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-mono"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Nomor Kartu Keluarga (KK)</label>
-                <input
-                  type="text"
-                  value={editingResident.noKk}
-                  onChange={(e) => setEditingResident({ ...editingResident, noKk: e.target.value })}
-                  placeholder="320815..."
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-mono"
-                />
-              </div>
-
-              <div className="sm:col-span-2">
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Nama Lengkap</label>
-                <input
-                  type="text"
-                  value={editingResident.nama}
-                  onChange={(e) => setEditingResident({ ...editingResident, nama: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
-                />
-              </div>
-
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Dusun</label>
-                <select
-                  value={editingResident.dusun}
-                  disabled={currentUser?.role === "kadus"}
-                  onChange={(e) => setEditingResident({ ...editingResident, dusun: e.target.value as any })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 font-bold"
-                >
-                  <option value="Manis">Dusun Manis</option>
-                  <option value="Pahing">Dusun Pahing</option>
-                  <option value="Wage">Dusun Wage</option>
-                </select>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">RT</label>
-                  <input
-                    type="text"
-                    value={editingResident.rt}
-                    onChange={(e) => setEditingResident({ ...editingResident, rt: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-center"
-                  />
+            <div className="mt-5 space-y-5 text-xs">
+              {/* Bagian 1: Identitas Dokumen */}
+              <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80 space-y-3">
+                <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                  <FileText className="w-3.5 h-3.5 text-[#009388]" />
+                  <span>1. Dokumen Identitas Kependudukan</span>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">RW</label>
-                  <input
-                    type="text"
-                    value={editingResident.rw}
-                    onChange={(e) => setEditingResident({ ...editingResident, rw: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50 text-center"
-                  />
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      NIK (16 Digit) <span className="text-red-500">*</span>
+                      {isEditingResidentExisting && (
+                        <span className="ml-1.5 text-[9px] font-bold text-amber-700 bg-amber-100/80 px-1.5 py-0.5 rounded">
+                          Terkunci (Primary Key)
+                        </span>
+                      )}
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={16}
+                      disabled={isEditingResidentExisting}
+                      value={editingResident.nik}
+                      onChange={(e) => setEditingResident({ ...editingResident, nik: e.target.value })}
+                      placeholder="320815..."
+                      className={`w-full px-3 py-2 rounded-xl border font-mono ${
+                        isEditingResidentExisting
+                          ? "bg-slate-100 text-slate-500 border-slate-200 cursor-not-allowed"
+                          : "bg-white border-slate-300 focus:ring-2 focus:ring-[#009388]"
+                      }`}
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Nomor Kartu Keluarga (No. KK) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      maxLength={16}
+                      value={editingResident.noKk}
+                      onChange={(e) => setEditingResident({ ...editingResident, noKk: e.target.value })}
+                      placeholder="320815..."
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono focus:ring-2 focus:ring-[#009388]"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Nama Lengkap (Sesuai KTP / Akta Lahir) <span className="text-red-500">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={editingResident.nama}
+                      onChange={(e) => setEditingResident({ ...editingResident, nama: e.target.value })}
+                      placeholder="Nama lengkap warga..."
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-semibold text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                    />
+                  </div>
                 </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Pekerjaan</label>
-                <input
-                  type="text"
-                  value={editingResident.pekerjaan}
-                  onChange={(e) => setEditingResident({ ...editingResident, pekerjaan: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
-                />
+              {/* Bagian 2: Data Kelahiran & Demografi */}
+              <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80 space-y-3">
+                <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                  <Calendar className="w-3.5 h-3.5 text-[#009388]" />
+                  <span>2. Data Kelahiran & Demografi</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Tempat, Tanggal Lahir (TTL)
+                    </label>
+                    <input
+                      type="text"
+                      value={editingResident.ttl}
+                      onChange={(e) => setEditingResident({ ...editingResident, ttl: e.target.value })}
+                      placeholder="Kuningan, 15-08-1990"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-[#009388]"
+                    />
+                    <span className="text-[9px] text-slate-400 mt-0.5 block">Format: Kota, DD-MM-YYYY</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Jenis Kelamin
+                    </label>
+                    <select
+                      value={editingResident.jenisKelamin}
+                      onChange={(e) => setEditingResident({ ...editingResident, jenisKelamin: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-[#009388]"
+                    >
+                      <option value="Laki-laki">Laki-laki</option>
+                      <option value="Perempuan">Perempuan</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Agama
+                    </label>
+                    <select
+                      value={editingResident.agama}
+                      onChange={(e) => setEditingResident({ ...editingResident, agama: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-[#009388]"
+                    >
+                      <option value="Islam">Islam</option>
+                      <option value="Kristen">Kristen Protestan</option>
+                      <option value="Katolik">Katolik</option>
+                      <option value="Hindu">Hindu</option>
+                      <option value="Buddha">Buddha</option>
+                      <option value="Konghucu">Konghucu</option>
+                    </select>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <label className="block text-[11px] font-bold text-slate-700 mb-1">Hubungan Keluarga</label>
-                <input
-                  type="text"
-                  value={editingResident.hubunganKeluarga}
-                  onChange={(e) => setEditingResident({ ...editingResident, hubunganKeluarga: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-slate-50"
-                />
+              {/* Bagian 3: Keluarga & Profesi */}
+              <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80 space-y-3">
+                <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                  <UserCheck className="w-3.5 h-3.5 text-[#009388]" />
+                  <span>3. Hubungan Keluarga, Pernikahan & Pekerjaan</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Hubungan Keluarga
+                    </label>
+                    <select
+                      value={editingResident.hubunganKeluarga}
+                      onChange={(e) => setEditingResident({ ...editingResident, hubunganKeluarga: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-[#009388]"
+                    >
+                      <option value="Kepala Keluarga">Kepala Keluarga</option>
+                      <option value="Istri">Istri</option>
+                      <option value="Anak">Anak</option>
+                      <option value="Orang Tua">Orang Tua</option>
+                      <option value="Mertua">Mertua</option>
+                      <option value="Famili Lain">Famili Lain</option>
+                      <option value="Anggota Lain">Anggota Lain</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Status Perkawinan
+                    </label>
+                    <select
+                      value={editingResident.statusPerkawinan}
+                      onChange={(e) => setEditingResident({ ...editingResident, statusPerkawinan: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-[#009388]"
+                    >
+                      <option value="Kawin">Kawin</option>
+                      <option value="Belum Kawin">Belum Kawin</option>
+                      <option value="Cerai Hidup">Cerai Hidup</option>
+                      <option value="Cerai Mati">Cerai Mati</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Pekerjaan / Mata Pencaharian
+                    </label>
+                    <input
+                      type="text"
+                      list="listPekerjaan"
+                      value={editingResident.pekerjaan}
+                      onChange={(e) => setEditingResident({ ...editingResident, pekerjaan: e.target.value })}
+                      placeholder="Petani / Wiraswasta..."
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-[#009388]"
+                    />
+                    <datalist id="listPekerjaan">
+                      <option value="Petani / Pekebun" />
+                      <option value="Wiraswasta" />
+                      <option value="Pedagang" />
+                      <option value="Buruh Harian Lepas" />
+                      <option value="Karyawan Swasta" />
+                      <option value="Pegawai Negeri Sipil (PNS)" />
+                      <option value="Guru / Dosen" />
+                      <option value="Pelajar / Mahasiswa" />
+                      <option value="Mengurus Rumah Tangga" />
+                      <option value="Pensiunan" />
+                      <option value="Belum / Tidak Bekerja" />
+                    </datalist>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bagian 4: Domisili & Wilayah */}
+              <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80 space-y-3">
+                <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                  <MapPin className="w-3.5 h-3.5 text-[#009388]" />
+                  <span>4. Wilayah Domisili (Dusun & RT/RW)</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Dusun
+                    </label>
+                    <select
+                      value={editingResident.dusun}
+                      disabled={currentUser?.role === "kadus"}
+                      onChange={(e) => setEditingResident({ ...editingResident, dusun: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-bold text-slate-800 focus:ring-2 focus:ring-[#009388]"
+                    >
+                      <option value="Manis">Dusun Manis</option>
+                      <option value="Pahing">Dusun Pahing</option>
+                      <option value="Wage">Dusun Wage</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">RT</label>
+                    <input
+                      type="text"
+                      maxLength={3}
+                      value={editingResident.rt}
+                      onChange={(e) => setEditingResident({ ...editingResident, rt: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-center font-bold font-mono focus:ring-2 focus:ring-[#009388]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">RW</label>
+                    <input
+                      type="text"
+                      maxLength={3}
+                      value={editingResident.rw}
+                      onChange={(e) => setEditingResident({ ...editingResident, rw: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white text-center font-bold font-mono focus:ring-2 focus:ring-[#009388]"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-4">
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Alamat Lengkap / Blok Jalan
+                    </label>
+                    <input
+                      type="text"
+                      value={editingResident.alamat}
+                      onChange={(e) => setEditingResident({ ...editingResident, alamat: e.target.value })}
+                      placeholder="Contoh: Jl. Desa Kadurama Blok Manis RT 01/RW 01"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white focus:ring-2 focus:ring-[#009388]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Bagian 5: Status Administrasi & Sinkronisasi */}
+              <div className="bg-slate-50/70 p-3.5 rounded-xl border border-slate-200/80 space-y-3">
+                <div className="flex items-center gap-2 text-[11px] font-bold text-slate-800 uppercase tracking-wider">
+                  <ShieldCheck className="w-3.5 h-3.5 text-[#009388]" />
+                  <span>5. Status Administrasi & Sinkronisasi</span>
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Status Warga
+                    </label>
+                    <select
+                      value={editingResident.status}
+                      onChange={(e) => setEditingResident({ ...editingResident, status: e.target.value })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-[#009388]"
+                    >
+                      <option value="Warga Tetap">Warga Tetap</option>
+                      <option value="Warga Sementara">Warga Sementara / Kontrak</option>
+                      <option value="Pindah">Pindah Keluar</option>
+                      <option value="Meninggal">Meninggal Dunia</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                      Status Sinkronisasi SIAK
+                    </label>
+                    <select
+                      value={editingResident.syncStatus}
+                      onChange={(e) => setEditingResident({ ...editingResident, syncStatus: e.target.value as any })}
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-medium focus:ring-2 focus:ring-[#009388]"
+                    >
+                      <option value="Tersinkronisasi">Tersinkronisasi (SIAK)</option>
+                      <option value="Perlu Sinkronisasi">Perlu Sinkronisasi</option>
+                      <option value="Diperbarui Internal">Diperbarui Internal</option>
+                    </select>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div className="mt-6 flex items-center justify-end gap-2.5">
-              <button
-                onClick={() => setIsResidentModalOpen(false)}
-                className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs"
-              >
-                Batal
-              </button>
-              <button
-                onClick={handleSaveResident}
-                className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm flex items-center gap-1.5"
-              >
-                <Check className="w-4 h-4" />
-                <span>Simpan Warga</span>
-              </button>
+            {/* Actions */}
+            <div className="mt-6 pt-4 border-t border-slate-100 flex items-center justify-between">
+              <span className="text-[11px] text-slate-500 italic">
+                * Tanda bintang menandakan isian identitas wajib diisi.
+              </span>
+              <div className="flex items-center gap-2.5">
+                <button
+                  onClick={() => setIsResidentModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-600 hover:bg-slate-100 font-semibold text-xs transition"
+                >
+                  Batal
+                </button>
+                <button
+                  onClick={handleSaveResident}
+                  className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm flex items-center gap-1.5 transition"
+                >
+                  <Check className="w-4 h-4" />
+                  <span>Simpan Data Warga</span>
+                </button>
+              </div>
             </div>
           </div>
         </div>
