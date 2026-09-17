@@ -15,12 +15,16 @@ import {
   calculateDesil,
   APARATUR_ACCOUNTS,
 } from "@/data/masterData";
-import { NEWS_ARTICLES } from "@/data/newsData";
+import { NEWS_ARTICLES, ANNOUNCEMENTS_LIST, AGENDA_LIST } from "@/data/newsData";
 import {
   ClipboardCheck,
   Users,
   PieChart,
   Newspaper,
+  Bell,
+  Calendar,
+  Clock,
+  MapPin,
   History,
   Lock,
   X,
@@ -85,7 +89,7 @@ export default function MasterPanelPage() {
   // STATE NAVIGASI TAB UTAMA
   // --------------------------------------------------------------------------
   const [activeTab, setActiveTab] = useState<
-    "sensus" | "residents" | "berita" | "apbdes" | "audit"
+    "sensus" | "residents" | "apbdes" | "berita" | "pengumuman" | "agenda" | "audit"
   >("sensus");
 
   // --------------------------------------------------------------------------
@@ -129,6 +133,48 @@ export default function MasterPanelPage() {
     tags: "",
   });
   const [isSubmittingNews, setIsSubmittingNews] = useState(false);
+
+  // --------------------------------------------------------------------------
+  // STATE PENGUMUMAN RESMI DESA
+  // --------------------------------------------------------------------------
+  const [announcementList, setAnnouncementList] = useState<any[]>(ANNOUNCEMENTS_LIST);
+  const [announcementSearch, setAnnouncementSearch] = useState("");
+  const [announcementCategoryFilter, setAnnouncementCategoryFilter] = useState("all");
+  const [isAnnouncementModalOpen, setIsAnnouncementModalOpen] = useState(false);
+  const [editingAnnouncement, setEditingAnnouncement] = useState<any | null>(null);
+  const [isSubmittingAnnouncement, setIsSubmittingAnnouncement] = useState(false);
+  const [announcementForm, setAnnouncementForm] = useState({
+    id: "",
+    number: "",
+    title: "",
+    category: "Edaran Kuwu",
+    date: "",
+    time: "08.00 - 15.00 WIB",
+    summary: "",
+    is_urgent: false,
+    file_url: "",
+  });
+
+  // --------------------------------------------------------------------------
+  // STATE AGENDA KEGIATAN DESA
+  // --------------------------------------------------------------------------
+  const [agendaList, setAgendaList] = useState<any[]>(AGENDA_LIST);
+  const [agendaSearch, setAgendaSearch] = useState("");
+  const [agendaDusunFilter, setAgendaDusunFilter] = useState("all");
+  const [isAgendaModalOpen, setIsAgendaModalOpen] = useState(false);
+  const [editingAgenda, setEditingAgenda] = useState<any | null>(null);
+  const [isSubmittingAgenda, setIsSubmittingAgenda] = useState(false);
+  const [agendaForm, setAgendaForm] = useState({
+    id: "",
+    title: "",
+    description: "",
+    date: "",
+    time: "09.00 - 11.30 WIB",
+    location: "Balai Desa Kadurama",
+    organizer: "Pemerintah Desa Kadurama",
+    dusun: "Semua Dusun",
+    status: "Akan Datang",
+  });
 
   // APBDes states
   const [apbdesList, setApbdesList] = useState<any[]>([]);
@@ -372,7 +418,23 @@ export default function MasterPanelPage() {
         .order("created_at", { ascending: false });
       if (newsData && newsData.length > 0) setNewsList(newsData);
 
-      // 5. Audit Logs (Ordered by created_at DESC)
+      // 5. Announcements
+      const { data: annData } = await supabase
+        .from("announcements")
+        .select("*")
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false });
+      if (annData && annData.length > 0) setAnnouncementList(annData);
+
+      // 6. Village Agenda
+      const { data: agdData } = await supabase
+        .from("village_agenda")
+        .select("*")
+        .eq("is_deleted", false)
+        .order("created_at", { ascending: false });
+      if (agdData && agdData.length > 0) setAgendaList(agdData);
+
+      // 7. Audit Logs (Ordered by created_at DESC)
       const { data: logData } = await supabase
         .from("audit_logs")
         .select("*")
@@ -1203,6 +1265,9 @@ export default function MasterPanelPage() {
     currentUser?.role === "sekdes" ||
     currentUser?.role === "operator";
 
+  const canManagePengumuman = canManageNews;
+  const canManageAgenda = canManageNews;
+
   const canManageApbdes =
     currentUser?.role === "master" ||
     currentUser?.role === "sekdes" ||
@@ -1366,6 +1431,258 @@ export default function MasterPanelPage() {
   };
 
   // --------------------------------------------------------------------------
+  // HANDLERS PENGUMUMAN RESMI
+  // --------------------------------------------------------------------------
+  const handleOpenCreateAnnouncement = () => {
+    setEditingAnnouncement(null);
+    const today = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
+    setAnnouncementForm({
+      id: `PENG-${Date.now().toString().slice(-4)}`,
+      number: `140/0${Math.floor(Math.random() * 90) + 10}/Pemdes/IX/2026`,
+      title: "",
+      category: "Edaran Kuwu",
+      date: today,
+      time: "08.00 - 15.00 WIB",
+      summary: "",
+      is_urgent: false,
+      file_url: "",
+    });
+    setIsAnnouncementModalOpen(true);
+  };
+
+  const handleOpenEditAnnouncement = (item: any) => {
+    setEditingAnnouncement(item);
+    setAnnouncementForm({
+      id: item.id,
+      number: item.number || "",
+      title: item.title || "",
+      category: item.category || "Edaran Kuwu",
+      date: item.date || "",
+      time: item.time || "08.00 - 15.00 WIB",
+      summary: item.summary || "",
+      is_urgent: !!item.is_urgent,
+      file_url: item.file_url || "",
+    });
+    setIsAnnouncementModalOpen(true);
+  };
+
+  const handleSaveAnnouncement = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!announcementForm.title.trim() || !announcementForm.summary.trim()) {
+      alert("Mohon lengkapi judul dan ringkasan pengumuman!");
+      return;
+    }
+    setIsSubmittingAnnouncement(true);
+    try {
+      const payload = {
+        id: announcementForm.id,
+        number: announcementForm.number.trim(),
+        title: announcementForm.title.trim(),
+        category: announcementForm.category,
+        date: announcementForm.date,
+        time: announcementForm.time,
+        summary: announcementForm.summary.trim(),
+        is_urgent: announcementForm.is_urgent,
+        file_url: announcementForm.file_url || null,
+        is_deleted: false,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (editingAnnouncement) {
+        const { error } = await supabase.from("announcements").update(payload).eq("id", payload.id);
+        if (error) throw error;
+        await recordAuditLog({
+          actor_email: currentUser?.email || "unknown",
+          actor_name: currentUser?.nama || "Pamong",
+          actor_role: currentUser?.role || "operator",
+          action: "UPDATE",
+          entity_type: "announcements",
+          entity_id: payload.id,
+          description: `Memperbarui Pengumuman: "${payload.title}" (${payload.number})`,
+        });
+        setAnnouncementList((prev) =>
+          prev.map((item) => (item.id === payload.id ? { ...item, ...payload } : item))
+        );
+      } else {
+        const { error } = await supabase.from("announcements").insert([payload]);
+        if (error) throw error;
+        await recordAuditLog({
+          actor_email: currentUser?.email || "unknown",
+          actor_name: currentUser?.nama || "Pamong",
+          actor_role: currentUser?.role || "operator",
+          action: "CREATE",
+          entity_type: "announcements",
+          entity_id: payload.id,
+          description: `Menerbitkan Pengumuman Baru: "${payload.title}" (${payload.number})`,
+        });
+        setAnnouncementList((prev) => [payload, ...prev]);
+      }
+      setIsAnnouncementModalOpen(false);
+      showToast(`Pengumuman berhasil ${editingAnnouncement ? "diperbarui" : "diterbitkan"}!`);
+      await fetchAllData();
+    } catch (err: any) {
+      alert("Gagal menyimpan pengumuman: " + (err.message || err));
+    } finally {
+      setIsSubmittingAnnouncement(false);
+    }
+  };
+
+  const handleDeleteAnnouncement = async (item: any) => {
+    if (!confirm(`Hapus pengumuman "${item.title}"?`)) return;
+    try {
+      const { error } = await supabase
+        .from("announcements")
+        .update({
+          is_deleted: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", item.id);
+      if (error) throw error;
+
+      await recordAuditLog({
+        actor_email: currentUser?.email || "unknown",
+        actor_name: currentUser?.nama || "Pamong",
+        actor_role: currentUser?.role || "operator",
+        action: "DELETE",
+        entity_type: "announcements",
+        entity_id: item.id,
+        description: `Menghapus Pengumuman: "${item.title}" (soft delete)`,
+      });
+      setAnnouncementList((prev) => prev.filter((a) => a.id !== item.id));
+      showToast("Pengumuman berhasil dihapus.");
+      await fetchAllData();
+    } catch (err: any) {
+      alert("Gagal menghapus pengumuman: " + (err.message || err));
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // HANDLERS AGENDA KEGIATAN DESA
+  // --------------------------------------------------------------------------
+  const handleOpenCreateAgenda = () => {
+    setEditingAgenda(null);
+    const today = new Intl.DateTimeFormat("id-ID", { day: "numeric", month: "long", year: "numeric" }).format(new Date());
+    setAgendaForm({
+      id: `AGD-${Date.now().toString().slice(-4)}`,
+      title: "",
+      description: "",
+      date: today,
+      time: "09.00 - 11.30 WIB",
+      location: "Balai Desa Kadurama",
+      organizer: "Pemerintah Desa Kadurama",
+      dusun: "Semua Dusun",
+      status: "Akan Datang",
+    });
+    setIsAgendaModalOpen(true);
+  };
+
+  const handleOpenEditAgenda = (item: any) => {
+    setEditingAgenda(item);
+    setAgendaForm({
+      id: item.id,
+      title: item.title || "",
+      description: item.description || "",
+      date: item.date || "",
+      time: item.time || "09.00 - 11.30 WIB",
+      location: item.location || "Balai Desa Kadurama",
+      organizer: item.organizer || "Pemerintah Desa Kadurama",
+      dusun: item.dusun || "Semua Dusun",
+      status: item.status || "Akan Datang",
+    });
+    setIsAgendaModalOpen(true);
+  };
+
+  const handleSaveAgenda = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!agendaForm.title.trim() || !agendaForm.description.trim()) {
+      alert("Mohon lengkapi judul dan deskripsi agenda!");
+      return;
+    }
+    setIsSubmittingAgenda(true);
+    try {
+      const payload = {
+        id: agendaForm.id,
+        title: agendaForm.title.trim(),
+        description: agendaForm.description.trim(),
+        date: agendaForm.date,
+        time: agendaForm.time,
+        location: agendaForm.location.trim(),
+        organizer: agendaForm.organizer.trim(),
+        dusun: agendaForm.dusun,
+        status: agendaForm.status,
+        is_deleted: false,
+        updated_at: new Date().toISOString(),
+      };
+
+      if (editingAgenda) {
+        const { error } = await supabase.from("village_agenda").update(payload).eq("id", payload.id);
+        if (error) throw error;
+        await recordAuditLog({
+          actor_email: currentUser?.email || "unknown",
+          actor_name: currentUser?.nama || "Pamong",
+          actor_role: currentUser?.role || "operator",
+          action: "UPDATE",
+          entity_type: "village_agenda",
+          entity_id: payload.id,
+          description: `Memperbarui Agenda: "${payload.title}" (${payload.dusun})`,
+        });
+        setAgendaList((prev) =>
+          prev.map((item) => (item.id === payload.id ? { ...item, ...payload } : item))
+        );
+      } else {
+        const { error } = await supabase.from("village_agenda").insert([payload]);
+        if (error) throw error;
+        await recordAuditLog({
+          actor_email: currentUser?.email || "unknown",
+          actor_name: currentUser?.nama || "Pamong",
+          actor_role: currentUser?.role || "operator",
+          action: "CREATE",
+          entity_type: "village_agenda",
+          entity_id: payload.id,
+          description: `Menambahkan Agenda Baru: "${payload.title}" (${payload.dusun})`,
+        });
+        setAgendaList((prev) => [payload, ...prev]);
+      }
+      setIsAgendaModalOpen(false);
+      showToast(`Agenda kegiatan berhasil ${editingAgenda ? "diperbarui" : "ditambahkan"}!`);
+      await fetchAllData();
+    } catch (err: any) {
+      alert("Gagal menyimpan agenda: " + (err.message || err));
+    } finally {
+      setIsSubmittingAgenda(false);
+    }
+  };
+
+  const handleDeleteAgenda = async (item: any) => {
+    if (!confirm(`Hapus agenda kegiatan "${item.title}"?`)) return;
+    try {
+      const { error } = await supabase
+        .from("village_agenda")
+        .update({
+          is_deleted: true,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", item.id);
+      if (error) throw error;
+
+      await recordAuditLog({
+        actor_email: currentUser?.email || "unknown",
+        actor_name: currentUser?.nama || "Pamong",
+        actor_role: currentUser?.role || "operator",
+        action: "DELETE",
+        entity_type: "village_agenda",
+        entity_id: item.id,
+        description: `Menghapus Agenda: "${item.title}" (soft delete)`,
+      });
+      setAgendaList((prev) => prev.filter((a) => a.id !== item.id));
+      showToast("Agenda berhasil dihapus.");
+      await fetchAllData();
+    } catch (err: any) {
+      alert("Gagal menghapus agenda: " + (err.message || err));
+    }
+  };
+
+  // --------------------------------------------------------------------------
   // HANDLERS APBDES 2026
   // --------------------------------------------------------------------------
   const handleOpenEditSummary = () => {
@@ -1490,6 +1807,27 @@ export default function MasterPanelPage() {
       item.summary?.toLowerCase().includes(newsSearch.toLowerCase()) ||
       item.author?.toLowerCase().includes(newsSearch.toLowerCase());
     return matchCat && matchSearch;
+  });
+
+  const filteredAnnouncements = announcementList.filter((item) => {
+    const matchCat = announcementCategoryFilter === "all" || item.category === announcementCategoryFilter;
+    const matchSearch =
+      !announcementSearch.trim() ||
+      item.title?.toLowerCase().includes(announcementSearch.toLowerCase()) ||
+      item.number?.toLowerCase().includes(announcementSearch.toLowerCase()) ||
+      item.summary?.toLowerCase().includes(announcementSearch.toLowerCase());
+    return matchCat && matchSearch;
+  });
+
+  const filteredAgenda = agendaList.filter((item) => {
+    const matchDusun = agendaDusunFilter === "all" || item.dusun === agendaDusunFilter;
+    const matchSearch =
+      !agendaSearch.trim() ||
+      item.title?.toLowerCase().includes(agendaSearch.toLowerCase()) ||
+      item.description?.toLowerCase().includes(agendaSearch.toLowerCase()) ||
+      item.location?.toLowerCase().includes(agendaSearch.toLowerCase()) ||
+      item.organizer?.toLowerCase().includes(agendaSearch.toLowerCase());
+    return matchDusun && matchSearch;
   });
   const filteredSensus = sensusList.filter((item) => {
     const matchDusun = sensusDusunFilter === "all" || item.dusun === sensusDusunFilter;
@@ -1782,6 +2120,32 @@ export default function MasterPanelPage() {
             >
               <Newspaper className="w-4 h-4 text-emerald-300" />
               <span>Publikasi Kabar Desa</span>
+            </button>
+
+            {/* TAB: PENGUMUMAN RESMI */}
+            <button
+              onClick={() => setActiveTab("pengumuman")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition ${
+                activeTab === "pengumuman"
+                  ? "bg-[#009388] text-white shadow-sm"
+                  : "text-emerald-100 hover:bg-[#005851]"
+              }`}
+            >
+              <Bell className="w-4 h-4 text-emerald-300" />
+              <span>Pengumuman Resmi</span>
+            </button>
+
+            {/* TAB: AGENDA KEGIATAN */}
+            <button
+              onClick={() => setActiveTab("agenda")}
+              className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition ${
+                activeTab === "agenda"
+                  ? "bg-[#009388] text-white shadow-sm"
+                  : "text-emerald-100 hover:bg-[#005851]"
+              }`}
+            >
+              <Calendar className="w-4 h-4 text-emerald-300" />
+              <span>Agenda Kegiatan</span>
             </button>
 
             <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-200/70 px-3 pt-4 pb-2">
@@ -2322,10 +2686,35 @@ export default function MasterPanelPage() {
           )}
 
           {/* ================================================================ */}
-          {/* TAB 3: MANAJEMEN KABAR DESA (FULL CRUD SUPABASE)                 */}
+          {/* TAB: MANAJEMEN KABAR DESA (FULL CRUD SUPABASE)                    */}
           {/* ================================================================ */}
           {activeTab === "berita" && (
             <div className="space-y-6">
+              {/* SUB-NAVIGASI INFORMASI DESA */}
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-3 flex-wrap">
+                <button
+                  onClick={() => setActiveTab("berita")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-[#009388] text-white shadow-xs"
+                >
+                  <Newspaper className="w-3.5 h-3.5" />
+                  <span>Warta Berita ({newsList.length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("pengumuman")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                >
+                  <Bell className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Pengumuman Resmi ({announcementList.length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("agenda")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Agenda Kegiatan ({agendaList.length})</span>
+                </button>
+              </div>
+
               <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
                 <div>
                   <h2 className="text-xl font-bold text-slate-950 flex items-center gap-2.5">
@@ -2394,7 +2783,7 @@ export default function MasterPanelPage() {
                 <div className="p-4 border-b border-slate-100 flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <h3 className="font-bold text-slate-900 text-sm">Daftar Publikasi Warta</h3>
-                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-[10px] font-bold">
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
                       {filteredNews.length} artikel
                     </span>
                   </div>
@@ -2408,10 +2797,10 @@ export default function MasterPanelPage() {
                 </div>
 
                 {filteredNews.length === 0 ? (
-                  <div className="p-12 text-center">
-                    <Newspaper className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                  <div className="py-12 text-center text-slate-500 space-y-2">
+                    <Newspaper className="w-10 h-10 mx-auto text-slate-300 stroke-1" />
                     <p className="text-slate-800 font-bold text-sm">Belum Ada Artikel Berita</p>
-                    <p className="text-slate-400 text-xs mt-1">
+                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
                       {newsSearch ? "Tidak ada berita yang cocok dengan kata kunci pencarian." : "Mulai terbitkan warta resmi kegiatan desa sekarang."}
                     </p>
                     {canManageNews && !newsSearch && (
@@ -2494,7 +2883,7 @@ export default function MasterPanelPage() {
                             <>
                               <button
                                 onClick={() => handleOpenEditNews(item)}
-                                className="p-2 rounded-xl text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition"
+                                className="p-2 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition"
                                 title="Edit Berita"
                               >
                                 <Edit3 className="w-4 h-4" />
@@ -2503,6 +2892,416 @@ export default function MasterPanelPage() {
                                 onClick={() => handleDeleteNews(item)}
                                 className="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition"
                                 title="Hapus Berita (Soft Delete)"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ================================================================ */}
+          {/* TAB: MANAJEMEN PENGUMUMAN RESMI (FULL CRUD SUPABASE)              */}
+          {/* ================================================================ */}
+          {activeTab === "pengumuman" && (
+            <div className="space-y-6">
+              {/* SUB-NAVIGASI INFORMASI DESA */}
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-3 flex-wrap">
+                <button
+                  onClick={() => setActiveTab("berita")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                >
+                  <Newspaper className="w-3.5 h-3.5" />
+                  <span>Warta Berita ({newsList.length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("pengumuman")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-[#009388] text-white shadow-xs"
+                >
+                  <Bell className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Pengumuman Resmi ({announcementList.length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("agenda")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Agenda Kegiatan ({agendaList.length})</span>
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-950 flex items-center gap-2.5">
+                    <Bell className="w-6 h-6 text-amber-600" />
+                    <span>Manajemen Pengumuman Resmi Balai Desa</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Terbitkan surat edaran Kuwu, jadwal pajak PBB, pengumuman bansos, dan info penting warga.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Link
+                    href="/pengumuman"
+                    target="_blank"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 transition"
+                  >
+                    <span>Buka Papan Pengumuman</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+
+                  {canManagePengumuman && (
+                    <button
+                      onClick={handleOpenCreateAnnouncement}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Buat Pengumuman Baru</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Filter & Search Bar */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div className="relative w-full sm:w-80">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={announcementSearch}
+                    onChange={(e) => setAnnouncementSearch(e.target.value)}
+                    placeholder="Cari nomor, judul, atau isi pengumuman..."
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <span className="text-xs text-slate-500 font-semibold whitespace-nowrap">Kategori:</span>
+                  <select
+                    value={announcementCategoryFilter}
+                    onChange={(e) => setAnnouncementCategoryFilter(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  >
+                    <option value="all">Semua Kategori</option>
+                    <option value="Edaran Kuwu">Edaran Kuwu</option>
+                    <option value="Bansos">Bansos</option>
+                    <option value="Kesehatan">Kesehatan</option>
+                    <option value="Pajak PBB">Pajak PBB</option>
+                    <option value="Administrasi">Administrasi</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Announcements List */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-slate-900 text-sm">Daftar Pengumuman Resmi</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
+                      {filteredAnnouncements.length} edaran
+                    </span>
+                  </div>
+                </div>
+
+                {filteredAnnouncements.length === 0 ? (
+                  <div className="py-12 text-center text-slate-500 space-y-2">
+                    <Bell className="w-10 h-10 mx-auto text-slate-300 stroke-1" />
+                    <p className="text-slate-800 font-bold text-sm">Belum Ada Pengumuman</p>
+                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                      {announcementSearch ? "Tidak ada pengumuman yang cocok dengan filter." : "Mulai buat surat edaran atau pemberitahuan balai desa."}
+                    </p>
+                    {canManagePengumuman && !announcementSearch && (
+                      <button
+                        onClick={handleOpenCreateAnnouncement}
+                        className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#009388] text-white text-xs font-bold hover:bg-[#007b71] transition"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Buat Pengumuman Pertama</span>
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {filteredAnnouncements.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50/70 transition group"
+                      >
+                        <div className="flex items-start gap-4 min-w-0">
+                          <div className="w-12 h-12 rounded-xl bg-amber-50 border border-amber-200 flex items-center justify-center flex-shrink-0 text-amber-600">
+                            <Bell className="w-6 h-6" />
+                          </div>
+
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-amber-100 text-amber-800">
+                                {item.category}
+                              </span>
+                              {item.is_urgent && (
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-red-100 text-red-700 border border-red-200 flex items-center gap-1">
+                                  <AlertTriangle className="w-3 h-3" /> MENDESAK
+                                </span>
+                              )}
+                              <span className="text-[11px] text-slate-500 font-mono font-bold">
+                                No: {item.number}
+                              </span>
+                              <span className="text-[11px] text-slate-400 font-mono">
+                                • {item.date}
+                              </span>
+                            </div>
+
+                            <h4 className="font-bold text-slate-900 text-sm leading-snug group-hover:text-[#009388] transition">
+                              {item.title}
+                            </h4>
+
+                            <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                              {item.summary}
+                            </p>
+
+                            <div className="text-[11px] text-slate-400 pt-0.5">
+                              Waktu/Jam: <span className="font-medium text-slate-600">{item.time || "08.00 - 15.00 WIB"}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 sm:self-center flex-shrink-0">
+                          <Link
+                            href="/pengumuman"
+                            target="_blank"
+                            className="p-2 rounded-xl text-slate-500 hover:text-[#009388] hover:bg-emerald-50 transition"
+                            title="Buka Papan Pengumuman"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+
+                          {canManagePengumuman && (
+                            <>
+                              <button
+                                onClick={() => handleOpenEditAnnouncement(item)}
+                                className="p-2 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition"
+                                title="Edit Pengumuman"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteAnnouncement(item)}
+                                className="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition"
+                                title="Hapus Pengumuman"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ================================================================ */}
+          {/* TAB: MANAJEMEN AGENDA KEGIATAN DESA (FULL CRUD SUPABASE)          */}
+          {/* ================================================================ */}
+          {activeTab === "agenda" && (
+            <div className="space-y-6">
+              {/* SUB-NAVIGASI INFORMASI DESA */}
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-3 flex-wrap">
+                <button
+                  onClick={() => setActiveTab("berita")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                >
+                  <Newspaper className="w-3.5 h-3.5" />
+                  <span>Warta Berita ({newsList.length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("pengumuman")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                >
+                  <Bell className="w-3.5 h-3.5 text-amber-600" />
+                  <span>Pengumuman Resmi ({announcementList.length})</span>
+                </button>
+                <button
+                  onClick={() => setActiveTab("agenda")}
+                  className="px-3.5 py-2 rounded-xl text-xs font-bold transition flex items-center gap-1.5 bg-[#009388] text-white shadow-xs"
+                >
+                  <Calendar className="w-3.5 h-3.5 text-emerald-200" />
+                  <span>Agenda Kegiatan ({agendaList.length})</span>
+                </button>
+              </div>
+
+              <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-950 flex items-center gap-2.5">
+                    <Calendar className="w-6 h-6 text-[#009388]" />
+                    <span>Manajemen Agenda & Kalender Musyawarah</span>
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Jadwalkan musrenbang, posyandu, kerja bakti, dan agenda warga di Dusun Manis, Pahing, dan Wage.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2.5">
+                  <Link
+                    href="/agenda"
+                    target="_blank"
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 transition"
+                  >
+                    <span>Lihat Kalender Publik</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
+                  </Link>
+
+                  {canManageAgenda && (
+                    <button
+                      onClick={handleOpenCreateAgenda}
+                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Tambah Agenda Baru</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Filter & Search Bar */}
+              <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-col sm:flex-row gap-3 items-center justify-between">
+                <div className="relative w-full sm:w-80">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <input
+                    type="text"
+                    value={agendaSearch}
+                    onChange={(e) => setAgendaSearch(e.target.value)}
+                    placeholder="Cari judul, lokasi, atau deskripsi agenda..."
+                    className="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                  <span className="text-xs text-slate-500 font-semibold whitespace-nowrap">Wilayah Dusun:</span>
+                  <select
+                    value={agendaDusunFilter}
+                    onChange={(e) => setAgendaDusunFilter(e.target.value)}
+                    className="px-3 py-2 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 bg-slate-50 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  >
+                    <option value="all">Semua Dusun</option>
+                    <option value="Semua Dusun">Semua Dusun</option>
+                    <option value="Dusun Manis">Dusun Manis</option>
+                    <option value="Dusun Pahing">Dusun Pahing</option>
+                    <option value="Dusun Wage">Dusun Wage</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Agenda List */}
+              <div className="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+                <div className="p-4 border-b border-slate-100 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <h3 className="font-bold text-slate-900 text-sm">Daftar Agenda Kegiatan</h3>
+                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 text-xs font-semibold">
+                      {filteredAgenda.length} agenda
+                    </span>
+                  </div>
+                </div>
+
+                {filteredAgenda.length === 0 ? (
+                  <div className="py-12 text-center text-slate-500 space-y-2">
+                    <Calendar className="w-10 h-10 mx-auto text-slate-300 stroke-1" />
+                    <p className="text-slate-800 font-bold text-sm">Belum Ada Agenda</p>
+                    <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                      {agendaSearch ? "Tidak ada agenda yang cocok dengan pencarian." : "Jadwalkan rapat, posyandu, atau musyawarah warga."}
+                    </p>
+                    {canManageAgenda && !agendaSearch && (
+                      <button
+                        onClick={handleOpenCreateAgenda}
+                        className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#009388] text-white text-xs font-bold hover:bg-[#007b71] transition"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Tambah Agenda Pertama</span>
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="divide-y divide-slate-100">
+                    {filteredAgenda.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 hover:bg-slate-50/70 transition group"
+                      >
+                        <div className="flex items-start gap-4 min-w-0">
+                          <div className="w-12 h-12 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center justify-center flex-shrink-0 text-[#009388]">
+                            <Calendar className="w-6 h-6" />
+                          </div>
+
+                          <div className="min-w-0 space-y-1">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800">
+                                {item.dusun}
+                              </span>
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                                  item.status === "Akan Datang"
+                                    ? "bg-blue-50 text-blue-700 border border-blue-200"
+                                    : item.status === "Berlangsung"
+                                    ? "bg-amber-50 text-amber-700 border border-amber-200 animate-pulse"
+                                    : "bg-slate-100 text-slate-600 border border-slate-200"
+                                }`}
+                              >
+                                {item.status}
+                              </span>
+                              <span className="text-[11px] text-slate-500 font-mono flex items-center gap-1">
+                                <Clock className="w-3 h-3 text-slate-400" />
+                                {item.date} • {item.time}
+                              </span>
+                            </div>
+
+                            <h4 className="font-bold text-slate-900 text-sm leading-snug group-hover:text-[#009388] transition">
+                              {item.title}
+                            </h4>
+
+                            <p className="text-xs text-slate-500 line-clamp-2 leading-relaxed">
+                              {item.description}
+                            </p>
+
+                            <div className="text-[11px] text-slate-500 flex items-center gap-3 pt-0.5 flex-wrap">
+                              <span className="flex items-center gap-1 text-slate-600 font-medium">
+                                <MapPin className="w-3 h-3 text-[#009388]" /> {item.location}
+                              </span>
+                              <span className="text-slate-400">
+                                Penyelenggara: <strong className="text-slate-600">{item.organizer}</strong>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2 sm:self-center flex-shrink-0">
+                          <Link
+                            href="/agenda"
+                            target="_blank"
+                            className="p-2 rounded-xl text-slate-500 hover:text-[#009388] hover:bg-emerald-50 transition"
+                            title="Buka Kalender Agenda"
+                          >
+                            <Eye className="w-4 h-4" />
+                          </Link>
+
+                          {canManageAgenda && (
+                            <>
+                              <button
+                                onClick={() => handleOpenEditAgenda(item)}
+                                className="p-2 rounded-xl text-slate-500 hover:text-blue-600 hover:bg-blue-50 transition"
+                                title="Edit Agenda"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                              <button
+                                onClick={() => handleDeleteAgenda(item)}
+                                className="p-2 rounded-xl text-slate-500 hover:text-red-600 hover:bg-red-50 transition"
+                                title="Hapus Agenda"
                               >
                                 <Trash2 className="w-4 h-4" />
                               </button>
@@ -3888,6 +4687,346 @@ export default function MasterPanelPage() {
                     <>
                       <Check className="w-4 h-4" />
                       <span>{editingNews ? "Simpan Perubahan" : "Terbitkan Warta"}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL PENGUMUMAN RESMI DESA (CREATE / EDIT)                         */}
+      {/* =================================================================== */}
+      {isAnnouncementModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 flex flex-col max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center border border-amber-200">
+                  <Bell className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-950">
+                    {editingAnnouncement ? "Edit Pengumuman Resmi" : "Buat Pengumuman Baru"}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Surat edaran, pengumuman bansos, jadwal PBB, atau informasi darurat warga.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAnnouncementModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveAnnouncement} className="py-5 space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Nomor Registrasi / Edaran <span className="text-red-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={announcementForm.number}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, number: e.target.value })}
+                    placeholder="140/084/Pemdes/IX/2026"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Kategori Pengumuman
+                  </label>
+                  <select
+                    value={announcementForm.category}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, category: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  >
+                    <option value="Edaran Kuwu">Edaran Kuwu</option>
+                    <option value="Bansos">Bansos</option>
+                    <option value="Kesehatan">Kesehatan</option>
+                    <option value="Pajak PBB">Pajak PBB</option>
+                    <option value="Administrasi">Administrasi</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Judul Pengumuman <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={announcementForm.title}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, title: e.target.value })}
+                  placeholder="Contoh: Jadwal Penyaluran Bantuan Pangan Beras Tahap IV..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Tanggal Pengumuman
+                  </label>
+                  <input
+                    type="text"
+                    value={announcementForm.date}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, date: e.target.value })}
+                    placeholder="17 September 2026"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Waktu / Jam Layanan
+                  </label>
+                  <input
+                    type="text"
+                    value={announcementForm.time}
+                    onChange={(e) => setAnnouncementForm({ ...announcementForm, time: e.target.value })}
+                    placeholder="08.00 - 15.00 WIB"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Isi / Uraian Pengumuman <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={4}
+                  value={announcementForm.summary}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, summary: e.target.value })}
+                  placeholder="Tuliskan isi pengumuman atau instruksi bagi warga secara lengkap dan jelas..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              {/* Status Mendesak Checkbox */}
+              <div className="p-3 rounded-xl bg-amber-50/60 border border-amber-200/80 flex items-center gap-3">
+                <input
+                  type="checkbox"
+                  id="is_urgent_checkbox"
+                  checked={announcementForm.is_urgent}
+                  onChange={(e) => setAnnouncementForm({ ...announcementForm, is_urgent: e.target.checked })}
+                  className="w-4 h-4 rounded text-amber-600 focus:ring-amber-500 border-slate-300 cursor-pointer"
+                />
+                <label htmlFor="is_urgent_checkbox" className="text-xs text-slate-800 font-medium cursor-pointer">
+                  Tandai sebagai <strong className="text-amber-800 font-bold">Pengumuman Mendesak / Penting</strong> (badge merah di portal publik)
+                </label>
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsAnnouncementModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingAnnouncement}
+                  className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] disabled:bg-slate-300 text-white text-xs font-bold shadow-md transition flex items-center gap-2"
+                >
+                  {isSubmittingAnnouncement ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>{editingAnnouncement ? "Simpan Perubahan" : "Terbitkan Pengumuman"}</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL AGENDA KEGIATAN DESA (CREATE / EDIT)                          */}
+      {/* =================================================================== */}
+      {isAgendaModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 flex flex-col max-h-[92vh] overflow-y-auto">
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-[#009388] flex items-center justify-center border border-emerald-200">
+                  <Calendar className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-950">
+                    {editingAgenda ? "Edit Agenda Kegiatan" : "Tambah Agenda Kegiatan Baru"}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Musyawarah desa, posyandu, gotong royong, atau pertemuan warga per dusun.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setIsAgendaModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveAgenda} className="py-5 space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Nama / Judul Agenda Kegiatan <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={agendaForm.title}
+                  onChange={(e) => setAgendaForm({ ...agendaForm, title: e.target.value })}
+                  placeholder="Contoh: Musyawarah Dusun (Musdus) Perencanaan RKPDes 2027..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Wilayah Dusun
+                  </label>
+                  <select
+                    value={agendaForm.dusun}
+                    onChange={(e) => setAgendaForm({ ...agendaForm, dusun: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  >
+                    <option value="Semua Dusun">Semua Dusun (Tingkat Desa)</option>
+                    <option value="Dusun Manis">Dusun Manis</option>
+                    <option value="Dusun Pahing">Dusun Pahing</option>
+                    <option value="Dusun Wage">Dusun Wage</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Status Pelaksanaan
+                  </label>
+                  <select
+                    value={agendaForm.status}
+                    onChange={(e) => setAgendaForm({ ...agendaForm, status: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  >
+                    <option value="Akan Datang">Akan Datang</option>
+                    <option value="Berlangsung">Sedang Berlangsung</option>
+                    <option value="Selesai">Selesai</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Tanggal Pelaksanaan
+                  </label>
+                  <input
+                    type="text"
+                    value={agendaForm.date}
+                    onChange={(e) => setAgendaForm({ ...agendaForm, date: e.target.value })}
+                    placeholder="25 September 2026"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Waktu / Jam
+                  </label>
+                  <input
+                    type="text"
+                    value={agendaForm.time}
+                    onChange={(e) => setAgendaForm({ ...agendaForm, time: e.target.value })}
+                    placeholder="09.00 - 11.30 WIB"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Tempat / Lokasi
+                  </label>
+                  <input
+                    type="text"
+                    value={agendaForm.location}
+                    onChange={(e) => setAgendaForm({ ...agendaForm, location: e.target.value })}
+                    placeholder="Balai Desa Kadurama / Pos Balai Dusun..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Penyelenggara
+                  </label>
+                  <input
+                    type="text"
+                    value={agendaForm.organizer}
+                    onChange={(e) => setAgendaForm({ ...agendaForm, organizer: e.target.value })}
+                    placeholder="Pemerintah Desa / Kepala Dusun & BPD..."
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Uraian / Keterangan Kegiatan <span className="text-red-500">*</span>
+                </label>
+                <textarea
+                  required
+                  rows={3}
+                  value={agendaForm.description}
+                  onChange={(e) => setAgendaForm({ ...agendaForm, description: e.target.value })}
+                  placeholder="Rincian pembahasan rapat, perlengkapan yang perlu dibawa warga, atau tujuan musyawarah..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsAgendaModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingAgenda}
+                  className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] disabled:bg-slate-300 text-white text-xs font-bold shadow-md transition flex items-center gap-2"
+                >
+                  {isSubmittingAgenda ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>{editingAgenda ? "Simpan Perubahan" : "Jadwalkan Agenda"}</span>
                     </>
                   )}
                 </button>

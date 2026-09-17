@@ -5,7 +5,7 @@ export interface AuditLogEntry {
   actor_name: string;
   actor_role: string;
   action: "CREATE" | "UPDATE" | "DELETE" | "RESTORE" | "LOGIN" | "IMPORT";
-  entity_type: "residents" | "sensus_kk" | "news_articles" | "apbdes_sectors" | "aparatur_users";
+  entity_type: "residents" | "sensus_kk" | "news_articles" | "announcements" | "village_agenda" | "apbdes_sectors" | "aparatur_users";
   entity_id: string;
   description: string;
   old_data?: any;
