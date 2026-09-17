@@ -239,16 +239,84 @@
       - Pustaka engine: `xlsx` (SheetJS) yang sudah terpasang di dependensi repositori.
     - **Integrasi Antarmuka:** Tombol aksi ekspor `"Unduh Laporan APBDes (PDF)"` dan `"Ekspor Data (Excel)"` akan ditempatkan di bagian atas halaman `/transparansi/apbdes` serta dapat diakses melalui portal administrasi master.
 
+21. Inventarisasi Komprehensif Format Dokumen Cetak & Download PDF Desa Kadurama:
+    - **Tujuan:** Merangkum dan menstandarisasi seluruh kebutuhan berkas PDF resmi yang dapat di-generate dan diunduh oleh warga maupun pamong desa.
+    - Telah dipetakan 4 Kluster Utama Dokumen PDF (Pelayanan Surat Warga, Transparansi APBDes, Tata Kelola Sensus & Bansos, serta Publikasi Regulasi Desa).
+
+---
+
+## 📄 Format & Inventarisasi Dokumen Download PDF Sistem Informasi Desa Kadurama
+
+Berikut adalah daftar lengkap format berkas PDF resmi yang disiapkan dalam arsitektur sistem informasi Desa Kadurama:
+
+### 1. Kluster Dokumen Pelayanan Administrasi Warga (A4 Standar Kemendagri)
+*Semua dokumen persuratan dilengkapi Kop Resmi Pemerintah Desa Kadurama, Lambang Kabupaten Kuningan, Kode Desa Kemendagri `32.08.10.2002`, QR Code verifikasi keaslian dokumen, dan stempel/ttd Kuwu.*
+
+1. **Surat Keterangan Usaha (SKU)**
+   - **Peruntukan:** Pengajuan pinjaman KUR perbankan, izin usaha mikro-kecil, kemitraan BUMDes, atau legalitas UMKM.
+   - **Format Isian:** Identitas pemohon (NIK, Nama, Tempat/Tgl Lahir, Dusun), Nama Usaha, Jenis Bidang Usaha (cth: Olahan Ubi Manis, Ternak Sapi, Toko Kelontong), Alamat Tempat Usaha, dan Pernyataan Keabsahan Usaha.
+2. **Surat Keterangan Tidak Mampu (SKTM)**
+   - **Peruntukan:** Keringanan biaya rumah sakit/Jamkesda/BPJS PBI, pengajuan beasiswa pendidikan (KIP-Sekolah & KIP-Kuliah), serta bantuan sosial kedaruratan.
+   - **Format Isian:** Nomor KK, NIK Kepala Keluarga & Pemohon, Penghasilan Bulanan, Kondisi Rumah (Layak/RTLH), Kategori Desil (Desil 1 s.d. 2), dan Tujuan Spesifik Penggunaan Surat.
+3. **Surat Keterangan Domisili (Warga / Badan Usaha / Ormas)**
+   - **Peruntukan:** Keterangan tinggal sementara/tetap bagi warga, pembukaan rekening perbankan, atau pendaftaran domisili sekretariat organisasi di Dusun Manis, Pahing, atau Wage.
+   - **Format Isian:** NIK pemohon, alamat asal KTP, alamat domisili nyata di Kadurama (Dusun, RT/RW), dan lama waktu bertempat tinggal.
+4. **Surat Pengantar Catatan Kepolisian (SKCK)**
+   - **Peruntukan:** Pengantar resmi kantor desa untuk penerbitan SKCK di Polsek Ciawigebang (melamar pekerjaan swasta/BUMN, seleksi CPNS, TNI, POLRI).
+   - **Format Isian:** Data diri pemohon, catatan kelakuan baik di lingkungan RT/RW desa, dan instansi tujuan pemohon.
+5. **Surat Keterangan Kematian & Kelahiran**
+   - **Peruntukan:** Pengantar pelaporan peristiwa kependudukan sebelum penerbitan Akta Resmi oleh Disdukcapil Kabupaten Kuningan.
+   - **Format Isian:** Tanggal dan jam peristiwa, tempat peristiwa, nama saksi, pelapor, dan nomor registrasi buku desa.
+6. **Surat Keterangan Belum Menikah & Keterangan Penghasilan**
+   - **Peruntukan:** Persyaratan nikah di KUA Ciawigebang atau syarat administratif permohonan KPR/pembiayaan.
+
+---
+
+### 2. Kluster Laporan Transparansi Keuangan Desa (APBDes 2026)
+*Sesuai Permendagri No. 20 Tahun 2018 tentang Pengelolaan Keuangan Desa.*
+
+1. **Lembar Infografis APBDes 2026 (Format Ringkas A4 Landscape / Poster Publik)**
+   - **Peruntukan:** Unduhan transparansi bagi masyarakat umum, bahan tayang musyawarah desa, dan cetak poster papan pengumuman balai desa.
+   - **Format Isian:** Grafik diagram batang/lingkaran pendapatan (PADes, Dana Desa, ADD, DBH), alokasi belanja 5 bidang, target serapan anggaran berjalan, dan surplus/defisit.
+2. **Laporan Realisasi Anggaran Pendapatan & Belanja Desa (Format Tabel Rinci)**
+   - **Peruntukan:** Arsip formal pemeriksaan berkala BPD, evaluasi Kecamatan Ciawigebang, dan laporan pertanggungjawaban tahunan.
+   - **Format Isian:** Pagu vs Realisasi Belanja 5 Bidang (Pemerintahan, Pembangunan, Pembinaan, Pemberdayaan, Kebencanaan), persentase capaian per sub-bidang, dan catatan SiLPA.
+
+---
+
+### 3. Kluster Tata Kelola Sensus, Bansos & PBB (Internal Pamong / Kepala Dusun)
+*Akses dibatasi hanya untuk pamong berwenang via Panel Data Center.*
+
+1. **Rekapitulasi Mikro Sensus Keluarga & Desil Kerentanan Per Dusun**
+   - **Peruntukan:** Verifikasi lapangan penerima program BLT Dana Desa, Program Bedah Rumah RTLH, dan bantuan sembako.
+   - **Format Isian:** Tabel per dusun (Manis, Pahing, Wage) memuat No KK, Nama Kepala Keluarga, Skor Desil (1-4), Kondisi Rumah (RTLH/Layak), status jamban/air bersih, dan foto dokumentasi.
+2. **Daftar Nominatif Wajib Pajak PBB-P2 Per RT/Dusun**
+   - **Peruntukan:** Lembar kerja penagihan pajak bumi dan bangunan bagi kolektor pamong dan kepala dusun.
+   - **Format Isian:** Nomor SPPT, NIK/Nama Wajib Pajak, Blok/RT, Nominal Pajak Terutang, Status Pelunasan (Lunas / Belum Lunas), dan paraf tanda terima.
+3. **Buku Agenda Register Surat Keluar Resmi**
+   - **Peruntukan:** Tertib arsip administrasi persuratan balai desa.
+   - **Format Isian:** Nomor urut registrasi, nomor surat, tanggal keluar, nama pemohon, NIK, jenis surat, keperluan, dan staf pembuat.
+
+---
+
+### 4. Kluster Publikasi, Regulasi & Informasi Umum
+1. **Lembar Pengumuman Resmi Balai Desa (A4 Vertikal)**
+   - **Peruntukan:** Dicetak untuk ditempel di pos ronda, papan kantor desa, atau dibagikan via grup WhatsApp warga.
+   - **Format Isian:** Kop surat desa, nomor edaran, perihal, isi pengumuman poin per poin, batas waktu pelaksanaan, dan tanda tangan Kuwu.
+2. **Salinan Peraturan Desa (Perdes) & Keputusan Kuwu (SK)**
+   - **Peruntukan:** Arsip dokumen hukum desa yang dapat diunduh publik sesuai prinsip Keterbukaan Informasi Publik (KIP).
+
 ---
 
 ## 🎯 Status & Pekerjaan Selanjutnya (Next Action)
 - [x] Penghapusan modul cetak surat dan agenda persuratan dari navigasi publik dan backpanel.
 - [x] Standardisasi wilayah menjadi 3 dusun resmi: Dusun Manis, Dusun Pahing, Dusun Wage.
 - [x] Pembuatan Modul Sensus Kesejahteraan Keluarga (Per KK) dengan kalkulator auto-desil dan kriteria RTLH.
-- [x] Draft arsitektur ekspor data APBDes (PDF & Excel/CSV) di DEVELOPMENT_LOG.md.
-- [x] Pembuatan section Profil 3 Dusun dan Peta Geografis Sebaran Fasilitas di portal publik.
-- [x] Redesign Hero Section & Profil 3 Dusun dengan standard taste frontend anti-slop.
-- [x] Pembuatan Lembar Validasi Data & Inventarisasi Asumsi di VALIDASI_DATA.md.
-- [ ] Implementasi export APBDes PDF & Excel setelah dokumen Perdes fisik APBDes diinput oleh staf desa.
+- [x] Pemetaan dan inventarisasi komprehensif format download dokumen PDF di DEVELOPMENT_LOG.md.
+- [x] Penggantian konten warta, agenda, dan pengumuman menjadi data contoh pengujian (Contoh 1 s.d. 5).
+- [x] Penambahan fitur upload foto, tombol preset foto resmi desa, dan standardisasi rasio 16:9 pada input warta.
+- [x] Penyusunan panduan materi training dan presentasi untuk pamong desa di PANDUAN_TRAINING_PAMONG.md.
+- [ ] Pelaksanaan sesi sosialisasi dan pendampingan teknis kepada pamong desa Kadurama.
+
 
 

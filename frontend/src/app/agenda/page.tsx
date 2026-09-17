@@ -5,6 +5,7 @@ import Link from "next/link";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
 import { createClient } from "@/lib/supabase/client";
+import { AGENDA_LIST } from "@/data/newsData";
 import {
   Calendar as CalendarIcon,
   Clock,
@@ -29,7 +30,7 @@ interface AgendaItem {
 
 export default function AgendaPage() {
   const [dusunFilter, setDusunFilter] = useState<string>("Semua");
-  const [agendaList, setAgendaList] = useState<AgendaItem[]>([]);
+  const [agendaList, setAgendaList] = useState<AgendaItem[]>(AGENDA_LIST);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -45,11 +46,11 @@ export default function AgendaPage() {
         if (data && data.length > 0) {
           setAgendaList(data);
         } else {
-          setAgendaList([]);
+          setAgendaList(AGENDA_LIST);
         }
       } catch (err) {
         console.warn("Gagal memuat agenda kegiatan dari Supabase:", err);
-        setAgendaList([]);
+        setAgendaList(AGENDA_LIST);
       } finally {
         setLoading(false);
       }

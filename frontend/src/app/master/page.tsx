@@ -15,6 +15,7 @@ import {
   calculateDesil,
   APARATUR_ACCOUNTS,
 } from "@/data/masterData";
+import { NEWS_ARTICLES } from "@/data/newsData";
 import {
   ClipboardCheck,
   Users,
@@ -92,7 +93,24 @@ export default function MasterPanelPage() {
   // --------------------------------------------------------------------------
   const [sensusList, setSensusList] = useState<SensusKK[]>([]);
   const [residentsList, setResidentsList] = useState<Resident[]>([]);
-  const [newsList, setNewsList] = useState<any[]>([]);
+  const [newsList, setNewsList] = useState<any[]>(() =>
+    NEWS_ARTICLES.map((n) => ({
+      id: n.id,
+      slug: n.slug,
+      title: n.title,
+      category: n.category,
+      date: n.date,
+      author: n.author,
+      author_role: n.authorRole,
+      read_time: n.readTime,
+      summary: n.summary,
+      content: n.content,
+      status: n.status,
+      image_url: n.imageUrl,
+      tags: n.tags,
+      is_deleted: false,
+    }))
+  );
   const [newsSearch, setNewsSearch] = useState("");
   const [newsCategoryFilter, setNewsCategoryFilter] = useState("all");
   const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
@@ -352,7 +370,7 @@ export default function MasterPanelPage() {
         .select("*")
         .eq("is_deleted", false)
         .order("created_at", { ascending: false });
-      if (newsData) setNewsList(newsData);
+      if (newsData && newsData.length > 0) setNewsList(newsData);
 
       // 5. Audit Logs (Ordered by created_at DESC)
       const { data: logData } = await supabase
@@ -2418,6 +2436,9 @@ export default function MasterPanelPage() {
                             <img
                               src={item.image_url}
                               alt={item.title}
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = "/dusun-manis.jpg";
+                              }}
                               className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl object-cover flex-shrink-0 bg-slate-100 border border-slate-200"
                             />
                           ) : (
@@ -3699,32 +3720,123 @@ export default function MasterPanelPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    URL Gambar Unggulan
-                  </label>
-                  <input
-                    type="url"
-                    value={newsForm.image_url}
-                    onChange={(e) => setNewsForm({ ...newsForm, image_url: e.target.value })}
-                    placeholder="https://images.unsplash.com/..."
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
-                  />
+              {/* FOTO UNGGULAN & PREVIEW DENGAN RASIO BAKU 16:9 */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200 space-y-3">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-800">
+                      Foto Unggulan Warta
+                    </label>
+                    <p className="text-[11px] text-slate-500">
+                      Upload foto, pilih preset resmi desa, atau masukkan link (rasio diseragamkan 16:9 lewat kode).
+                    </p>
+                  </div>
+                  <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold w-fit">
+                    <CheckCircle2 className="w-3 h-3" /> Rasio 16:9 Baku
+                  </span>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Tagar (Dipisah Koma)
-                  </label>
-                  <input
-                    type="text"
-                    value={newsForm.tags}
-                    onChange={(e) => setNewsForm({ ...newsForm, tags: e.target.value })}
-                    placeholder="Kadurama, Musrenbang, 2027..."
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
-                  />
+                {/* Preset Tombol Cepat Foto Desa */}
+                <div className="flex items-center gap-1.5 flex-wrap">
+                  <span className="text-[11px] text-slate-500 font-medium mr-1">Foto Cepat:</span>
+                  {[
+                    { label: "Dusun Manis", url: "/dusun-manis.jpg" },
+                    { label: "Dusun Pahing", url: "/dusun-pahing.jpg" },
+                    { label: "Dusun Wage", url: "/dusun-wage.jpg" },
+                    { label: "Banner Pemdes", url: "/og-image.jpg" },
+                  ].map((preset) => (
+                    <button
+                      key={preset.url}
+                      type="button"
+                      onClick={() => setNewsForm({ ...newsForm, image_url: preset.url })}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition border ${
+                        newsForm.image_url === preset.url
+                          ? "bg-[#009388] text-white border-[#009388] shadow-xs"
+                          : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
                 </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center pt-1">
+                  {/* Pilihan Upload atau URL */}
+                  <div className="sm:col-span-7 space-y-2.5">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        1. Upload Foto dari HP / Komputer
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 3 * 1024 * 1024) {
+                              alert("Ukuran file foto maksimal 3MB!");
+                              return;
+                            }
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const result = event.target?.result as string;
+                              if (result) {
+                                setNewsForm({ ...newsForm, image_url: result });
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-[#009388] file:text-white hover:file:bg-[#007b71] file:cursor-pointer cursor-pointer border border-slate-300 rounded-xl bg-white p-1"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        2. Atau Masukkan URL / Path Foto
+                      </label>
+                      <input
+                        type="text"
+                        value={newsForm.image_url}
+                        onChange={(e) => setNewsForm({ ...newsForm, image_url: e.target.value })}
+                        placeholder="/dusun-manis.jpg atau https://..."
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388] bg-white"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Pratinjau Foto dengan Frame Standar 16:9 */}
+                  <div className="sm:col-span-5">
+                    <div className="relative w-full aspect-video rounded-xl overflow-hidden border-2 border-slate-300 bg-slate-200 shadow-inner group">
+                      <img
+                        src={newsForm.image_url || "/dusun-manis.jpg"}
+                        alt="Pratinjau Foto Warta"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/dusun-manis.jpg";
+                        }}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-2">
+                        <span className="text-[10px] text-white font-medium truncate">
+                          Pratinjau Rasio Standar 16:9
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Tagar (Dipisah Koma)
+                </label>
+                <input
+                  type="text"
+                  value={newsForm.tags}
+                  onChange={(e) => setNewsForm({ ...newsForm, tags: e.target.value })}
+                  placeholder="Kadurama, Musrenbang, 2027..."
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                />
               </div>
 
               <div>

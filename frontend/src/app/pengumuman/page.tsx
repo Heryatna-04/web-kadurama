@@ -5,6 +5,7 @@ import Link from "next/link";
 import CivicNavbar from "@/components/CivicNavbar";
 import CivicFooter from "@/components/CivicFooter";
 import { createClient } from "@/lib/supabase/client";
+import { ANNOUNCEMENTS_LIST } from "@/data/newsData";
 import {
   Bell,
   Calendar,
@@ -34,7 +35,7 @@ interface AnnouncementItem {
 
 export default function PengumumanPage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>([]);
+  const [announcements, setAnnouncements] = useState<AnnouncementItem[]>(ANNOUNCEMENTS_LIST);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -64,11 +65,11 @@ export default function PengumumanPage() {
           }));
           setAnnouncements(mapped);
         } else {
-          setAnnouncements([]);
+          setAnnouncements(ANNOUNCEMENTS_LIST);
         }
       } catch (err) {
         console.warn("Gagal memuat pengumuman dari Supabase:", err);
-        setAnnouncements([]);
+        setAnnouncements(ANNOUNCEMENTS_LIST);
       } finally {
         setLoading(false);
       }

@@ -60,11 +60,11 @@ export default function BeritaPage() {
           }));
           setArticles(mapped);
         } else {
-          setArticles([]);
+          setArticles(DEFAULT_ARTICLES);
         }
       } catch (err) {
         console.warn("Gagal mengambil berita dari Supabase:", err);
-        setArticles([]);
+        setArticles(DEFAULT_ARTICLES);
       } finally {
         setLoading(false);
       }
