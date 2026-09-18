@@ -63,18 +63,18 @@ Tunjukkan tampilan layar proyektor / laptop Anda pada domain website desa:
 Jelaskan mengapa di halaman login tidak disediakan tombol pendaftaran akun umum:
 * **Alasan Keamanan:** Sistem data kependudukan menyangkut NIK dan kerentanan warga. Hanya aparatur ber-SK resmi yang diberikan akses login.
 
-### Daftar Kredensial Akun Default:
+### Daftar Kredensial Akun Default Resmi:
 
-| Jabatan / Posisi | Email Login | Password Awal | Tugas Utama di Sistem |
-| :--- | :--- | :--- | :--- |
-| **Kuwu / Master Admin** | `master@kadurama.com` | `kadurama2026` | Pengawasan Penuh, Monitoring Audit Log & Rekap Desa |
-| **Sekretaris Desa** | `sekdes@kadurama.com` | `kadurama2026` | Loket Persuratan Warga & Verifikasi Master Data |
-| **Kepala Dusun I Manis** | `kadus.manis@kadurama.com` | `kadurama2026` | Sensus KK & Verifikasi RTLH/PBB Dusun Manis |
-| **Kepala Dusun II Pahing** | `kadus.pahing@kadurama.com` | `kadurama2026` | Sensus KK & Verifikasi RTLH/PBB Dusun Pahing |
-| **Kepala Dusun III Wage** | `kadus.wage@kadurama.com` | `kadurama2026` | Sensus KK & Verifikasi RTLH/PBB Dusun Wage |
-| **Kaur Keuangan** | `keuangan@kadurama.com` | `kadurama2026` | Input & Penyesuaian Realisasi Belanja APBDes 2026 |
-| **Kasi Kesejahteraan** | `kesra@kadurama.com` | `kadurama2026` | Pemantauan Penerima Bansos & Desil 1–2 (Miskin Ekstrem) |
-| **Operator Balai Desa** | `operator@kadurama.com` | `kadurama2026` | Entri Data Harian, Penerbitan Berita, Foto & Agenda |
+| No | Nama Aparatur | Jabatan / Posisi | Email Login | Password Awal | Tugas Utama di Sistem |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| 1 | **Developer & Master Admin** | Super Administrator (Full Access) | `master@kadurama.com` | `kadurama2026` | Pengawasan Penuh, Monitoring Audit Log & Rekap Desa |
+| 2 | **Sumiati, SE** | Sekretaris Desa | `sekdes@kadurama.com` | `kadurama2026` | Loket Persuratan Warga & Verifikasi Master Data |
+| 3 | **Trida Sentosa** | Kepala Dusun I Pahing | `kadus.pahing@kadurama.com` | `kadurama2026` | Sensus KK & Verifikasi RTLH/PBB Dusun Pahing |
+| 4 | **Andri Rukmana** | Kepala Dusun II Wage | `kadus.wage@kadurama.com` | `kadurama2026` | Sensus KK & Verifikasi RTLH/PBB Dusun Wage |
+| 5 | **Jamaludin** | Kepala Dusun III Manis | `kadus.manis@kadurama.com` | `kadurama2026` | Sensus KK & Verifikasi RTLH/PBB Dusun Manis |
+| 6 | **Leni Sumiati** | Kaur Keuangan | `keuangan@kadurama.com` | `kadurama2026` | Input & Penyesuaian Realisasi Belanja APBDes 2026 |
+| 7 | **Ayub Suhandi** | Kasi Kesejahteraan | `kesra@kadurama.com` | `kadurama2026` | Pemantauan Penerima Bansos & Desil 1–2 (Miskin Ekstrem) |
+| 8 | **Operator Balai Desa** | Staf Administrasi / Pelayanan | `operator@kadurama.com` | `kadurama2026` | Entri Data Harian, Penerbitan Berita, Foto & Agenda |
 
 ---
 

@@ -273,18 +273,17 @@ FOR ALL TO anon, authenticated USING (true) WITH CHECK (true);
 
 -- ----------------------------------------------------------------------------
 -- 9. SEED DATA: AKUN RESMI APARATUR PEMDES KADURAMA
--- Termasuk Dusun III Wage (Agus Setiawan)
 -- ----------------------------------------------------------------------------
 INSERT INTO public.aparatur_users (email, nama, role, jabatan, dusun, password_hash)
 VALUES
-  ('master@kadurama.com', 'Developer & Master Administrator', 'master', 'Super Administrator Sistem', 'all', 'kadurama2026'),
-  ('sekdes@kadurama.com', 'Dadang Kurnia', 'sekdes', 'Sekretaris Desa Kadurama', 'all', 'kadurama2026'),
-  ('kadus.manis@kadurama.com', 'Ahmad Dahlan', 'kadus', 'Kepala Dusun I Manis', 'Manis', 'kadurama2026'),
-  ('kadus.pahing@kadurama.com', 'Rohmat Hidayat', 'kadus', 'Kepala Dusun II Pahing', 'Pahing', 'kadurama2026'),
-  ('kadus.wage@kadurama.com', 'Agus Setiawan', 'kadus', 'Kepala Dusun III Wage', 'Wage', 'kadurama2026'),
-  ('keuangan@kadurama.com', 'Ismail Saleh, S.E', 'keuangan', 'Kaur Keuangan & Perbendaharaan', 'all', 'kadurama2026'),
-  ('kesra@kadurama.com', 'Iskandar Zulkarnaen', 'kesra', 'Kasi Kesejahteraan Rakyat & Bansos', 'all', 'kadurama2026'),
-  ('operator@kadurama.com', 'Operator Balai Desa', 'operator', 'Staf Administrasi & Kependudukan', 'all', 'kadurama2026')
+  ('master@kadurama.com', 'Developer & Master Admin', 'master', 'Super Administrator Sistem (Full Access)', 'all', 'kadurama2026'),
+  ('sekdes@kadurama.com', 'Sumiati, SE', 'sekdes', 'Sekretaris Desa Kadurama', 'all', 'kadurama2026'),
+  ('kadus.pahing@kadurama.com', 'Trida Sentosa', 'kadus', 'Kepala Dusun I Pahing', 'Pahing', 'kadurama2026'),
+  ('kadus.wage@kadurama.com', 'Andri Rukmana', 'kadus', 'Kepala Dusun II Wage', 'Wage', 'kadurama2026'),
+  ('kadus.manis@kadurama.com', 'Jamaludin', 'kadus', 'Kepala Dusun III Manis', 'Manis', 'kadurama2026'),
+  ('keuangan@kadurama.com', 'Leni Sumiati', 'keuangan', 'Kaur Keuangan & Perbendaharaan', 'all', 'kadurama2026'),
+  ('kesra@kadurama.com', 'Ayub Suhandi', 'kesra', 'Kasi Kesejahteraan Rakyat & Bansos', 'all', 'kadurama2026'),
+  ('operator@kadurama.com', 'Operator Balai Desa', 'operator', 'Staf Administrasi & Pelayanan Warga', 'all', 'kadurama2026')
 ON CONFLICT (email) DO UPDATE SET
   nama = EXCLUDED.nama,
   role = EXCLUDED.role,

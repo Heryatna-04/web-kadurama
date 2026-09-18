@@ -136,7 +136,7 @@ export function calculateDesil(
 export const APARATUR_ACCOUNTS: AparaturUser[] = [
   {
     email: "master@kadurama.com",
-    nama: "Developer & Master Administrator",
+    nama: "Developer & Master Admin",
     role: "master",
     jabatan: "Super Administrator Sistem (Full Access)",
     dusun: "all",
