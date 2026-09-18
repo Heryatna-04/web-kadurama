@@ -66,6 +66,17 @@ import {
 } from "lucide-react";
 
 // ----------------------------------------------------------------------------
+// HELPER CERDAS FOTO REPRESENTATIF DUSUN / FOTO FISIK RUMAH
+// ----------------------------------------------------------------------------
+export function getSmartPhotoUrl(fotoUrl?: string | null, dusun?: string | null): string {
+  if (fotoUrl && fotoUrl.trim()) return fotoUrl.trim();
+  const d = (dusun || "Manis").toLowerCase();
+  if (d === "pahing") return "/dusun-pahing.jpg";
+  if (d === "wage") return "/dusun-wage.jpg";
+  return "/dusun-manis.jpg";
+}
+
+// ----------------------------------------------------------------------------
 // KOMPONEN KONTROL PAGINASI TABEL MASTER TERPADU
 // ----------------------------------------------------------------------------
 function PaginationControls({
@@ -435,6 +446,8 @@ export default function MasterPanelPage() {
   const [editingSensus, setEditingSensus] = useState<SensusKK | null>(null);
   const [desilMode, setDesilMode] = useState<"auto" | "manual">("auto");
   const [manualDesil, setManualDesil] = useState<number>(1);
+  const [sensusResidentSearch, setSensusResidentSearch] = useState("");
+  const [isSensusResidentPickerOpen, setIsSensusResidentPickerOpen] = useState(false);
 
   // Modal Soft Delete Berdasar Alasan Resmi (Meninggal / Pindah / Lainnya)
   const [deleteModal, setDeleteModal] = useState<{
@@ -952,6 +965,8 @@ export default function MasterPanelPage() {
       }),
       catatanVerifikasi: "Data terverifikasi melalui survei lapangan aparatur dusun.",
     });
+    setSensusResidentSearch("");
+    setIsSensusResidentPickerOpen(false);
     setDesilMode("auto");
     setManualDesil(3);
     setIsSensusModalOpen(true);
@@ -1000,6 +1015,8 @@ export default function MasterPanelPage() {
       return;
     }
 
+    const smartPhotoUrl = getSmartPhotoUrl(editingSensus.foto_rumah_url, targetDusun);
+
     const payload = {
       id: editingSensus.id,
       no_kk: editingSensus.noKk,
@@ -1028,7 +1045,7 @@ export default function MasterPanelPage() {
       kepemilikan_lahan: editingSensus.kepemilikanLahan,
       kerentanan: editingSensus.kerentanan,
       bansos_aktif: editingSensus.bansosAktif,
-      foto_rumah_url: editingSensus.foto_rumah_url,
+      foto_rumah_url: smartPhotoUrl,
       foto_kk_url: editingSensus.foto_kk_url,
       surveyor_kadus: editingSensus.surveyorKadus,
       tanggal_sensus: editingSensus.tanggalSensus,
@@ -2962,19 +2979,16 @@ export default function MasterPanelPage() {
                               </span>
                             </td>
                             <td className="py-3.5 px-4">
-                              {item.foto_rumah_url ? (
-                                <a
-                                  href={item.foto_rumah_url}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-[10px] font-bold text-slate-700"
-                                >
-                                  <Camera className="w-3 h-3 text-[#009388]" />
-                                  <span>Lihat Foto</span>
-                                </a>
-                              ) : (
-                                <span className="text-[11px] text-slate-400 italic">Belum Ada</span>
-                              )}
+                              <a
+                                href={getSmartPhotoUrl(item.foto_rumah_url, item.dusun)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="inline-flex items-center gap-1 px-2 py-1 rounded bg-slate-100 hover:bg-slate-200 text-[10px] font-bold text-slate-700 transition"
+                                title={item.foto_rumah_url ? "Foto Fisik Lapangan" : `Foto Representatif Dusun ${item.dusun}`}
+                              >
+                                <Camera className="w-3 h-3 text-[#009388]" />
+                                <span>{item.foto_rumah_url ? "Lihat Foto" : "Foto Dusun"}</span>
+                              </a>
                             </td>
                             <td className="py-3.5 px-4">
                               <span
@@ -3008,6 +3022,8 @@ export default function MasterPanelPage() {
                                     <button
                                       onClick={() => {
                                         setEditingSensus(item);
+                                        setSensusResidentSearch("");
+                                        setIsSensusResidentPickerOpen(false);
                                         setDesilMode("manual");
                                         setManualDesil(item.desil || 1);
                                         setIsSensusModalOpen(true);
@@ -5277,20 +5293,322 @@ export default function MasterPanelPage() {
             </div>
 
             <div className="mt-5 space-y-4 text-xs">
-              {/* Bagian 1: Identitas KK */}
+              {/* Bagian 1: Identitas KK (Terintegrasi Pencarian Data Penduduk) */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px]">
-                  1. Identitas Kepala Keluarga
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-1.5">
+                    <Users className="w-3.5 h-3.5 text-[#009388]" />
+                    <span>1. Identitas Kepala Keluarga (Terintegrasi Master e-KTP)</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsSensusModalOpen(false);
+                      setActiveTab("residents");
+                      if (editingSensus.nikKepalaKeluarga || editingSensus.namaKepalaKeluarga) {
+                        setResidentSearch(editingSensus.nikKepalaKeluarga || editingSensus.namaKepalaKeluarga);
+                      }
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-white border border-slate-300 hover:border-[#009388] text-slate-700 hover:text-[#009388] text-[11px] font-semibold transition shadow-2xs"
+                    title="Periksa atau verifikasi data penduduk di Master e-KTP"
+                  >
+                    <Database className="w-3 h-3 text-[#009388]" />
+                    <span>Periksa Data Penduduk</span>
+                  </button>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
+                {/* Input Pencarian Terintegrasi dari Master Penduduk e-KTP */}
+                <div className="relative">
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                    Cari & Pilih Kepala Keluarga / Warga dari Master e-KTP:
+                  </label>
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                    <input
+                      type="text"
+                      value={sensusResidentSearch}
+                      onChange={(e) => {
+                        setSensusResidentSearch(e.target.value);
+                        setIsSensusResidentPickerOpen(true);
+                      }}
+                      onFocus={() => {
+                        if (sensusResidentSearch.trim().length >= 1) {
+                          setIsSensusResidentPickerOpen(true);
+                        }
+                      }}
+                      placeholder="Ketik NIK, No. KK, atau Nama Kepala Keluarga..."
+                      className="w-full pl-9 pr-8 py-2 rounded-xl border border-slate-300 bg-white font-medium text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388] focus:border-[#009388]"
+                    />
+                    {sensusResidentSearch && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSensusResidentSearch("");
+                          setIsSensusResidentPickerOpen(false);
+                        }}
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    )}
+                  </div>
+
+                  {/* Dropdown Live Search Hasil e-KTP */}
+                  {isSensusResidentPickerOpen && sensusResidentSearch.trim().length >= 2 && (
+                    <div className="absolute z-30 top-full left-0 right-0 mt-1 bg-white rounded-2xl border border-slate-200 shadow-2xl overflow-hidden max-h-64 overflow-y-auto">
+                      {(() => {
+                        const query = sensusResidentSearch.trim().toLowerCase();
+                        const isKadus =
+                          currentUser?.role === "kadus" &&
+                          currentUser.dusun &&
+                          currentUser.dusun !== "all";
+
+                        const matches = residentsList.filter((r) => {
+                          if (r.is_deleted) return false;
+                          const mNik = r.nik?.toLowerCase().includes(query);
+                          const mKk = r.noKk?.toLowerCase().includes(query);
+                          const mNama = r.nama?.toLowerCase().includes(query);
+                          return mNik || mKk || mNama;
+                        });
+
+                        const sortedMatches = [...matches].sort((a, b) => {
+                          if (isKadus) {
+                            if (a.dusun === currentUser.dusun && b.dusun !== currentUser.dusun) return -1;
+                            if (b.dusun === currentUser.dusun && a.dusun !== currentUser.dusun) return 1;
+                          }
+                          return 0;
+                        }).slice(0, 8);
+
+                        if (sortedMatches.length === 0) {
+                          return (
+                            <div className="p-4 text-center">
+                              <div className="w-8 h-8 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-2">
+                                <AlertTriangle className="w-4 h-4" />
+                              </div>
+                              <p className="text-xs font-bold text-slate-800">
+                                Data Warga Tidak Ditemukan di Master e-KTP
+                              </p>
+                              <p className="text-[11px] text-slate-500 mt-0.5">
+                                NIK, No. KK, atau Nama tidak ada di database e-KTP Desa Kadurama.
+                              </p>
+                              <div className="mt-3 flex items-center justify-center gap-2">
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    setIsSensusModalOpen(false);
+                                    setActiveTab("residents");
+                                    setResidentSearch(sensusResidentSearch);
+                                  }}
+                                  className="px-3 py-1.5 rounded-lg bg-[#009388] text-white text-[11px] font-bold hover:bg-[#007b71] transition flex items-center gap-1.5 shadow-xs"
+                                >
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>Periksa / Tambah di Data Penduduk</span>
+                                </button>
+                              </div>
+                            </div>
+                          );
+                        }
+
+                        return (
+                          <div className="divide-y divide-slate-100">
+                            <div className="px-3 py-1.5 bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider flex items-center justify-between">
+                              <span>Ditemukan {matches.length} warga</span>
+                              <span className="text-[#009388]">Klik untuk integrasikan data</span>
+                            </div>
+                            {sortedMatches.map((r) => {
+                              const isKadusConflict = isKadus && r.dusun !== currentUser?.dusun;
+                              return (
+                                <button
+                                  key={r.nik}
+                                  type="button"
+                                  onClick={() => {
+                                    const famCount = residentsList.filter(
+                                      (m) => m.noKk === r.noKk && !m.is_deleted
+                                    ).length;
+
+                                    setEditingSensus({
+                                      ...editingSensus,
+                                      noKk: r.noKk || "",
+                                      nikKepalaKeluarga: r.nik || "",
+                                      namaKepalaKeluarga: r.nama || "",
+                                      dusun: r.dusun,
+                                      rt: r.rt || "01",
+                                      rw: r.rw || "01",
+                                      alamat:
+                                        r.alamat ||
+                                        `Dusun ${r.dusun} RT ${r.rt || "01"} / RW ${r.rw || "01"}, Desa Kadurama`,
+                                      pekerjaanUtama: r.pekerjaan || editingSensus.pekerjaanUtama,
+                                      jumlahAnggota: famCount > 0 ? famCount : editingSensus.jumlahAnggota,
+                                    });
+                                    setSensusResidentSearch("");
+                                    setIsSensusResidentPickerOpen(false);
+                                  }}
+                                  className="w-full text-left px-3.5 py-2 hover:bg-[#e6f7f5]/50 transition flex items-center justify-between gap-3 group"
+                                >
+                                  <div className="min-w-0">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-xs text-slate-900 group-hover:text-[#009388] truncate">
+                                        {r.nama}
+                                      </span>
+                                      <span
+                                        className={`text-[10px] px-1.5 py-0.2 rounded font-medium ${
+                                          r.hubunganKeluarga === "Kepala Keluarga"
+                                            ? "bg-emerald-100 text-emerald-800 font-bold"
+                                            : "bg-slate-100 text-slate-600"
+                                        }`}
+                                      >
+                                        {r.hubunganKeluarga || "Warga"}
+                                      </span>
+                                      {isKadusConflict && (
+                                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-100 text-amber-800 font-semibold">
+                                          Wilayah Dusun {r.dusun}
+                                        </span>
+                                      )}
+                                    </div>
+                                    <div className="text-[11px] text-slate-500 font-mono mt-0.5 flex items-center gap-2">
+                                      <span>NIK: {r.nik}</span>
+                                      <span>•</span>
+                                      <span>KK: {r.noKk}</span>
+                                    </div>
+                                  </div>
+                                  <div className="text-right shrink-0">
+                                    <div className="text-[11px] font-bold text-slate-700">
+                                      Dusun {r.dusun}
+                                    </div>
+                                    <div className="text-[10px] text-slate-400">
+                                      RT {r.rt} / RW {r.rw}
+                                    </div>
+                                  </div>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </div>
+
+                {/* Status Validasi Sinkronisasi e-KTP */}
+                {(() => {
+                  const matched = residentsList.find(
+                    (r) => r.nik === editingSensus.nikKepalaKeluarga && !r.is_deleted
+                  );
+                  if (matched) {
+                    const isDesynced =
+                      editingSensus.dusun !== matched.dusun ||
+                      editingSensus.rt !== matched.rt ||
+                      editingSensus.rw !== matched.rw ||
+                      editingSensus.noKk !== matched.noKk;
+
+                    return (
+                      <div
+                        className={`p-2.5 rounded-xl border flex items-center justify-between gap-2 ${
+                          isDesynced
+                            ? "bg-amber-50 border-amber-200 text-amber-900"
+                            : "bg-emerald-50 border-emerald-200 text-emerald-900"
+                        }`}
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {isDesynced ? (
+                            <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                          ) : (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                          )}
+                          <div className="text-[11px] truncate">
+                            <span className="font-bold">
+                              {isDesynced
+                                ? "Ketidaksinkronan Data Wilayah: "
+                                : "Terintegrasi e-KTP: "}
+                            </span>
+                            <span>
+                              {matched.nama} ({matched.hubunganKeluarga || "Warga"}) • Dusun{" "}
+                              {matched.dusun} RT {matched.rt}/RW {matched.rw}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          {isDesynced && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setEditingSensus({
+                                  ...editingSensus,
+                                  dusun: matched.dusun,
+                                  rt: matched.rt,
+                                  rw: matched.rw,
+                                  noKk: matched.noKk,
+                                  namaKepalaKeluarga: matched.nama,
+                                  alamat:
+                                    matched.alamat ||
+                                    `Dusun ${matched.dusun} RT ${matched.rt} / RW ${matched.rw}, Desa Kadurama`,
+                                });
+                              }}
+                              className="px-2 py-0.5 rounded bg-amber-200 hover:bg-amber-300 text-amber-900 text-[10px] font-bold transition"
+                            >
+                              Sinkronkan dari e-KTP
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setIsSensusModalOpen(false);
+                              setActiveTab("residents");
+                              setResidentSearch(matched.nik);
+                            }}
+                            className="px-2 py-0.5 rounded bg-white hover:bg-slate-100 text-slate-700 text-[10px] font-bold border border-slate-300 transition"
+                          >
+                            Periksa Data Penduduk
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  } else if (
+                    editingSensus.nikKepalaKeluarga &&
+                    editingSensus.nikKepalaKeluarga.length >= 16
+                  ) {
+                    return (
+                      <div className="p-2.5 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+                          <div className="text-[11px] truncate">
+                            <span className="font-bold">Perhatian: </span>
+                            <span>
+                              NIK {editingSensus.nikKepalaKeluarga} belum tercatat pada Data Induk Penduduk e-KTP.
+                            </span>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsSensusModalOpen(false);
+                            setActiveTab("residents");
+                            setResidentSearch(editingSensus.nikKepalaKeluarga);
+                          }}
+                          className="px-2.5 py-1 rounded-lg bg-[#009388] hover:bg-[#007b71] text-white text-[10px] font-bold shrink-0 transition"
+                        >
+                          Periksa Data Penduduk
+                        </button>
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
+
+                {/* Form Rincian KK, NIK, Nama, Dusun, RT, RW */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-[11px] font-bold text-slate-700">Nomor Kartu Keluarga (KK) <span className="text-red-500">*</span></label>
-                      <span className={`text-[10px] font-mono font-bold ${
-                        editingSensus.noKk.length === 16 && /^\d+$/.test(editingSensus.noKk)
-                          ? "text-emerald-600"
-                          : "text-amber-600"
-                      }`}>
+                      <label className="text-[11px] font-bold text-slate-700">
+                        Nomor Kartu Keluarga (KK) <span className="text-red-500">*</span>
+                      </label>
+                      <span
+                        className={`text-[10px] font-mono font-bold ${
+                          editingSensus.noKk.length === 16 && /^\d+$/.test(editingSensus.noKk)
+                            ? "text-emerald-600"
+                            : "text-amber-600"
+                        }`}
+                      >
                         {editingSensus.noKk.length}/16 Digit
                       </span>
                     </div>
@@ -5298,7 +5616,12 @@ export default function MasterPanelPage() {
                       type="text"
                       maxLength={16}
                       value={editingSensus.noKk}
-                      onChange={(e) => setEditingSensus({ ...editingSensus, noKk: e.target.value.replace(/\D/g, "") })}
+                      onChange={(e) =>
+                        setEditingSensus({
+                          ...editingSensus,
+                          noKk: e.target.value.replace(/\D/g, ""),
+                        })
+                      }
                       placeholder="16 digit No KK"
                       className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono focus:ring-2 focus:ring-[#009388]"
                     />
@@ -5316,12 +5639,17 @@ export default function MasterPanelPage() {
                   </div>
                   <div>
                     <div className="flex items-center justify-between mb-1">
-                      <label className="text-[11px] font-bold text-slate-700">NIK Kepala Keluarga</label>
-                      <span className={`text-[10px] font-mono font-bold ${
-                        editingSensus.nikKepalaKeluarga.length === 16 && /^\d+$/.test(editingSensus.nikKepalaKeluarga)
-                          ? "text-emerald-600"
-                          : "text-amber-600"
-                      }`}>
+                      <label className="text-[11px] font-bold text-slate-700">
+                        NIK Kepala Keluarga
+                      </label>
+                      <span
+                        className={`text-[10px] font-mono font-bold ${
+                          editingSensus.nikKepalaKeluarga.length === 16 &&
+                          /^\d+$/.test(editingSensus.nikKepalaKeluarga)
+                            ? "text-emerald-600"
+                            : "text-amber-600"
+                        }`}
+                      >
                         {editingSensus.nikKepalaKeluarga.length}/16 Digit
                       </span>
                     </div>
@@ -5329,7 +5657,12 @@ export default function MasterPanelPage() {
                       type="text"
                       maxLength={16}
                       value={editingSensus.nikKepalaKeluarga}
-                      onChange={(e) => setEditingSensus({ ...editingSensus, nikKepalaKeluarga: e.target.value.replace(/\D/g, "") })}
+                      onChange={(e) =>
+                        setEditingSensus({
+                          ...editingSensus,
+                          nikKepalaKeluarga: e.target.value.replace(/\D/g, ""),
+                        })
+                      }
                       placeholder="16 digit NIK"
                       className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono focus:ring-2 focus:ring-[#009388]"
                     />
@@ -5339,18 +5672,24 @@ export default function MasterPanelPage() {
                           <Check className="w-3 h-3" /> 16 digit angka valid
                         </span>
                       ) : (
-                        <span className="text-slate-400">
-                          Format 16 digit angka KTP-el
-                        </span>
+                        <span className="text-slate-400">Format 16 digit angka KTP-el</span>
                       )}
                     </div>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Nama Lengkap Kepala Keluarga</label>
+                    <label className="block text-[11px] font-bold text-slate-700 mb-1">
+                      Nama Lengkap Kepala Keluarga
+                    </label>
                     <input
                       type="text"
                       value={editingSensus.namaKepalaKeluarga}
-                      onChange={(e) => setEditingSensus({ ...editingSensus, namaKepalaKeluarga: e.target.value })}
+                      onChange={(e) =>
+                        setEditingSensus({
+                          ...editingSensus,
+                          namaKepalaKeluarga: e.target.value,
+                        })
+                      }
+                      placeholder="Nama lengkap sesuai e-KTP"
                       className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white"
                     />
                   </div>
@@ -5360,7 +5699,9 @@ export default function MasterPanelPage() {
                       <select
                         value={editingSensus.dusun}
                         disabled={currentUser?.role === "kadus"}
-                        onChange={(e) => setEditingSensus({ ...editingSensus, dusun: e.target.value as any })}
+                        onChange={(e) =>
+                          setEditingSensus({ ...editingSensus, dusun: e.target.value as any })
+                        }
                         className="w-full px-2 py-2 rounded-xl border border-slate-300 bg-white font-bold"
                       >
                         <option value="Manis">Manis</option>
@@ -5390,50 +5731,24 @@ export default function MasterPanelPage() {
                 </div>
               </div>
 
-              {/* Bagian 2: Foto Rumah Warga (Bukti Fisik RTLH) */}
+              {/* Bagian 2: Foto Fisik Rumah Warga (Bukti Fisik RTLH - Opsional & Smart URL) */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
                 <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Camera className="w-4 h-4 text-[#009388]" />
                     <span>2. Foto Fisik Rumah Warga (Verifikasi RTLH)</span>
                   </div>
-                  <span className="text-[10px] text-slate-400 font-normal">Format Gambar / Foto Kamera</span>
+                  <span className="text-[10px] text-slate-400 font-normal">
+                    Opsional (Tidak Wajib Terisi)
+                  </span>
                 </div>
 
-                {/* Pilihan Preset Placeholder Cepat */}
-                <div>
-                  <label className="block text-[11px] font-semibold text-slate-600 mb-1.5">
-                    Pilih Contoh / Placeholder Wilayah:
-                  </label>
-                  <div className="flex flex-wrap gap-1.5">
-                    {[
-                      { label: "Permanen Layak (Manis)", url: "/dusun-manis.jpg" },
-                      { label: "Rumah Dusun (Pahing)", url: "/dusun-pahing.jpg" },
-                      { label: "Rumah Sederhana (Wage)", url: "/dusun-wage.jpg" },
-                      { label: "Balai Pertemuan", url: "/og-image.jpg" },
-                    ].map((preset) => (
-                      <button
-                        key={preset.url}
-                        type="button"
-                        onClick={() => setEditingSensus({ ...editingSensus, foto_rumah_url: preset.url })}
-                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition border ${
-                          editingSensus.foto_rumah_url === preset.url
-                            ? "bg-[#009388] text-white border-[#009388] shadow-xs"
-                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
-                        }`}
-                      >
-                        {preset.label}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center pt-1">
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center">
                   {/* Upload File atau URL */}
                   <div className="sm:col-span-7 space-y-2.5">
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        1. Unggah Foto dari Kamera HP / Galeri
+                        Unggah Foto dari Kamera HP / Galeri
                       </label>
                       <input
                         type="file"
@@ -5461,32 +5776,53 @@ export default function MasterPanelPage() {
 
                     <div>
                       <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                        2. Atau Masukkan URL / Path Gambar
+                        Atau Masukkan URL / Path Gambar
                       </label>
                       <input
                         type="text"
                         value={editingSensus.foto_rumah_url || ""}
-                        onChange={(e) => setEditingSensus({ ...editingSensus, foto_rumah_url: e.target.value })}
-                        placeholder="/dusun-manis.jpg atau https://..."
+                        onChange={(e) =>
+                          setEditingSensus({ ...editingSensus, foto_rumah_url: e.target.value })
+                        }
+                        placeholder="Biarkan kosong untuk foto otomatis Dusun, atau tempel https://..."
                         className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
                       />
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Jika dikosongkan, sistem cerdas akan otomatis menggunakan foto representatif Dusun {editingSensus.dusun || "Manis"}.
+                      </p>
                     </div>
+
+                    {editingSensus.foto_rumah_url && (
+                      <button
+                        type="button"
+                        onClick={() => setEditingSensus({ ...editingSensus, foto_rumah_url: "" })}
+                        className="inline-flex items-center gap-1 text-[11px] text-red-600 hover:text-red-700 font-semibold"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                        <span>Hapus Foto Kustom & Gunakan Foto Default Dusun</span>
+                      </button>
+                    )}
                   </div>
 
                   {/* Pratinjau Foto Standar Rasio 16:9 */}
                   <div className="sm:col-span-5">
                     <div className="relative w-full aspect-video rounded-xl overflow-hidden border-2 border-slate-300 bg-slate-200 shadow-inner group">
                       <img
-                        src={editingSensus.foto_rumah_url || "/dusun-manis.jpg"}
+                        src={getSmartPhotoUrl(editingSensus.foto_rumah_url, editingSensus.dusun)}
                         alt="Pratinjau Rumah Sensus"
                         onError={(e) => {
-                          (e.target as HTMLImageElement).src = "/dusun-manis.jpg";
+                          (e.target as HTMLImageElement).src = getSmartPhotoUrl("", editingSensus.dusun);
                         }}
                         className="w-full h-full object-cover"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-2">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-between p-2">
                         <span className="text-[10px] text-white font-medium truncate">
-                          {editingSensus.foto_rumah_url ? "Pratinjau Foto Tampak Depan" : "Placeholder Standar Dusun"}
+                          {editingSensus.foto_rumah_url?.trim()
+                            ? "Foto Fisik Lapangan"
+                            : `Otomatis: Dusun ${editingSensus.dusun || "Manis"}`}
+                        </span>
+                        <span className="text-[9px] px-1.5 py-0.5 rounded bg-black/50 text-white font-mono">
+                          16:9
                         </span>
                       </div>
                     </div>
