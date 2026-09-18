@@ -4928,10 +4928,10 @@ export default function MasterPanelPage() {
                   </label>
                   <div className="flex flex-wrap gap-1.5">
                     {[
-                      { label: "🏠 Permanen Layak (Manis)", url: "/dusun-manis.jpg" },
-                      { label: "🏡 Rumah Dusun (Pahing)", url: "/dusun-pahing.jpg" },
-                      { label: "🛖 Rumah Sederhana (Wage)", url: "/dusun-wage.jpg" },
-                      { label: "🏛️ Balai Pertemuan", url: "/og-image.jpg" },
+                      { label: "Permanen Layak (Manis)", url: "/dusun-manis.jpg" },
+                      { label: "Rumah Dusun (Pahing)", url: "/dusun-pahing.jpg" },
+                      { label: "Rumah Sederhana (Wage)", url: "/dusun-wage.jpg" },
+                      { label: "Balai Pertemuan", url: "/og-image.jpg" },
                     ].map((preset) => (
                       <button
                         key={preset.url}
@@ -5115,7 +5115,7 @@ export default function MasterPanelPage() {
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
-                      ⚡ Otomatis Sistem
+                      Otomatis Sistem
                     </button>
                     <button
                       type="button"
@@ -5126,7 +5126,7 @@ export default function MasterPanelPage() {
                           : "text-slate-600 hover:text-slate-900"
                       }`}
                     >
-                      🏛️ Penetapan Pemdes
+                      Penetapan Pemdes
                     </button>
                   </div>
                 </div>
@@ -6997,18 +6997,18 @@ export default function MasterPanelPage() {
                 <div className="grid grid-cols-1 gap-2">
                   {(deleteModal.type === "resident"
                     ? [
-                        { id: "Meninggal Dunia", label: "Meninggal Dunia (Surat/Akta Kematian)", icon: "🕊️" },
-                        { id: "Pindah Domisili / Keluar Desa", label: "Pindah Domisili / Keluar Desa (SKPWNI)", icon: "🚗" },
-                        { id: "Pecah KK / Perubahan Administrasi", label: "Perubahan Administrasi / Pecah KK", icon: "📋" },
-                        { id: "Kesalahan Input Data / Duplikasi", label: "Kesalahan Input Data / Duplikasi", icon: "⚠️" },
-                        { id: "Lainnya", label: "Lainnya (Tuliskan Keterangan Khusus)", icon: "✍️" },
+                        { id: "Meninggal Dunia", label: "Meninggal Dunia (Surat/Akta Kematian)" },
+                        { id: "Pindah Domisili / Keluar Desa", label: "Pindah Domisili / Keluar Desa (SKPWNI)" },
+                        { id: "Pecah KK / Perubahan Administrasi", label: "Perubahan Administrasi / Pecah KK" },
+                        { id: "Kesalahan Input Data / Duplikasi", label: "Kesalahan Input Data / Duplikasi" },
+                        { id: "Lainnya", label: "Lainnya (Tuliskan Keterangan Khusus)" },
                       ]
                     : [
-                        { id: "Pindah Domisili / Keluar Desa", label: "Keluarga Pindah Domisili Keluar Desa", icon: "🚗" },
-                        { id: "Kepala Keluarga Meninggal / Reorganisasi KK", label: "Kepala Keluarga Meninggal / Reorganisasi KK", icon: "🕊️" },
-                        { id: "Penggabungan / Pecah KK", label: "Penggabungan atau Pecah Kartu Keluarga", icon: "📋" },
-                        { id: "Kesalahan Input Data / Duplikasi", label: "Kesalahan Input Data / Duplikasi", icon: "⚠️" },
-                        { id: "Lainnya", label: "Lainnya (Tuliskan Keterangan Khusus)", icon: "✍️" },
+                        { id: "Pindah Domisili / Keluar Desa", label: "Keluarga Pindah Domisili Keluar Desa" },
+                        { id: "Kepala Keluarga Meninggal / Reorganisasi KK", label: "Kepala Keluarga Meninggal / Reorganisasi KK" },
+                        { id: "Penggabungan / Pecah KK", label: "Penggabungan atau Pecah Kartu Keluarga" },
+                        { id: "Kesalahan Input Data / Duplikasi", label: "Kesalahan Input Data / Duplikasi" },
+                        { id: "Lainnya", label: "Lainnya (Tuliskan Keterangan Khusus)" },
                       ]
                   ).map((opt) => (
                     <label
@@ -7027,8 +7027,7 @@ export default function MasterPanelPage() {
                         onChange={(e) => setDeleteModal({ ...deleteModal, reason: e.target.value })}
                         className="text-red-600 focus:ring-red-500"
                       />
-                      <span>{opt.icon}</span>
-                      <span>{opt.label}</span>
+                      <span className="flex-1 text-slate-800">{opt.label}</span>
                     </label>
                   ))}
                 </div>
