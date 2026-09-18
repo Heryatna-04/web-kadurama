@@ -35,3 +35,21 @@ export async function recordAuditLog(entry: AuditLogEntry) {
     console.warn("Error recording audit log:", err);
   }
 }
+
+/**
+ * Mencatat rilis pembaruan sistem / fitur baru secara manual oleh pengembang
+ * saat merilis versi baru ke production / push origin.
+ * Log ini adalah satu-satunya log developer yang ditampilkan ke klien APDES.
+ */
+export async function recordSystemReleaseLog(version: string, title: string, description: string) {
+  return recordAuditLog({
+    actor_email: "master@kadurama.com",
+    actor_name: "Tim Pengembang Desa (Developer)",
+    actor_role: "master",
+    action: "UPDATE",
+    entity_type: "aparatur_users",
+    entity_id: "SYSTEM_RELEASE",
+    description: `Rilis Pembaruan Sistem (${version}): ${title} - ${description}`,
+  });
+}
+
