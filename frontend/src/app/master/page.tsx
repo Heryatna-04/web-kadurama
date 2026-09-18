@@ -403,7 +403,6 @@ export default function MasterPanelPage() {
   const [isSubmittingApbdes, setIsSubmittingApbdes] = useState(false);
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [auditLogLimit, setAuditLogLimit] = useState<number>(15);
   const [auditLogSearch, setAuditLogSearch] = useState<string>("");
   const [isLoadingData, setIsLoadingData] = useState(false);
 
@@ -990,15 +989,26 @@ export default function MasterPanelPage() {
     const finalDesil = desilMode === "manual" ? manualDesil : autoDesil;
 
     const isNew = !sensusList.some((s) => s.id === editingSensus.id);
+
+    // Otoritas Wilayah: Kadus hanya bisa upload/edit untuk wilayah dusunnya sendiri
+    const isKadus = currentUser.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all";
+    const targetDusun = isKadus ? (currentUser.dusun as any) : editingSensus.dusun;
+
+    const existingSensus = sensusList.find((s) => s.id === editingSensus.id);
+    if (isKadus && existingSensus && existingSensus.dusun !== currentUser.dusun) {
+      alert(`Akses Ditolak: Sebagai Kepala Dusun ${currentUser.dusun}, Anda hanya berwenang menambah atau mengedit data sensus di wilayah Dusun ${currentUser.dusun}.`);
+      return;
+    }
+
     const payload = {
       id: editingSensus.id,
       no_kk: editingSensus.noKk,
       nik_kepala_keluarga: editingSensus.nikKepalaKeluarga,
       nama_kepala_keluarga: editingSensus.namaKepalaKeluarga,
-      dusun: editingSensus.dusun,
+      dusun: targetDusun,
       rt: editingSensus.rt,
       rw: editingSensus.rw,
-      alamat: editingSensus.alamat,
+      alamat: editingSensus.alamat || `Dusun ${targetDusun} RT ${editingSensus.rt} / RW ${editingSensus.rw}, Desa Kadurama`,
       jumlah_anggota: editingSensus.jumlahAnggota,
       desil: finalDesil,
       status_pbb: editingSensus.statusPbb,
@@ -1112,6 +1122,14 @@ export default function MasterPanelPage() {
     try {
       if (deleteModal.type === "sensus" && deleteModal.sensusItem) {
         const item = deleteModal.sensusItem;
+
+        // Validasi Otoritas Kadus
+        if (currentUser.role === "kadus" && currentUser.dusun && item.dusun !== currentUser.dusun) {
+          alert(`Akses Ditolak: Sebagai Kepala Dusun ${currentUser.dusun}, Anda tidak berwenang mengarsipkan data KK dari Dusun ${item.dusun}.`);
+          setDeleteModal((prev) => ({ ...prev, isSubmitting: false }));
+          return;
+        }
+
         await supabase
           .from("sensus_kk")
           .update({
@@ -1135,6 +1153,13 @@ export default function MasterPanelPage() {
         showToast(`Data KK ${item.namaKepalaKeluarga} berhasil diarsipkan (Alasan: ${deleteModal.reason}).`);
       } else if (deleteModal.type === "resident" && deleteModal.residentItem) {
         const res = deleteModal.residentItem;
+
+        // Validasi Otoritas Kadus
+        if (currentUser.role === "kadus" && currentUser.dusun && res.dusun !== currentUser.dusun) {
+          alert(`Akses Ditolak: Sebagai Kepala Dusun ${currentUser.dusun}, Anda tidak berwenang mengarsipkan data warga dari Dusun ${res.dusun}.`);
+          setDeleteModal((prev) => ({ ...prev, isSubmitting: false }));
+          return;
+        }
         const newStatus = deleteModal.reason.includes("Meninggal")
           ? "Meninggal Dunia"
           : deleteModal.reason.includes("Pindah")
@@ -1234,6 +1259,16 @@ export default function MasterPanelPage() {
       return;
     }
 
+    // Otoritas Wilayah: Kadus hanya bisa upload/edit untuk wilayah dusunnya sendiri
+    const isKadus = currentUser.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all";
+    const targetDusun = isKadus ? (currentUser.dusun as any) : editingResident.dusun;
+
+    const oldResident = residentsList.find((r) => r.nik === cleanNik);
+    if (isKadus && oldResident && oldResident.dusun !== currentUser.dusun) {
+      alert(`Akses Ditolak: Sebagai Kepala Dusun ${currentUser.dusun}, Anda hanya berwenang menambah atau mengedit data warga di wilayah Dusun ${currentUser.dusun}.`);
+      return;
+    }
+
     const payload = {
       nik: cleanNik,
       no_kk: cleanNoKk || "3208150000000000",
@@ -1244,10 +1279,10 @@ export default function MasterPanelPage() {
       agama: editingResident.agama?.trim() || "Islam",
       status_perkawinan: editingResident.statusPerkawinan?.trim() || "Kawin",
       hubungan_keluarga: editingResident.hubunganKeluarga?.trim() || "Kepala Keluarga",
-      dusun: editingResident.dusun,
+      dusun: targetDusun,
       rt: editingResident.rt?.trim() || "01",
       rw: editingResident.rw?.trim() || "01",
-      alamat: editingResident.alamat?.trim() || `Dusun ${editingResident.dusun}, Desa Kadurama`,
+      alamat: editingResident.alamat?.trim() || `Dusun ${targetDusun}, Desa Kadurama`,
       status: editingResident.status?.trim() || "Warga Tetap",
       sync_status: editingResident.syncStatus?.trim() || "Tersinkronisasi",
       updated_by: currentUser.email,
@@ -1374,13 +1409,15 @@ export default function MasterPanelPage() {
           const rt = rawRt ? rawRt.padStart(2, "0") : importDefaultRt.padStart(2, "0");
           const rw = rawRw ? rawRw.padStart(2, "0") : importDefaultRw.padStart(2, "0");
 
-          // Deteksi Dusun
+          // Deteksi Dusun (Jika akun Kadus, terkunci murni pada wilayah dusunnya sendiri)
           let dusunRow: "Manis" | "Pahing" | "Wage" = targetDusun;
-          const rtNum = parseInt(rt, 10);
-          if (!isNaN(rtNum) && rawRt) {
-            if (rtNum >= 1 && rtNum <= 7) dusunRow = "Manis";
-            else if (rtNum >= 8 && rtNum <= 14) dusunRow = "Pahing";
-            else if (rtNum >= 15 && rtNum <= 21) dusunRow = "Wage";
+          if (currentUser?.role !== "kadus") {
+            const rtNum = parseInt(rt, 10);
+            if (!isNaN(rtNum) && rawRt) {
+              if (rtNum >= 1 && rtNum <= 7) dusunRow = "Manis";
+              else if (rtNum >= 8 && rtNum <= 14) dusunRow = "Pahing";
+              else if (rtNum >= 15 && rtNum <= 21) dusunRow = "Wage";
+            }
           }
 
           const rawAlamat = String(row.ALAMAT || row.alamat || "").trim();
@@ -1491,27 +1528,34 @@ export default function MasterPanelPage() {
     setImportError("");
 
     try {
+      // Otoritas Wilayah: Akun Kadus dipastikan hanya mengimpor ke dusunnya sendiri
+      const isKadus = currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all";
+      const kadusDusun = isKadus ? (currentUser.dusun as "Manis" | "Pahing" | "Wage") : null;
+
       // 1. Upsert residents ke database Supabase
-      const residentPayload = importParsedResidents.map((r) => ({
-        nik: r.nik,
-        no_kk: r.noKk,
-        nama: r.nama,
-        ttl: r.ttl,
-        jenis_kelamin: r.jenisKelamin,
-        pekerjaan: r.pekerjaan,
-        agama: r.agama,
-        status_perkawinan: r.statusPerkawinan,
-        hubungan_keluarga: r.hubunganKeluarga,
-        dusun: r.dusun,
-        rt: r.rt,
-        rw: r.rw,
-        alamat: r.alamat,
-        status: "Warga Tetap",
-        sync_status: "Tersinkronisasi",
-        created_by: currentUser?.email || "system",
-        updated_by: currentUser?.email || "system",
-        is_deleted: false,
-      }));
+      const residentPayload = importParsedResidents.map((r) => {
+        const finalDusun = kadusDusun || r.dusun;
+        return {
+          nik: r.nik,
+          no_kk: r.noKk,
+          nama: r.nama,
+          ttl: r.ttl,
+          jenis_kelamin: r.jenisKelamin,
+          pekerjaan: r.pekerjaan,
+          agama: r.agama,
+          status_perkawinan: r.statusPerkawinan,
+          hubungan_keluarga: r.hubunganKeluarga,
+          dusun: finalDusun,
+          rt: r.rt,
+          rw: r.rw,
+          alamat: kadusDusun ? `Dusun ${kadusDusun} RT ${r.rt} / RW ${r.rw}, Desa Kadurama` : r.alamat,
+          status: "Warga Tetap",
+          sync_status: "Tersinkronisasi",
+          created_by: currentUser?.email || "system",
+          updated_by: currentUser?.email || "system",
+          is_deleted: false,
+        };
+      });
 
       const { error: residentErr } = await supabase
         .from("residents")
@@ -1524,9 +1568,17 @@ export default function MasterPanelPage() {
       // 2. Jika opsi buat Sensus KK dicentang
       let sensusSuccessCount = 0;
       if (importCreateSensusKK && importParsedSensus.length > 0) {
+        const sensusPayload = isKadus
+          ? importParsedSensus.map((s) => ({
+              ...s,
+              dusun: kadusDusun,
+              alamat: `Dusun ${kadusDusun} RT ${s.rt} / RW ${s.rw}, Desa Kadurama`,
+            }))
+          : importParsedSensus;
+
         const { error: sensusErr } = await supabase
           .from("sensus_kk")
-          .upsert(importParsedSensus, { onConflict: "no_kk" });
+          .upsert(sensusPayload, { onConflict: "no_kk" });
 
         if (!sensusErr) {
           sensusSuccessCount = importParsedSensus.length;
@@ -2143,34 +2195,50 @@ export default function MasterPanelPage() {
       item.organizer?.toLowerCase().includes(agendaSearch.toLowerCase());
     return matchDusun && matchSearch;
   });
-  const filteredSensus = sensusList.filter((item) => {
-    const effectiveDusun =
-      currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all"
-        ? currentUser.dusun
-        : sensusDusunFilter;
-    const matchDusun = effectiveDusun === "all" || item.dusun === effectiveDusun;
-    const matchDesil = sensusDesilFilter === "all" || item.desil.toString() === sensusDesilFilter;
-    const matchSearch =
-      !sensusSearch.trim() ||
-      item.namaKepalaKeluarga.toLowerCase().includes(sensusSearch.toLowerCase()) ||
-      item.noKk.includes(sensusSearch) ||
-      item.nikKepalaKeluarga.includes(sensusSearch);
-    return matchDusun && matchDesil && matchSearch;
-  });
+  const filteredSensus = useMemo(() => {
+    const list = sensusList.filter((item) => {
+      const matchDusun = sensusDusunFilter === "all" || item.dusun === sensusDusunFilter;
+      const matchDesil = sensusDesilFilter === "all" || item.desil.toString() === sensusDesilFilter;
+      const matchSearch =
+        !sensusSearch.trim() ||
+        item.namaKepalaKeluarga.toLowerCase().includes(sensusSearch.toLowerCase()) ||
+        item.noKk.includes(sensusSearch) ||
+        item.nikKepalaKeluarga.includes(sensusSearch);
+      return matchDusun && matchDesil && matchSearch;
+    });
 
-  const filteredResidents = residentsList.filter((res) => {
-    const effectiveDusun =
-      currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all"
-        ? currentUser.dusun
-        : residentDusunFilter;
-    const matchDusun = effectiveDusun === "all" || res.dusun === effectiveDusun;
-    const matchSearch =
-      !residentSearch.trim() ||
-      res.nama.toLowerCase().includes(residentSearch.toLowerCase()) ||
-      res.nik.includes(residentSearch) ||
-      res.noKk.includes(residentSearch);
-    return matchDusun && matchSearch;
-  });
+    // Dalam filter "all", akun kadus menampilkan data dusunnya sendiri di paling atas
+    if (sensusDusunFilter === "all" && currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all") {
+      return [...list].sort((a, b) => {
+        const aIsMine = a.dusun === currentUser.dusun ? 1 : 0;
+        const bIsMine = b.dusun === currentUser.dusun ? 1 : 0;
+        return bIsMine - aIsMine;
+      });
+    }
+    return list;
+  }, [sensusList, sensusDusunFilter, sensusDesilFilter, sensusSearch, currentUser]);
+
+  const filteredResidents = useMemo(() => {
+    const list = residentsList.filter((res) => {
+      const matchDusun = residentDusunFilter === "all" || res.dusun === residentDusunFilter;
+      const matchSearch =
+        !residentSearch.trim() ||
+        res.nama.toLowerCase().includes(residentSearch.toLowerCase()) ||
+        res.nik.includes(residentSearch) ||
+        res.noKk.includes(residentSearch);
+      return matchDusun && matchSearch;
+    });
+
+    // Dalam filter "all", akun kadus menampilkan data dusunnya sendiri di paling atas
+    if (residentDusunFilter === "all" && currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all") {
+      return [...list].sort((a, b) => {
+        const aIsMine = a.dusun === currentUser.dusun ? 1 : 0;
+        const bIsMine = b.dusun === currentUser.dusun ? 1 : 0;
+        return bIsMine - aIsMine;
+      });
+    }
+    return list;
+  }, [residentsList, residentDusunFilter, residentSearch, currentUser]);
 
   // Kalkulasi Halaman & Paginasi
   const totalSensusPages = Math.max(1, Math.ceil(filteredSensus.length / sensusPageSize));
@@ -2246,11 +2314,10 @@ export default function MasterPanelPage() {
     });
   }, [auditLogs, auditLogSearch]);
 
-  // Batasi hanya menampilkan data terbaru (default 15, opsi 10, 15, 20)
+  // Batasi hanya menampilkan 10 data aktivitas terbaru
   const displayedAuditLogs = useMemo(() => {
-    if (auditLogLimit === 0) return filteredAuditLogs;
-    return filteredAuditLogs.slice(0, auditLogLimit);
-  }, [filteredAuditLogs, auditLogLimit]);
+    return filteredAuditLogs.slice(0, 10);
+  }, [filteredAuditLogs]);
 
   // KPI Metrics Sensus
   const totalKk = sensusList.length;
@@ -2749,23 +2816,32 @@ export default function MasterPanelPage() {
 
                   <div className="flex items-center gap-2">
                     <Filter className="w-3.5 h-3.5 text-slate-400" />
-                    {currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all" ? (
-                      <div className="px-3 py-2 text-xs rounded-xl border border-emerald-200 bg-emerald-50 font-bold text-emerald-800 flex items-center gap-1.5 shadow-2xs">
-                        <Lock className="w-3 h-3 text-emerald-600" />
-                        <span>Dusun {currentUser.dusun} (Terkunci Sesuai Wilayah)</span>
-                      </div>
-                    ) : (
-                      <select
-                        value={sensusDusunFilter}
-                        onChange={(e) => setSensusDusunFilter(e.target.value)}
-                        className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-semibold text-slate-700"
-                      >
-                        <option value="all">Semua Dusun</option>
-                        <option value="Manis">Dusun Manis</option>
-                        <option value="Pahing">Dusun Pahing</option>
-                        <option value="Wage">Dusun Wage</option>
-                      </select>
-                    )}
+                    <select
+                      value={sensusDusunFilter}
+                      onChange={(e) => setSensusDusunFilter(e.target.value)}
+                      className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                    >
+                      {currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all" ? (
+                        <>
+                          <option value={currentUser.dusun}>Dusun {currentUser.dusun} (Wilayah Saya - Default)</option>
+                          <option value="all">Semua Dusun (Dusun {currentUser.dusun} di Teratas)</option>
+                          {["Manis", "Pahing", "Wage"]
+                            .filter((d) => d !== currentUser.dusun)
+                            .map((d) => (
+                              <option key={d} value={d}>
+                                Dusun {d}
+                              </option>
+                            ))}
+                        </>
+                      ) : (
+                        <>
+                          <option value="all">Semua Dusun</option>
+                          <option value="Manis">Dusun Manis</option>
+                          <option value="Pahing">Dusun Pahing</option>
+                          <option value="Wage">Dusun Wage</option>
+                        </>
+                      )}
+                    </select>
 
                     <select
                       value={sensusDesilFilter}
@@ -3035,23 +3111,32 @@ export default function MasterPanelPage() {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  {currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all" ? (
-                    <div className="px-3 py-2 text-xs rounded-xl border border-emerald-200 bg-emerald-50 font-bold text-emerald-800 flex items-center gap-1.5 shadow-2xs">
-                      <Lock className="w-3 h-3 text-emerald-600" />
-                      <span>Dusun {currentUser.dusun} (Terkunci Sesuai Wilayah)</span>
-                    </div>
-                  ) : (
-                    <select
-                      value={residentDusunFilter}
-                      onChange={(e) => setResidentDusunFilter(e.target.value)}
-                      className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-semibold text-slate-700"
-                    >
-                      <option value="all">Semua Dusun (Manis, Pahing, Wage)</option>
-                      <option value="Manis">Dusun Manis</option>
-                      <option value="Pahing">Dusun Pahing</option>
-                      <option value="Wage">Dusun Wage</option>
-                    </select>
-                  )}
+                  <select
+                    value={residentDusunFilter}
+                    onChange={(e) => setResidentDusunFilter(e.target.value)}
+                    className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                  >
+                    {currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all" ? (
+                      <>
+                        <option value={currentUser.dusun}>Dusun {currentUser.dusun} (Wilayah Saya - Default)</option>
+                        <option value="all">Semua Dusun (Dusun {currentUser.dusun} di Teratas)</option>
+                        {["Manis", "Pahing", "Wage"]
+                          .filter((d) => d !== currentUser.dusun)
+                          .map((d) => (
+                            <option key={d} value={d}>
+                              Dusun {d}
+                            </option>
+                          ))}
+                      </>
+                    ) : (
+                      <>
+                        <option value="all">Semua Dusun (Manis, Pahing, Wage)</option>
+                        <option value="Manis">Dusun Manis</option>
+                        <option value="Pahing">Dusun Pahing</option>
+                        <option value="Wage">Dusun Wage</option>
+                      </>
+                    )}
+                  </select>
 
                   <button
                     onClick={() => {
@@ -5043,36 +5128,7 @@ export default function MasterPanelPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2.5">
-                  {/* Limit Data Terbaru: 10 / 15 / 20 / Semua */}
-                  <div className="inline-flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
-                    {[10, 15, 20].map((num) => (
-                      <button
-                        key={num}
-                        type="button"
-                        onClick={() => setAuditLogLimit(num)}
-                        className={`px-3 py-1.5 rounded-lg font-bold transition ${
-                          auditLogLimit === num
-                            ? "bg-[#003733] text-white shadow-xs"
-                            : "text-slate-600 hover:text-slate-950 hover:bg-white/60"
-                        }`}
-                      >
-                        {num} Data
-                      </button>
-                    ))}
-                    <button
-                      type="button"
-                      onClick={() => setAuditLogLimit(0)}
-                      className={`px-3 py-1.5 rounded-lg font-bold transition ${
-                        auditLogLimit === 0
-                          ? "bg-[#003733] text-white shadow-xs"
-                          : "text-slate-600 hover:text-slate-950 hover:bg-white/60"
-                      }`}
-                    >
-                      Semua
-                    </button>
-                  </div>
-
+                <div className="flex items-center gap-2.5">
                   <button
                     onClick={fetchAllData}
                     className="px-3.5 py-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold flex items-center gap-2 shadow-2xs transition"
