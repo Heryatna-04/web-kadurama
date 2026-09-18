@@ -49,6 +49,11 @@
       stroke-width: 2px;
       fill: none;
     }
+    .canvas-dot-grid {
+      background-color: #fbf9f5;
+      background-image: radial-gradient(#d3ccc0 1.25px, transparent 1.25px);
+      background-size: 22px 22px;
+    }
     @keyframes dash {
       to {
         stroke-dashoffset: -1000;
@@ -555,16 +560,57 @@
       <!-- ================================================================= -->
       <div id="view-cluster-container" class="hidden space-y-4">
         <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-          <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+          <div class="flex flex-wrap items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-100">
             <div>
-              <h3 class="font-bold text-slate-900 text-sm">Graf Hubungan Konstelasi Kependudukan 3 Dusun</h3>
-              <p class="text-[11px] text-slate-500">Gunakan kursor mouse untuk drag, zoom, dan klik simpul untuk melihat rincian.</p>
+              <div class="flex items-center gap-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-[#009388] animate-pulse"></span>
+                <h3 class="font-extrabold text-slate-900 text-sm tracking-tight">Graf Konstelasi Relasi Kependudukan 3 Dusun</h3>
+              </div>
+              <p class="text-[11px] text-slate-500 mt-0.5">
+                Kanvas interaktif keterhubungan Dusun Manis, Pahing, dan Wage dengan pusat Kartu Keluarga dan warga.
+              </p>
             </div>
-            <button onclick="networkCluster.fit()" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
-              Pusatkan Graf
-            </button>
+
+            <!-- Toolbar on top of canvas -->
+            <div class="flex items-center gap-2">
+              <!-- Legend Pills -->
+              <div class="hidden xl:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-[10px] font-semibold text-slate-600">
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#009388]"></span>Dusun</span>
+                <span class="text-slate-300">•</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-md bg-[#d97706]"></span>Hub KK</span>
+                <span class="text-slate-300">•</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#2563eb]"></span>Kepala (L)</span>
+                <span class="text-slate-300">•</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#db2777]"></span>Istri (P)</span>
+                <span class="text-slate-300">•</span>
+                <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-[#10b981]"></span>Anak</span>
+              </div>
+
+              <div class="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                <button onclick="zoomCluster(1.2)" class="p-1.5 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow-2xs text-xs font-bold" title="Perbesar (Zoom In)">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                </button>
+                <button onclick="zoomCluster(0.8)" class="p-1.5 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow-2xs text-xs font-bold" title="Perkecil (Zoom Out)">
+                  <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"/></svg>
+                </button>
+                <button onclick="if(networkCluster) networkCluster.fit({ animation: { duration: 600 } })" class="px-2.5 py-1.5 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow-2xs text-xs font-bold flex items-center gap-1" title="Pusatkan Graf">
+                  <svg class="w-3.5 h-3.5 text-[#009388]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                  <span>Reset Tampilan</span>
+                </button>
+              </div>
+            </div>
           </div>
-          <div id="cluster-canvas" class="w-full h-[540px] rounded-2xl bg-slate-900 border border-slate-800"></div>
+
+          <!-- THE CANVAS WITH CREAM / OFF-WHITE RADIAL DOT PATTERN -->
+          <div class="relative">
+            <div id="cluster-canvas" class="w-full h-[560px] rounded-2xl canvas-dot-grid border border-[#e6e0d5] shadow-inner relative overflow-hidden"></div>
+            
+            <!-- Quick Helper Note Overlay at bottom-left of canvas -->
+            <div class="absolute bottom-4 left-4 pointer-events-none bg-white/95 backdrop-blur-xs border border-slate-200/80 px-3 py-1.5 rounded-xl shadow-xs text-[10px] text-slate-600 flex items-center gap-2">
+              <svg class="w-3.5 h-3.5 text-[#009388]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122"/></svg>
+              <span>Geser simpul atau klik kartu warga untuk melihat identitas di laci kanan</span>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -741,41 +787,105 @@
       document.getElementById('inspector-drawer').classList.add('translate-x-full');
     }
 
+    function zoomCluster(factor) {
+      if (!networkCluster) return;
+      const currentScale = networkCluster.getScale();
+      networkCluster.moveTo({
+        scale: currentScale * factor,
+        animation: { duration: 300, easingFunction: "easeInOutQuad" }
+      });
+    }
+
     function initClusterGraph() {
       const container = document.getElementById("cluster-canvas");
       const nodes = [
-        { id: "M", label: "Dusun Manis", color: "#009388", font: { color: "#fff", bold: true }, size: 25 },
-        { id: "P", label: "Dusun Pahing", color: "#009388", font: { color: "#fff", bold: true }, size: 25 },
-        { id: "W", label: "Dusun Wage", color: "#009388", font: { color: "#fff", bold: true }, size: 25 },
-        { id: "KK1", label: "KK Dedi Supriyadi\n(Pahing RT 02)", shape: "box", color: "#eda50c", font: { color: "#fff" } },
-        { id: "KK2", label: "KK H. Maman\n(Wage RT 01)", shape: "box", color: "#eda50c", font: { color: "#fff" } },
-        { id: "KK3", label: "KK Suryana\n(Manis RT 01)", shape: "box", color: "#eda50c", font: { color: "#fff" } },
-        { id: "R1", label: "Dedi Supriyadi (K)", shape: "dot", color: "#3b82f6", size: 12 },
-        { id: "R2", label: "Ratna Sari (I)", shape: "dot", color: "#ec4899", size: 10 },
-        { id: "R3", label: "Bayu Saputra (A)", shape: "dot", color: "#ef4444", size: 9 },
-        { id: "R4", label: "H. Maman (K)", shape: "dot", color: "#3b82f6", size: 12 },
-        { id: "R5", label: "Hj. Nunung (I)", shape: "dot", color: "#ec4899", size: 10 }
+        // Dusun Nodes
+        { id: "P", label: "DUSUN I PAHING\nKepala: Trida Sentosa", shape: "box", margin: 12, color: { background: "#009388", border: "#006d64", highlight: { background: "#007b71", border: "#004d47" } }, font: { color: "#ffffff", bold: true, size: 11, face: "Plus Jakarta Sans" }, borderWidth: 2, shadow: { color: "rgba(0, 55, 51, 0.15)", size: 6, x: 2, y: 3 }, type: "DUSUN" },
+        { id: "W", label: "DUSUN II WAGE\nKepala: Andri Rukmana", shape: "box", margin: 12, color: { background: "#009388", border: "#006d64", highlight: { background: "#007b71", border: "#004d47" } }, font: { color: "#ffffff", bold: true, size: 11, face: "Plus Jakarta Sans" }, borderWidth: 2, shadow: { color: "rgba(0, 55, 51, 0.15)", size: 6, x: 2, y: 3 }, type: "DUSUN" },
+        { id: "M", label: "DUSUN III MANIS\nKepala: Jamaludin", shape: "box", margin: 12, color: { background: "#009388", border: "#006d64", highlight: { background: "#007b71", border: "#004d47" } }, font: { color: "#ffffff", bold: true, size: 11, face: "Plus Jakarta Sans" }, borderWidth: 2, shadow: { color: "rgba(0, 55, 51, 0.15)", size: 6, x: 2, y: 3 }, type: "DUSUN" },
+
+        // KK Hub Nodes (Krem Emas Elegan)
+        { id: "3208151201000002", label: "KK DEDI SUPRIYADI\nDesil 1 (RTLH)\nPahing RT 02/01", shape: "box", margin: 10, color: { background: "#fffbeb", border: "#d97706", highlight: { background: "#fef3c7", border: "#b45309" } }, font: { color: "#78350f", bold: true, size: 10, face: "Plus Jakarta Sans" }, borderWidth: 2, shadow: { color: "rgba(180, 83, 9, 0.12)", size: 6, x: 1, y: 2 }, type: "KK" },
+        { id: "KK2", label: "KK H. MAMAN SULAEMAN\nDesil 4 (Mandiri)\nWage RT 01/01", shape: "box", margin: 10, color: { background: "#fffbeb", border: "#d97706", highlight: { background: "#fef3c7", border: "#b45309" } }, font: { color: "#78350f", bold: true, size: 10, face: "Plus Jakarta Sans" }, borderWidth: 2, shadow: { color: "rgba(180, 83, 9, 0.12)", size: 6, x: 1, y: 2 }, type: "KK" },
+        { id: "KK3", label: "KK SURYANA\nDesil 3 (Pra-Sejahtera)\nManis RT 01/01", shape: "box", margin: 10, color: { background: "#fffbeb", border: "#d97706", highlight: { background: "#fef3c7", border: "#b45309" } }, font: { color: "#78350f", bold: true, size: 10, face: "Plus Jakarta Sans" }, borderWidth: 2, shadow: { color: "rgba(180, 83, 9, 0.12)", size: 6, x: 1, y: 2 }, type: "KK" },
+
+        // Warga Keluarga Dedi Supriyadi (Pahing)
+        { id: "3208151805820005", label: "Dedi Supriyadi\nKepala Keluarga", shape: "box", margin: 7, color: { background: "#eff6ff", border: "#3b82f6", highlight: { background: "#dbeafe", border: "#1d4ed8" } }, font: { color: "#1e3a8a", size: 10, bold: true, face: "Plus Jakarta Sans" }, borderWidth: 1.5, type: "KTP" },
+        { id: "3208154506840006", label: "Ratna Sari\nIstri", shape: "box", margin: 7, color: { background: "#fdf2f8", border: "#ec4899", highlight: { background: "#fce7f3", border: "#be185d" } }, font: { color: "#831843", size: 10, bold: true, face: "Plus Jakarta Sans" }, borderWidth: 1.5, type: "KTP" },
+        { id: "3208152009220007", label: "Bayu Saputra (3 Th)\n⚠️ Pantauan Stunting", shape: "box", margin: 7, color: { background: "#fef2f2", border: "#ef4444", highlight: { background: "#fee2e2", border: "#b91c1c" } }, font: { color: "#991b1b", size: 9, bold: true, face: "Plus Jakarta Sans" }, borderWidth: 2, type: "KTP" },
+        { id: "3208150201480008", label: "Mak Eni (78 Th)\n👵 Lansia Rentan", shape: "box", margin: 7, color: { background: "#faf5ff", border: "#8b5cf6", highlight: { background: "#f3e8ff", border: "#6d28d9" } }, font: { color: "#581c87", size: 9, bold: true, face: "Plus Jakarta Sans" }, borderWidth: 1.5, type: "KTP" },
+
+        // Warga Keluarga H. Maman (Wage)
+        { id: "R4", label: "H. Maman Sulaeman\nKepala Keluarga", shape: "box", margin: 7, color: { background: "#eff6ff", border: "#3b82f6" }, font: { color: "#1e3a8a", size: 10, bold: true, face: "Plus Jakarta Sans" }, borderWidth: 1.5, type: "KTP" },
+        { id: "R5", label: "Hj. Nunung Halimah\nIstri", shape: "box", margin: 7, color: { background: "#fdf2f8", border: "#ec4899" }, font: { color: "#831843", size: 10, bold: true, face: "Plus Jakarta Sans" }, borderWidth: 1.5, type: "KTP" },
+        { id: "R6", label: "Fajar Ramadhan\nAnak (BUMN)", shape: "box", margin: 7, color: { background: "#ecfdf5", border: "#10b981" }, font: { color: "#064e3b", size: 9, face: "Plus Jakarta Sans" }, borderWidth: 1.5, type: "KTP" },
+
+        // Warga Keluarga Suryana (Manis)
+        { id: "R7", label: "Suryana\nKepala (PNS Guru)", shape: "box", margin: 7, color: { background: "#eff6ff", border: "#3b82f6" }, font: { color: "#1e3a8a", size: 10, bold: true, face: "Plus Jakarta Sans" }, borderWidth: 1.5, type: "KTP" },
+        { id: "R8", label: "Cucun Rodiah\nIstri (Bidan Desa)", shape: "box", margin: 7, color: { background: "#fdf2f8", border: "#ec4899" }, font: { color: "#831843", size: 10, bold: true, face: "Plus Jakarta Sans" }, borderWidth: 1.5, type: "KTP" }
       ];
 
       const edges = [
-        { from: "P", to: "KK1" },
-        { from: "W", to: "KK2" },
-        { from: "M", to: "KK3" },
-        { from: "KK1", to: "R1" },
-        { from: "KK1", to: "R2" },
-        { from: "KK1", to: "R3" },
-        { from: "KK2", to: "R4" },
-        { from: "KK2", to: "R5" },
-        { from: "R1", to: "R2", label: "Pasutri", color: "#ec4899" }
+        // Dusun to KK
+        { from: "P", to: "3208151201000002", color: { color: "#cbd5e1" }, width: 2 },
+        { from: "W", to: "KK2", color: { color: "#cbd5e1" }, width: 2 },
+        { from: "M", to: "KK3", color: { color: "#cbd5e1" }, width: 2 },
+
+        // KK to Members
+        { from: "3208151201000002", to: "3208151805820005", color: { color: "#93c5fd" }, width: 1.5 },
+        { from: "3208151201000002", to: "3208154506840006", color: { color: "#f9a8d4" }, width: 1.5 },
+        { from: "3208151201000002", to: "3208152009220007", color: { color: "#fca5a5" }, width: 2, dashes: true },
+        { from: "3208151201000002", to: "3208150201480008", color: { color: "#d8b4fe" }, width: 1.5, dashes: true },
+
+        // Wage Family
+        { from: "KK2", to: "R4", color: { color: "#93c5fd" }, width: 1.5 },
+        { from: "KK2", to: "R5", color: { color: "#f9a8d4" }, width: 1.5 },
+        { from: "KK2", to: "R6", color: { color: "#6ee7b7" }, width: 1.5 },
+
+        // Manis Family
+        { from: "KK3", to: "R7", color: { color: "#93c5fd" }, width: 1.5 },
+        { from: "KK3", to: "R8", color: { color: "#f9a8d4" }, width: 1.5 },
+
+        // Pasangan Suami-Istri (Inter-member)
+        { from: "3208151805820005", to: "3208154506840006", label: "Pasutri", color: { color: "#ec4899" }, width: 2, font: { color: "#ec4899", size: 9, face: "Plus Jakarta Sans", strokeWidth: 3, strokeColor: "#fbf9f5" } },
+        { from: "R4", to: "R5", label: "Pasutri", color: { color: "#ec4899" }, width: 2, font: { color: "#ec4899", size: 9, face: "Plus Jakarta Sans", strokeWidth: 3, strokeColor: "#fbf9f5" } },
+        { from: "R7", to: "R8", label: "Pasutri", color: { color: "#ec4899" }, width: 2, font: { color: "#ec4899", size: 9, face: "Plus Jakarta Sans", strokeWidth: 3, strokeColor: "#fbf9f5" } }
       ];
 
       const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
       const options = {
-        physics: { stabilization: true },
-        interaction: { hover: true }
+        physics: {
+          stabilization: { iterations: 120 },
+          barnesHut: {
+            gravitationalConstant: -2800,
+            centralGravity: 0.28,
+            springLength: 110,
+            springConstant: 0.05,
+            damping: 0.1
+          }
+        },
+        interaction: {
+          hover: true,
+          tooltipDelay: 100
+        }
       };
 
       networkCluster = new vis.Network(container, data, options);
+
+      // Handle click on cluster nodes
+      networkCluster.on("click", function(params) {
+        if (params.nodes.length > 0) {
+          const nodeId = params.nodes[0];
+          const node = data.nodes.get(nodeId);
+          if (node) {
+            if (node.type === "KK") {
+              inspectNode("KK", nodeId);
+            } else if (node.type === "KTP") {
+              inspectNode("KTP", nodeId);
+            }
+          }
+        }
+      });
     }
 
     function searchFamily(val) {
