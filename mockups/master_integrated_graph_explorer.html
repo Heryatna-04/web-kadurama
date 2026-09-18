@@ -1,0 +1,807 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Data Center Pemdes Kadurama - Peta Relasi KK & KTP</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+    /* Curved Connector SVG styles */
+    .connector-line {
+      stroke: #94a3b8;
+      stroke-width: 2px;
+      fill: none;
+      stroke-dasharray: 4 4;
+      animation: dash 30s linear infinite;
+    }
+    .connector-line-solid {
+      stroke: #009388;
+      stroke-width: 2.5px;
+      fill: none;
+    }
+    .connector-line-marital {
+      stroke: #ec4899;
+      stroke-width: 2px;
+      fill: none;
+    }
+    @keyframes dash {
+      to {
+        stroke-dashoffset: -1000;
+      }
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen flex antialiased">
+
+  <!-- ===================================================================== -->
+  <!-- SIDEBAR RESMI MASTER PANEL (Persis sama dengan /master)               -->
+  <!-- ===================================================================== -->
+  <aside class="w-64 lg:w-72 bg-gradient-to-b from-[#003733] via-[#002825] to-[#001f1c] text-white flex flex-col justify-between shrink-0 h-screen sticky top-0 border-r border-[#005851]/60 shadow-2xl z-30">
+    <div class="p-5 flex-1 overflow-y-auto">
+      <!-- Brand Balai Desa -->
+      <div class="flex items-center gap-3 pb-5 border-b border-[#005851]">
+        <div class="w-10 h-10 rounded-2xl bg-white p-1.5 shadow-md flex items-center justify-center shrink-0">
+          <img src="/default-avatar.svg" onerror="this.src='https://raw.githubusercontent.com/Heryatna-04/web-kadurama/main/frontend/public/default-avatar.svg'" class="w-full h-full object-contain" alt="Logo Kuningan">
+        </div>
+        <div>
+          <h1 class="font-extrabold text-sm tracking-tight text-white leading-tight">
+            DATA CENTER KADURAMA
+          </h1>
+          <p class="text-[10px] text-emerald-300 font-medium">Portal Otorisasi Aparatur Desa</p>
+        </div>
+      </div>
+
+      <!-- Navigation Tabs -->
+      <div class="mt-5 space-y-1.5 text-xs">
+        <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-300/70 px-3 pb-1">
+          Master Kependudukan & Sosial
+        </div>
+
+        <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-left text-emerald-100 hover:bg-[#005851] transition">
+          <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg>
+          <span>Sensus Keluarga & Desil</span>
+        </button>
+
+        <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-left text-emerald-100 hover:bg-[#005851] transition">
+          <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+          <span>Data Warga (SIAK)</span>
+        </button>
+
+        <!-- ACTIVE TAB: PETA RELASI KK & KTP (NEW!) -->
+        <button class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-left bg-[#009388] text-white shadow-lg shadow-emerald-950/40 transition">
+          <div class="flex items-center gap-3">
+            <svg class="w-4 h-4 text-emerald-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <circle cx="12" cy="12" r="3" stroke-width="2"/>
+              <circle cx="5" cy="7" r="2" stroke-width="2"/>
+              <circle cx="19" cy="7" r="2" stroke-width="2"/>
+              <circle cx="6" cy="17" r="2" stroke-width="2"/>
+              <circle cx="18" cy="17" r="2" stroke-width="2"/>
+              <path stroke-width="1.5" d="M7 8l3 3m7-3l-3 3m-4 3l-2 2m6-2l2 2"/>
+            </svg>
+            <span>Peta Relasi KK & KTP</span>
+          </div>
+          <span class="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-[#eda50c] text-slate-950 uppercase">
+            Baru
+          </span>
+        </button>
+
+        <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-300/70 px-3 pt-4 pb-1">
+          Tata Kelola & Layanan
+        </div>
+
+        <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-left text-emerald-100 hover:bg-[#005851] transition">
+          <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+          <span>Loket Cetak Surat</span>
+        </button>
+
+        <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-left text-emerald-100 hover:bg-[#005851] transition">
+          <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+          <span>Transparansi APBDes</span>
+        </button>
+
+        <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-left text-emerald-100 hover:bg-[#005851] transition">
+          <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z"/></svg>
+          <span>Publikasi & Warta Desa</span>
+        </button>
+
+        <div class="text-[10px] font-bold uppercase tracking-wider text-emerald-300/70 px-3 pt-4 pb-1">
+          Keamanan Sistem
+        </div>
+
+        <button class="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl font-semibold text-left text-emerald-100 hover:bg-[#005851] transition">
+          <svg class="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          <span>Log Audit Keamanan</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Profil Login Aparatur -->
+    <div class="p-4 border-t border-[#005851] bg-[#002421]">
+      <div class="flex items-center gap-3">
+        <div class="w-9 h-9 rounded-xl bg-[#eda50c] text-slate-950 font-extrabold flex items-center justify-center text-xs shadow-md">
+          SE
+        </div>
+        <div class="min-w-0 flex-1">
+          <div class="text-xs font-bold text-white truncate">Sumiati, SE</div>
+          <div class="text-[10px] text-emerald-300 truncate">Sekretaris Desa Kadurama</div>
+        </div>
+      </div>
+      <div class="mt-2 text-[10px] text-emerald-200/80 font-mono bg-[#003733] px-2.5 py-1 rounded-lg border border-[#005851] flex items-center justify-between">
+        <span>Wilayah Kerja:</span>
+        <span class="font-bold text-white">Semua Dusun (Pusat)</span>
+      </div>
+    </div>
+  </aside>
+
+  <!-- ===================================================================== -->
+  <!-- MAIN CONTENT AREA (Clean Civic Style)                                 -->
+  <!-- ===================================================================== -->
+  <main class="flex-1 h-screen overflow-y-auto p-6 lg:p-8 bg-slate-50 relative">
+    <div class="max-w-[1400px] mx-auto space-y-6 pb-20">
+
+      <!-- Breadcrumb & Header Title -->
+      <div class="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+        <div>
+          <div class="flex items-center gap-2 text-[11px] font-semibold text-[#009388] uppercase tracking-wider mb-1">
+            <span>Data Center</span>
+            <span>•</span>
+            <span>Kependudukan SIAK</span>
+            <span>•</span>
+            <span>Modul Relasi Kependudukan</span>
+          </div>
+          <h2 class="text-2xl font-extrabold text-slate-950 flex items-center gap-2.5 tracking-tight">
+            <div class="w-8 h-8 rounded-xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="3" stroke-width="2"/>
+                <circle cx="5" cy="7" r="2" stroke-width="2"/>
+                <circle cx="19" cy="7" r="2" stroke-width="2"/>
+                <path stroke-width="2" d="M7 8l3 3m7-3l-3 3"/>
+              </svg>
+            </div>
+            <span>Peta Relasi KK & KTP Elektronik (Civic Knowledge Graph)</span>
+          </h2>
+          <p class="text-xs text-slate-500 mt-1">
+            Visualisasi keterhubungan satu Nomor Kartu Keluarga (KK) dengan identitas NIK anggota keluarga, garis perkawinan, tanggungan anak, dan status kerentanan sosial.
+          </p>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="flex items-center gap-2.5">
+          <button onclick="window.print()" class="px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 font-bold text-xs shadow-2xs flex items-center gap-2 transition">
+            <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            <span>Cetak Bagan Relasi</span>
+          </button>
+          <button onclick="alert('Sinkronisasi SIAK: 2.481 data warga telah terverifikasi dengan 808 KK')" class="px-4 py-2 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm flex items-center gap-2 transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+            <span>Perbarui Data Relasi</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Metrics Ribbon -->
+      <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+          <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Kartu Keluarga</div>
+          <div class="text-2xl font-black text-slate-900 mt-1">808 <span class="text-xs font-normal text-slate-400">KK</span></div>
+          <div class="text-[10px] text-emerald-600 mt-0.5 font-bold">100% Terverifikasi Dusun</div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+          <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Jiwa Terkoneksi</div>
+          <div class="text-2xl font-black text-slate-900 mt-1">2.481 <span class="text-xs font-normal text-slate-400">Jiwa</span></div>
+          <div class="text-[10px] text-blue-600 mt-0.5 font-bold">Rata-rata 3.1 Jiwa / KK</div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+          <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Keluarga Desil 1 (Rentan)</div>
+          <div class="text-2xl font-black text-red-600 mt-1">42 <span class="text-xs font-normal text-slate-400">KK</span></div>
+          <div class="text-[10px] text-red-700 mt-0.5 font-bold">Terhubung BLT-DD & PKH</div>
+        </div>
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+          <div class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Wilayah Terdata</div>
+          <div class="text-2xl font-black text-[#009388] mt-1">3 <span class="text-xs font-normal text-slate-400">Dusun</span></div>
+          <div class="text-[10px] text-slate-500 mt-0.5 font-medium">Manis, Pahing & Wage</div>
+        </div>
+      </div>
+
+      <!-- Filter & Search Toolbar -->
+      <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+        <!-- Dusun Selector & KK Search -->
+        <div class="flex flex-wrap items-center gap-3 flex-1 min-w-[300px]">
+          <div>
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Pilih Dusun</label>
+            <select id="select-dusun" onchange="filterDusun(this.value)" class="bg-slate-50 border border-slate-300 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#009388] focus:outline-none">
+              <option value="all">Semua Dusun (Manis, Pahing, Wage)</option>
+              <option value="Pahing" selected>Dusun I Pahing (Keluarga Dedi Supriyadi)</option>
+              <option value="Wage">Dusun II Wage (Keluarga H. Maman)</option>
+              <option value="Manis">Dusun III Manis (Keluarga Suryana)</option>
+            </select>
+          </div>
+
+          <div class="flex-1 min-w-[240px]">
+            <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Cari Kepala Keluarga / No. KK / NIK</label>
+            <div class="relative">
+              <input
+                type="text"
+                id="search-input"
+                oninput="searchFamily(this.value)"
+                placeholder="Ketik NIK, Nama, atau No. KK..."
+                class="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 pl-9 text-xs text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#009388] transition font-mono"
+              />
+              <svg class="w-4 h-4 text-slate-400 absolute left-3 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- View Mode Switcher Inside Master -->
+        <div>
+          <label class="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">Model Visualisasi</label>
+          <div class="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+            <button onclick="setMasterView('tree')" id="tab-tree" class="px-3.5 py-1.5 rounded-lg font-bold bg-[#009388] text-white shadow-xs transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              <span>Pohon Relasi 1 KK</span>
+            </button>
+            <button onclick="setMasterView('matrix')" id="tab-matrix" class="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg>
+              <span>Matriks Anggota</span>
+            </button>
+            <button onclick="setMasterView('cluster')" id="tab-cluster" class="px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"/></svg>
+              <span>Graf Makro Dusun</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 1: INTERACTIVE CIVIC FAMILY TREE (POHON RELASI KK-KTP)        -->
+      <!-- ================================================================= -->
+      <div id="view-tree-container" class="space-y-6">
+        <!-- Family Tree Board -->
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm relative overflow-hidden">
+          <div class="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
+            <div class="flex items-center gap-3">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+              <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                Struktur Keluarga Terpilih: <strong class="text-[#009388]" id="active-family-name">Keluarga Bpk. Dedi Supriyadi (Dusun Pahing)</strong>
+              </span>
+            </div>
+            <div class="text-xs text-slate-400 font-mono">
+              Terverifikasi SIAK • Sensus Selesai
+            </div>
+          </div>
+
+          <!-- LEVEL 1: CENTRAL HOUSEHOLD HUB (KARTU KELUARGA) -->
+          <div class="flex justify-center mb-10">
+            <div onclick="inspectNode('KK', '3208151201000002')" class="cursor-pointer group relative bg-gradient-to-br from-amber-50 to-orange-50/70 border-2 border-amber-300/80 hover:border-amber-500 rounded-2xl p-5 w-full max-w-md shadow-md hover:shadow-xl transition-all duration-300">
+              <div class="flex items-start justify-between">
+                <div class="flex items-center gap-3">
+                  <div class="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-xs shadow-sm">
+                    KK
+                  </div>
+                  <div>
+                    <span class="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-md">
+                      Pusat Rumah Tangga
+                    </span>
+                    <h3 class="font-extrabold text-slate-900 text-base mt-0.5 group-hover:text-amber-900 transition">
+                      Dedi Supriyadi
+                    </h3>
+                  </div>
+                </div>
+                <span class="px-2.5 py-1 rounded-full text-[10px] font-black bg-red-100 text-red-700 border border-red-200">
+                  Desil 1 (Rentan)
+                </span>
+              </div>
+
+              <div class="mt-4 pt-3 border-t border-amber-200/60 grid grid-cols-2 gap-2 text-xs">
+                <div>
+                  <span class="text-[10px] text-slate-500 block">Nomor Kartu Keluarga</span>
+                  <span class="font-mono font-bold text-slate-900 text-[11px]">3208151201000002</span>
+                </div>
+                <div>
+                  <span class="text-[10px] text-slate-500 block">Wilayah Domisili</span>
+                  <span class="font-bold text-slate-800">Dusun Pahing (RT 02/01)</span>
+                </div>
+                <div class="col-span-2 flex items-center justify-between mt-1 text-[11px]">
+                  <span class="text-slate-600">Bansos Aktif: <strong class="text-indigo-700">PKH & BLT-DD</strong></span>
+                  <span class="text-amber-800 font-bold underline text-[10px] group-hover:translate-x-1 transition">Detail KK →</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- CONNECTOR BRANCH: VERTICAL TRUNK TO PARENTS & CHILDREN -->
+          <div class="relative w-full max-w-4xl mx-auto">
+            <!-- LEVEL 2: KEPALA KELUARGA & ISTRI (SPOUSE LEVEL) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12 relative">
+              
+              <!-- Connection Ribbon Between Spouses -->
+              <div class="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 items-center justify-center">
+                <div class="bg-pink-50 border border-pink-300 text-pink-700 px-3 py-1 rounded-full text-[10px] font-extrabold shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                  <span>💍 Pasangan Suami - Istri</span>
+                </div>
+              </div>
+
+              <!-- CARD 1: KEPALA KELUARGA -->
+              <div onclick="inspectNode('KTP', '3208151805820005')" class="cursor-pointer bg-white rounded-2xl border-2 border-blue-200 hover:border-blue-500 p-5 shadow-sm hover:shadow-lg transition-all group">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
+                      L
+                    </div>
+                    <div>
+                      <span class="text-[10px] font-bold text-blue-600 uppercase tracking-wider">Kepala Keluarga</span>
+                      <h4 class="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition">Dedi Supriyadi</h4>
+                    </div>
+                  </div>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    44 Tahun
+                  </span>
+                </div>
+                <div class="mt-3 space-y-1.5 text-xs text-slate-600">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">NIK:</span>
+                    <span class="font-mono font-bold text-slate-800">3208151805820005</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">TTL:</span>
+                    <span>Kuningan, 18-05-1982</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Pekerjaan:</span>
+                    <span class="font-semibold text-slate-800">Buruh Harian Lepas</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- CARD 2: ISTRI -->
+              <div onclick="inspectNode('KTP', '3208154506840006')" class="cursor-pointer bg-white rounded-2xl border-2 border-pink-200 hover:border-pink-500 p-5 shadow-sm hover:shadow-lg transition-all group">
+                <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+                  <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-pink-100 text-pink-700 flex items-center justify-center font-bold text-xs">
+                      P
+                    </div>
+                    <div>
+                      <span class="text-[10px] font-bold text-pink-600 uppercase tracking-wider">Istri</span>
+                      <h4 class="font-bold text-sm text-slate-900 group-hover:text-pink-600 transition">Ratna Sari</h4>
+                    </div>
+                  </div>
+                  <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-pink-50 text-pink-700 border border-pink-200">
+                    42 Tahun
+                  </span>
+                </div>
+                <div class="mt-3 space-y-1.5 text-xs text-slate-600">
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">NIK:</span>
+                    <span class="font-mono font-bold text-slate-800">3208154506840006</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">TTL:</span>
+                    <span>Kuningan, 05-06-1984</span>
+                  </div>
+                  <div class="flex items-center justify-between">
+                    <span class="text-slate-400">Pekerjaan:</span>
+                    <span class="font-semibold text-slate-800">Pedagang Makanan Ringan</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- LEVEL 3: DESCENDANTS & DEPENDENTS (ANAK & ORANG TUA) -->
+            <div>
+              <div class="flex items-center gap-3 mb-4">
+                <div class="h-px flex-1 bg-slate-200"></div>
+                <span class="text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                  Tanggungan Keluarga & Keturunan
+                </span>
+                <div class="h-px flex-1 bg-slate-200"></div>
+              </div>
+
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <!-- CARD 3: BALITA (PANTAUAN STUNTING) -->
+                <div onclick="inspectNode('KTP', '3208152009220007')" class="cursor-pointer bg-white rounded-2xl border-2 border-red-300 hover:border-red-500 p-4 shadow-sm hover:shadow-lg transition-all group relative overflow-hidden">
+                  <div class="absolute top-0 right-0 bg-red-600 text-white text-[9px] font-extrabold px-2.5 py-0.5 rounded-bl-lg">
+                    Pantauan Stunting Posyandu
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0">
+                      A1
+                    </div>
+                    <div>
+                      <span class="text-[10px] font-bold text-emerald-700 uppercase tracking-wider">Anak Kandung (3 Tahun)</span>
+                      <h4 class="font-bold text-sm text-slate-900 group-hover:text-red-600 transition">Bayu Saputra</h4>
+                    </div>
+                  </div>
+                  <div class="mt-3 text-xs text-slate-600 space-y-1">
+                    <div class="flex justify-between">
+                      <span class="text-slate-400">NIK:</span>
+                      <span class="font-mono text-slate-800 font-bold">3208152009220007</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-slate-400">Status Gizi:</span>
+                      <span class="text-red-600 font-bold">Perlu Asupan PMT Tambahan</span>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- CARD 4: LANSIA (ORANG TUA TANGGUNGAN) -->
+                <div onclick="inspectNode('KTP', '3208150201480008')" class="cursor-pointer bg-white rounded-2xl border-2 border-purple-200 hover:border-purple-500 p-4 shadow-sm hover:shadow-lg transition-all group relative overflow-hidden">
+                  <div class="absolute top-0 right-0 bg-purple-600 text-white text-[9px] font-extrabold px-2.5 py-0.5 rounded-bl-lg">
+                    Lansia Rentan (78 Th)
+                  </div>
+                  <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded-xl bg-purple-100 text-purple-800 font-bold flex items-center justify-center text-xs shrink-0">
+                      OT
+                    </div>
+                    <div>
+                      <span class="text-[10px] font-bold text-purple-700 uppercase tracking-wider">Orang Tua (Ibu)</span>
+                      <h4 class="font-bold text-sm text-slate-900 group-hover:text-purple-600 transition">Mak Eni</h4>
+                    </div>
+                  </div>
+                  <div class="mt-3 text-xs text-slate-600 space-y-1">
+                    <div class="flex justify-between">
+                      <span class="text-slate-400">NIK:</span>
+                      <span class="font-mono text-slate-800 font-bold">3208150201480008</span>
+                    </div>
+                    <div class="flex justify-between">
+                      <span class="text-slate-400">Status Pernikahan:</span>
+                      <span class="font-medium text-slate-700">Cerai Mati (Janda Lansia)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 2: MATRIKS KONEKTOR DATA PENDUDUK (TABEL TERHUBUNG)          -->
+      <!-- ================================================================= -->
+      <div id="view-matrix-container" class="hidden space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+          <table class="w-full text-left text-xs text-slate-700">
+            <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+              <tr>
+                <th class="py-3 px-4">NIK (KTP Warga)</th>
+                <th class="py-3 px-4">Nama Anggota</th>
+                <th class="py-3 px-4">Relasi Dalam KK</th>
+                <th class="py-3 px-4">No. Kartu Keluarga</th>
+                <th class="py-3 px-4">Kepala Keluarga</th>
+                <th class="py-3 px-4">Dusun / RT / RW</th>
+                <th class="py-3 px-4">Kerentanan / Bansos</th>
+                <th class="py-3 px-4 text-right">Aksi</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr class="hover:bg-slate-50/80 transition">
+                <td class="py-3.5 px-4 font-mono font-bold text-slate-900">3208151805820005</td>
+                <td class="py-3.5 px-4 font-bold text-slate-900">Dedi Supriyadi</td>
+                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded bg-blue-50 text-blue-700 font-bold border border-blue-200">Kepala Keluarga</span></td>
+                <td class="py-3.5 px-4 font-mono">3208151201000002</td>
+                <td class="py-3.5 px-4 font-semibold text-slate-800">Dedi Supriyadi</td>
+                <td class="py-3.5 px-4">Dusun Pahing (02/01)</td>
+                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded bg-red-50 text-red-700 font-bold text-[10px]">RTLH • Desil 1</span></td>
+                <td class="py-3.5 px-4 text-right">
+                  <button onclick="inspectNode('KTP', '3208151805820005')" class="px-2.5 py-1 rounded-lg bg-[#009388] text-white font-bold hover:bg-[#007b71] transition">Sorot Relasi</button>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-50/80 transition">
+                <td class="py-3.5 px-4 font-mono font-bold text-slate-900">3208154506840006</td>
+                <td class="py-3.5 px-4 font-bold text-slate-900">Ratna Sari</td>
+                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded bg-pink-50 text-pink-700 font-bold border border-pink-200">Istri</span></td>
+                <td class="py-3.5 px-4 font-mono">3208151201000002</td>
+                <td class="py-3.5 px-4 font-semibold text-slate-800">Dedi Supriyadi</td>
+                <td class="py-3.5 px-4">Dusun Pahing (02/01)</td>
+                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold text-[10px]">Penerima PKH</span></td>
+                <td class="py-3.5 px-4 text-right">
+                  <button onclick="inspectNode('KTP', '3208154506840006')" class="px-2.5 py-1 rounded-lg bg-[#009388] text-white font-bold hover:bg-[#007b71] transition">Sorot Relasi</button>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-50/80 transition bg-red-50/30">
+                <td class="py-3.5 px-4 font-mono font-bold text-slate-900">3208152009220007</td>
+                <td class="py-3.5 px-4 font-bold text-slate-900">Bayu Saputra</td>
+                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 font-bold border border-emerald-200">Anak</span></td>
+                <td class="py-3.5 px-4 font-mono">3208151201000002</td>
+                <td class="py-3.5 px-4 font-semibold text-slate-800">Dedi Supriyadi</td>
+                <td class="py-3.5 px-4">Dusun Pahing (02/01)</td>
+                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded bg-red-100 text-red-800 font-bold text-[10px] border border-red-200 animate-pulse">⚠️ Pantauan Stunting</span></td>
+                <td class="py-3.5 px-4 text-right">
+                  <button onclick="inspectNode('KTP', '3208152009220007')" class="px-2.5 py-1 rounded-lg bg-[#009388] text-white font-bold hover:bg-[#007b71] transition">Sorot Relasi</button>
+                </td>
+              </tr>
+              <tr class="hover:bg-slate-50/80 transition">
+                <td class="py-3.5 px-4 font-mono font-bold text-slate-900">3208150201480008</td>
+                <td class="py-3.5 px-4 font-bold text-slate-900">Mak Eni</td>
+                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded bg-purple-50 text-purple-700 font-bold border border-purple-200">Orang Tua</span></td>
+                <td class="py-3.5 px-4 font-mono">3208151201000002</td>
+                <td class="py-3.5 px-4 font-semibold text-slate-800">Dedi Supriyadi</td>
+                <td class="py-3.5 px-4">Dusun Pahing (02/01)</td>
+                <td class="py-3.5 px-4"><span class="px-2 py-0.5 rounded bg-purple-100 text-purple-800 font-bold text-[10px]">👵 Lansia Tunggal</span></td>
+                <td class="py-3.5 px-4 text-right">
+                  <button onclick="inspectNode('KTP', '3208150201480008')" class="px-2.5 py-1 rounded-lg bg-[#009388] text-white font-bold hover:bg-[#007b71] transition">Sorot Relasi</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ================================================================= -->
+      <!-- VIEW 3: SEAMLESS INTEGRATED NETWORK CANVAS (GRAF KLASTER)         -->
+      <!-- ================================================================= -->
+      <div id="view-cluster-container" class="hidden space-y-4">
+        <div class="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+          <div class="flex items-center justify-between pb-3 mb-3 border-b border-slate-100">
+            <div>
+              <h3 class="font-bold text-slate-900 text-sm">Graf Hubungan Konstelasi Kependudukan 3 Dusun</h3>
+              <p class="text-[11px] text-slate-500">Gunakan kursor mouse untuk drag, zoom, dan klik simpul untuk melihat rincian.</p>
+            </div>
+            <button onclick="networkCluster.fit()" class="px-3 py-1 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition">
+              Pusatkan Graf
+            </button>
+          </div>
+          <div id="cluster-canvas" class="w-full h-[540px] rounded-2xl bg-slate-900 border border-slate-800"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- =================================================================== -->
+    <!-- RIGHT SLIDE-OVER INSPECTION DRAWER (CIVIC INSPECTOR)                -->
+    <!-- =================================================================== -->
+    <aside id="inspector-drawer" class="fixed top-0 right-0 bottom-0 w-84 sm:w-96 bg-white border-l border-slate-200 shadow-2xl z-40 transform translate-x-full transition-transform duration-300 p-6 flex flex-col justify-between overflow-y-auto">
+      <div>
+        <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+          <div class="flex items-center gap-3">
+            <div id="drawer-icon" class="w-9 h-9 rounded-xl bg-[#e6f7f5] text-[#009388] font-bold flex items-center justify-center text-xs">
+              KTP
+            </div>
+            <div>
+              <span id="drawer-badge" class="text-[10px] font-bold uppercase tracking-wider text-[#009388]">
+                Entitas Kependudukan
+              </span>
+              <h3 id="drawer-title" class="font-extrabold text-slate-900 text-base leading-tight truncate max-w-[200px]">
+                Dedi Supriyadi
+              </h3>
+            </div>
+          </div>
+          <button onclick="closeDrawer()" class="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+          </button>
+        </div>
+
+        <!-- Detail Information Rows -->
+        <div id="drawer-content" class="mt-5 space-y-3.5 text-xs">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+      <div class="mt-6 pt-4 border-t border-slate-200 space-y-2">
+        <button onclick="alert('Membuka formulir cetak Surat Pengantar Warga untuk NIK ini...')" class="w-full py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+          <span>Buat Surat Pengantar Warga</span>
+        </button>
+        <button onclick="closeDrawer()" class="w-full py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-xs transition">
+          Tutup Panel Rincian
+        </button>
+      </div>
+    </aside>
+  </main>
+
+  <!-- ===================================================================== -->
+  <!-- JAVASCRIPT LOGIC                                                      -->
+  <!-- ===================================================================== -->
+  <script>
+    const DEMO_RESIDENTS = {
+      "3208151805820005": { nik: "3208151805820005", nama: "Dedi Supriyadi", noKk: "3208151201000002", ttl: "Kuningan, 18-05-1982", jk: "Laki-laki", agama: "Islam", hubungan: "Kepala Keluarga", kerja: "Buruh Harian Lepas", dusun: "Pahing", rt: "02", rw: "01", statusKawin: "Kawin", bansos: "PKH & BLT-DD" },
+      "3208154506840006": { nik: "3208154506840006", nama: "Ratna Sari", noKk: "3208151201000002", ttl: "Kuningan, 05-06-1984", jk: "Perempuan", agama: "Islam", hubungan: "Istri", kerja: "Pedagang Makanan Ringan", dusun: "Pahing", rt: "02", rw: "01", statusKawin: "Kawin", bansos: "PKH & BLT-DD" },
+      "3208152009220007": { nik: "3208152009220007", nama: "Bayu Saputra", noKk: "3208151201000002", ttl: "Kuningan, 20-09-2022", jk: "Laki-laki", agama: "Islam", hubungan: "Anak", kerja: "Balita", dusun: "Pahing", rt: "02", rw: "01", statusKawin: "Belum Kawin", bansos: "PMT Gizi Posyandu", isStunting: true },
+      "3208150201480008": { nik: "3208150201480008", nama: "Mak Eni", noKk: "3208151201000002", ttl: "Kuningan, 02-01-1948", jk: "Perempuan", agama: "Islam", hubungan: "Orang Tua", kerja: "Tidak Bekerja / Lansia", dusun: "Pahing", rt: "02", rw: "01", statusKawin: "Cerai Mati", bansos: "Bansos Lansia Rentan", isLansia: true },
+    };
+
+    const DEMO_KK = {
+      "3208151201000002": { noKk: "3208151201000002", kepala: "Dedi Supriyadi", dusun: "Pahing", rt: "02", rw: "01", alamat: "Jl. Balai Desa Blok Pahing RT 02/RW 01, Desa Kadurama", desil: 1, pbb: "Belum Lunas", rtlh: "RTLH", bansos: "PKH & BLT-DD" }
+    };
+
+    let networkCluster = null;
+
+    function setMasterView(view) {
+      document.getElementById('view-tree-container').classList.add('hidden');
+      document.getElementById('view-matrix-container').classList.add('hidden');
+      document.getElementById('view-cluster-container').classList.add('hidden');
+
+      document.getElementById('tab-tree').className = "px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+      document.getElementById('tab-matrix').className = "px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+      document.getElementById('tab-cluster').className = "px-3.5 py-1.5 rounded-lg font-semibold text-slate-600 hover:text-slate-900 transition flex items-center gap-1.5";
+
+      if (view === 'tree') {
+        document.getElementById('view-tree-container').classList.remove('hidden');
+        document.getElementById('tab-tree').className = "px-3.5 py-1.5 rounded-lg font-bold bg-[#009388] text-white shadow-xs transition flex items-center gap-1.5";
+      } else if (view === 'matrix') {
+        document.getElementById('view-matrix-container').classList.remove('hidden');
+        document.getElementById('tab-matrix').className = "px-3.5 py-1.5 rounded-lg font-bold bg-[#009388] text-white shadow-xs transition flex items-center gap-1.5";
+      } else if (view === 'cluster') {
+        document.getElementById('view-cluster-container').classList.remove('hidden');
+        document.getElementById('tab-cluster').className = "px-3.5 py-1.5 rounded-lg font-bold bg-[#009388] text-white shadow-xs transition flex items-center gap-1.5";
+        if (!networkCluster) initClusterGraph();
+      }
+    }
+
+    function inspectNode(type, id) {
+      const drawer = document.getElementById('inspector-drawer');
+      const title = document.getElementById('drawer-title');
+      const badge = document.getElementById('drawer-badge');
+      const icon = document.getElementById('drawer-icon');
+      const content = document.getElementById('drawer-content');
+
+      drawer.classList.remove('translate-x-full');
+
+      if (type === 'KTP') {
+        const d = DEMO_RESIDENTS[id] || { nik: id, nama: "Warga Terdaftar", hubungan: "Anggota", jk: "Laki-laki", ttl: "Kuningan", kerja: "Wiraswasta", dusun: "Pahing", rt: "01", rw: "01", statusKawin: "Kawin" };
+        title.innerText = d.nama;
+        badge.innerText = "Entitas e-KTP Warga";
+        badge.className = "text-[10px] font-bold uppercase tracking-wider text-blue-600";
+        icon.innerText = "KTP";
+        icon.className = "w-9 h-9 rounded-xl bg-blue-100 text-blue-700 font-bold flex items-center justify-center text-xs";
+
+        content.innerHTML = `
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <span class="text-slate-400 text-[10px] block">NIK (Nomor Induk Kependudukan)</span>
+            <span class="font-mono font-bold text-slate-900 text-xs">${d.nik}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <span class="text-slate-400 text-[10px] block">Hubungan Keluarga</span>
+              <span class="font-bold text-slate-800">${d.hubungan}</span>
+            </div>
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <span class="text-slate-400 text-[10px] block">Jenis Kelamin</span>
+              <span class="font-bold text-slate-800">${d.jk}</span>
+            </div>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <span class="text-slate-400 text-[10px] block">Tempat, Tanggal Lahir</span>
+            <span class="font-bold text-slate-800">${d.ttl}</span>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <span class="text-slate-400 text-[10px] block">Mata Pencaharian</span>
+            <span class="font-bold text-slate-800">${d.kerja}</span>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <span class="text-slate-400 text-[10px] block">Nomor Kartu Keluarga (KK)</span>
+            <span class="font-mono font-bold text-[#009388]">${d.noKk}</span>
+          </div>
+          ${d.isStunting ? '<div class="p-2.5 rounded-xl bg-red-50 border border-red-200 text-red-700 font-bold text-xs flex items-center gap-1.5">⚠️ Terpantau Intervensi Stunting Posyandu</div>' : ''}
+          ${d.isLansia ? '<div class="p-2.5 rounded-xl bg-purple-50 border border-purple-200 text-purple-700 font-bold text-xs flex items-center gap-1.5">👵 Kategori Lansia Rentan (Penerima Manfaat)</div>' : ''}
+        `;
+      } else if (type === 'KK') {
+        const d = DEMO_KK[id] || { noKk: id, kepala: "Kepala Keluarga", dusun: "Pahing", rt: "01", rw: "01", alamat: "Desa Kadurama", desil: 1, pbb: "Lunas", rtlh: "Layak Huni", bansos: "PKH" };
+        title.innerText = d.kepala;
+        badge.innerText = "Kartu Keluarga (Pusat Hub)";
+        badge.className = "text-[10px] font-bold uppercase tracking-wider text-amber-700";
+        icon.innerText = "KK";
+        icon.className = "w-9 h-9 rounded-xl bg-amber-100 text-amber-800 font-bold flex items-center justify-center text-xs";
+
+        content.innerHTML = `
+          <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+            <span class="text-slate-400 text-[10px] block">Nomor Kartu Keluarga (KK)</span>
+            <span class="font-mono font-bold text-slate-900 text-xs">${d.noKk}</span>
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <span class="text-slate-400 text-[10px] block">Desil Kesejahteraan</span>
+              <span class="font-bold text-red-600">Desil ${d.desil} (Miskin Ekstrem)</span>
+            </div>
+            <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+              <span class="text-slate-400 text-[10px] block">Status PBB</span>
+              <span class="font-bold text-amber-600">${d.pbb}</span>
+            </div>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <span class="text-slate-400 text-[10px] block">Kondisi Rumah</span>
+            <span class="font-bold text-slate-800">${d.rtlh}</span>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <span class="text-slate-400 text-[10px] block">Alamat Rumah Tinggal</span>
+            <span class="font-medium text-slate-800">${d.alamat}</span>
+          </div>
+          <div class="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+            <span class="text-slate-400 text-[10px] block">Bansos Aktif</span>
+            <span class="font-bold text-indigo-600">${d.bansos}</span>
+          </div>
+        `;
+      }
+    }
+
+    function closeDrawer() {
+      document.getElementById('inspector-drawer').classList.add('translate-x-full');
+    }
+
+    function initClusterGraph() {
+      const container = document.getElementById("cluster-canvas");
+      const nodes = [
+        { id: "M", label: "Dusun Manis", color: "#009388", font: { color: "#fff", bold: true }, size: 25 },
+        { id: "P", label: "Dusun Pahing", color: "#009388", font: { color: "#fff", bold: true }, size: 25 },
+        { id: "W", label: "Dusun Wage", color: "#009388", font: { color: "#fff", bold: true }, size: 25 },
+        { id: "KK1", label: "KK Dedi Supriyadi\n(Pahing RT 02)", shape: "box", color: "#eda50c", font: { color: "#fff" } },
+        { id: "KK2", label: "KK H. Maman\n(Wage RT 01)", shape: "box", color: "#eda50c", font: { color: "#fff" } },
+        { id: "KK3", label: "KK Suryana\n(Manis RT 01)", shape: "box", color: "#eda50c", font: { color: "#fff" } },
+        { id: "R1", label: "Dedi Supriyadi (K)", shape: "dot", color: "#3b82f6", size: 12 },
+        { id: "R2", label: "Ratna Sari (I)", shape: "dot", color: "#ec4899", size: 10 },
+        { id: "R3", label: "Bayu Saputra (A)", shape: "dot", color: "#ef4444", size: 9 },
+        { id: "R4", label: "H. Maman (K)", shape: "dot", color: "#3b82f6", size: 12 },
+        { id: "R5", label: "Hj. Nunung (I)", shape: "dot", color: "#ec4899", size: 10 }
+      ];
+
+      const edges = [
+        { from: "P", to: "KK1" },
+        { from: "W", to: "KK2" },
+        { from: "M", to: "KK3" },
+        { from: "KK1", to: "R1" },
+        { from: "KK1", to: "R2" },
+        { from: "KK1", to: "R3" },
+        { from: "KK2", to: "R4" },
+        { from: "KK2", to: "R5" },
+        { from: "R1", to: "R2", label: "Pasutri", color: "#ec4899" }
+      ];
+
+      const data = { nodes: new vis.DataSet(nodes), edges: new vis.DataSet(edges) };
+      const options = {
+        physics: { stabilization: true },
+        interaction: { hover: true }
+      };
+
+      networkCluster = new vis.Network(container, data, options);
+    }
+
+    function searchFamily(val) {
+      if (!val.trim()) return;
+      const q = val.toLowerCase();
+      if (q.includes("dedi") || q.includes("bayu") || q.includes("ratna") || q.includes("3208151201000002")) {
+        setMasterView('tree');
+        document.getElementById('active-family-name').innerText = "Keluarga Bpk. Dedi Supriyadi (Dusun Pahing)";
+      } else if (q.includes("maman") || q.includes("wage")) {
+        setMasterView('tree');
+        document.getElementById('active-family-name').innerText = "Keluarga Bpk. H. Maman Sulaeman (Dusun Wage)";
+      } else if (q.includes("suryana") || q.includes("manis")) {
+        setMasterView('tree');
+        document.getElementById('active-family-name').innerText = "Keluarga Bpk. Suryana (Dusun Manis)";
+      }
+    }
+
+    function filterDusun(dusun) {
+      if (dusun === "Pahing") {
+        document.getElementById('active-family-name').innerText = "Keluarga Bpk. Dedi Supriyadi (Dusun Pahing)";
+      } else if (dusun === "Wage") {
+        document.getElementById('active-family-name').innerText = "Keluarga Bpk. H. Maman Sulaeman (Dusun Wage)";
+      } else if (dusun === "Manis") {
+        document.getElementById('active-family-name').innerText = "Keluarga Bpk. Suryana (Dusun Manis)";
+      }
+    }
+  </script>
+</body>
+</html>
