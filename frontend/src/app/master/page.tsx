@@ -193,6 +193,39 @@ function PaginationControls({
   );
 }
 
+// ----------------------------------------------------------------------------
+// HELPER KALKULASI USIA RESMI DARI TTL / NIK
+// ----------------------------------------------------------------------------
+function getResidentAge(ttl?: string, nik?: string): { age: number | null; label: string } {
+  const currentYear = 2026;
+
+  if (ttl) {
+    const yearMatch = ttl.match(/\b(19\d{2}|20\d{2})\b/);
+    if (yearMatch) {
+      const birthYear = parseInt(yearMatch[1], 10);
+      if (birthYear > 1900 && birthYear <= currentYear) {
+        const age = currentYear - birthYear;
+        return { age, label: `${age} Thn` };
+      }
+    }
+  }
+
+  if (nik && nik.length >= 12 && !nik.startsWith("TEMP-")) {
+    const rawMonth = parseInt(nik.substring(8, 10), 10);
+    const rawYear = parseInt(nik.substring(10, 12), 10);
+
+    if (!isNaN(rawMonth) && !isNaN(rawYear) && rawMonth >= 1 && rawMonth <= 12) {
+      const fullBirthYear = rawYear <= 26 ? 2000 + rawYear : 1900 + rawYear;
+      const age = currentYear - fullBirthYear;
+      if (age >= 0 && age <= 120) {
+        return { age, label: `${age} Thn` };
+      }
+    }
+  }
+
+  return { age: null, label: "-" };
+}
+
 export default function MasterPanelPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
@@ -3350,57 +3383,74 @@ export default function MasterPanelPage() {
 
                         {/* LEVEL 2: KEPALA KELUARGA & ISTRI (SPOUSE LEVEL) */}
                         <div className="max-w-4xl mx-auto">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 relative">
-                            {/* Pasangan Suami-Istri Ribbon */}
-                            {istriList.length > 0 && (
-                              <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 items-center justify-center">
-                                <div className="bg-pink-50 border border-pink-300 text-pink-700 px-3 py-1 rounded-full text-[10px] font-extrabold shadow-sm flex items-center gap-1.5 whitespace-nowrap">
-                                  <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />
-                                  <span>Pasangan Suami - Istri</span>
-                                </div>
-                              </div>
-                            )}
+                          {istriList.length > 0 && (
+                            <div className="flex items-center justify-center gap-3 mb-4">
+                              <div className="h-px bg-slate-200 flex-1"></div>
+                              <span className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-pink-50 border border-pink-200 text-pink-700 text-[11px] font-bold shadow-2xs">
+                                <Heart className="w-3.5 h-3.5 text-pink-500 fill-pink-500" />
+                                <span>Pasangan Kepala Keluarga & Istri</span>
+                              </span>
+                              <div className="h-px bg-slate-200 flex-1"></div>
+                            </div>
+                          )}
 
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
                             {/* KEPALA KELUARGA CARD */}
-                            {kepala ? (
-                              <div
-                                onClick={() => setSelectedGraphEntity({ type: "KTP", data: kepala })}
-                                className="cursor-pointer bg-white rounded-2xl border-2 border-blue-200 hover:border-blue-500 p-5 shadow-sm hover:shadow-lg transition-all group"
-                              >
-                                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                                  <div className="flex items-center gap-2.5">
-                                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
-                                      L
+                            {kepala ? (() => {
+                              const age = getResidentAge(kepala.ttl, kepala.nik);
+                              return (
+                                <div
+                                  onClick={() => setSelectedGraphEntity({ type: "KTP", data: kepala })}
+                                  className="cursor-pointer bg-white rounded-2xl border-2 border-blue-200 hover:border-blue-500 p-5 shadow-sm hover:shadow-lg transition-all group"
+                                >
+                                  <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-9 h-9 rounded-xl bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                                        L
+                                      </div>
+                                      <div>
+                                        <div className="flex items-center gap-1.5">
+                                          <span className="text-[10px] font-extrabold text-blue-600 uppercase tracking-wider">
+                                            Kepala Keluarga
+                                          </span>
+                                          {age.label !== "-" && (
+                                            <span className="px-1.5 py-0.2 rounded-md bg-blue-50 text-blue-800 text-[10px] font-bold border border-blue-200">
+                                              {age.label}
+                                            </span>
+                                          )}
+                                        </div>
+                                        <h4 className="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition leading-snug">
+                                          {kepala.nama}
+                                        </h4>
+                                      </div>
                                     </div>
-                                    <div>
-                                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
-                                        Kepala Keluarga
+                                    <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200 shrink-0">
+                                      {kepala.statusPerkawinan || "Kawin"}
+                                    </span>
+                                  </div>
+                                  <div className="mt-3.5 space-y-2 text-xs text-slate-600">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-slate-400">NIK:</span>
+                                      <span className="font-mono font-bold text-slate-900">{kepala.nik}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-slate-400">Kelahiran:</span>
+                                      <span className="text-slate-800 font-medium">{kepala.ttl || "Kuningan"}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-slate-400">Pekerjaan:</span>
+                                      <span className="font-semibold text-slate-800">{kepala.pekerjaan || "Wiraswasta"}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px]">
+                                      <span className="text-slate-400">Agama / Status:</span>
+                                      <span className="text-slate-700 font-medium">
+                                        {kepala.agama || "Islam"} • {kepala.status || "Warga Tetap"}
                                       </span>
-                                      <h4 className="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition">
-                                        {kepala.nama}
-                                      </h4>
                                     </div>
                                   </div>
-                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
-                                    {kepala.statusPerkawinan || "Kawin"}
-                                  </span>
                                 </div>
-                                <div className="mt-3 space-y-1.5 text-xs text-slate-600">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-slate-400">NIK:</span>
-                                    <span className="font-mono font-bold text-slate-800">{kepala.nik}</span>
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-slate-400">TTL:</span>
-                                    <span>{kepala.ttl || "Kuningan"}</span>
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-slate-400">Pekerjaan:</span>
-                                    <span className="font-semibold text-slate-800">{kepala.pekerjaan}</span>
-                                  </div>
-                                </div>
-                              </div>
-                            ) : (
+                              );
+                            })() : (
                               <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-5 text-center text-slate-400 text-xs flex flex-col items-center justify-center">
                                 <span>Data Kepala Keluarga belum terdaftar di NIK</span>
                               </div>
@@ -3408,46 +3458,62 @@ export default function MasterPanelPage() {
 
                             {/* ISTRI CARD */}
                             {istriList.length > 0 ? (
-                              istriList.map((istri) => (
-                                <div
-                                  key={istri.nik}
-                                  onClick={() => setSelectedGraphEntity({ type: "KTP", data: istri })}
-                                  className="cursor-pointer bg-white rounded-2xl border-2 border-pink-200 hover:border-pink-500 p-5 shadow-sm hover:shadow-lg transition-all group"
-                                >
-                                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-                                    <div className="flex items-center gap-2.5">
-                                      <div className="w-8 h-8 rounded-lg bg-pink-100 text-pink-700 flex items-center justify-center font-bold text-xs">
-                                        P
+                              istriList.map((istri) => {
+                                const age = getResidentAge(istri.ttl, istri.nik);
+                                return (
+                                  <div
+                                    key={istri.nik}
+                                    onClick={() => setSelectedGraphEntity({ type: "KTP", data: istri })}
+                                    className="cursor-pointer bg-white rounded-2xl border-2 border-pink-200 hover:border-pink-500 p-5 shadow-sm hover:shadow-lg transition-all group"
+                                  >
+                                    <div className="flex items-start justify-between pb-3 border-b border-slate-100">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-9 h-9 rounded-xl bg-pink-100 text-pink-700 flex items-center justify-center font-bold text-xs shrink-0 shadow-2xs">
+                                          P
+                                        </div>
+                                        <div>
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="text-[10px] font-extrabold text-pink-600 uppercase tracking-wider">
+                                              Istri
+                                            </span>
+                                            {age.label !== "-" && (
+                                              <span className="px-1.5 py-0.2 rounded-md bg-pink-50 text-pink-800 text-[10px] font-bold border border-pink-200">
+                                                {age.label}
+                                              </span>
+                                            )}
+                                          </div>
+                                          <h4 className="font-bold text-sm text-slate-900 group-hover:text-pink-600 transition leading-snug">
+                                            {istri.nama}
+                                          </h4>
+                                        </div>
                                       </div>
-                                      <div>
-                                        <span className="text-[10px] font-bold text-pink-600 uppercase tracking-wider">
-                                          Istri
+                                      <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-pink-50 text-pink-700 border border-pink-200 shrink-0">
+                                        {istri.statusPerkawinan || "Kawin"}
+                                      </span>
+                                    </div>
+                                    <div className="mt-3.5 space-y-2 text-xs text-slate-600">
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-slate-400">NIK:</span>
+                                        <span className="font-mono font-bold text-slate-900">{istri.nik}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-slate-400">Kelahiran:</span>
+                                        <span className="text-slate-800 font-medium">{istri.ttl || "Kuningan"}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-slate-400">Pekerjaan:</span>
+                                        <span className="font-semibold text-slate-800">{istri.pekerjaan || "Mengurus Rumah Tangga"}</span>
+                                      </div>
+                                      <div className="flex items-center justify-between pt-1 border-t border-slate-100 text-[11px]">
+                                        <span className="text-slate-400">Agama / Status:</span>
+                                        <span className="text-slate-700 font-medium">
+                                          {istri.agama || "Islam"} • {istri.status || "Warga Tetap"}
                                         </span>
-                                        <h4 className="font-bold text-sm text-slate-900 group-hover:text-pink-600 transition">
-                                          {istri.nama}
-                                        </h4>
                                       </div>
                                     </div>
-                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-pink-50 text-pink-700 border border-pink-200">
-                                      {istri.statusPerkawinan || "Kawin"}
-                                    </span>
                                   </div>
-                                  <div className="mt-3 space-y-1.5 text-xs text-slate-600">
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-slate-400">NIK:</span>
-                                      <span className="font-mono font-bold text-slate-800">{istri.nik}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-slate-400">TTL:</span>
-                                      <span>{istri.ttl || "Kuningan"}</span>
-                                    </div>
-                                    <div className="flex items-center justify-between">
-                                      <span className="text-slate-400">Pekerjaan:</span>
-                                      <span className="font-semibold text-slate-800">{istri.pekerjaan}</span>
-                                    </div>
-                                  </div>
-                                </div>
-                              ))
+                                );
+                              })
                             ) : (
                               <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-5 text-center text-slate-400 text-xs flex flex-col items-center justify-center">
                                 <span>Tidak ada data Istri tercatat di KK ini</span>
@@ -3459,7 +3525,7 @@ export default function MasterPanelPage() {
                           <div className="space-y-4">
                             <div className="flex items-center gap-3">
                               <div className="h-px flex-1 bg-slate-200"></div>
-                              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-3.5 py-1 rounded-full border border-slate-200">
                                 Anak Kandung & Tanggungan ({anakList.length + tanggunganList.length})
                               </span>
                               <div className="h-px flex-1 bg-slate-200"></div>
@@ -3471,73 +3537,133 @@ export default function MasterPanelPage() {
                               </div>
                             ) : (
                               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
-                                {anakList.map((anak, idx) => (
-                                  <div
-                                    key={anak.nik}
-                                    onClick={() => setSelectedGraphEntity({ type: "KTP", data: anak })}
-                                    className="cursor-pointer bg-white rounded-2xl border-2 border-emerald-200 hover:border-emerald-500 p-4 shadow-2xs hover:shadow-md transition-all group"
-                                  >
-                                    <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100">
-                                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0">
-                                        A{idx + 1}
-                                      </div>
-                                      <div className="min-w-0 flex-1">
-                                        <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wider block truncate">
-                                          Anak ke-{idx + 1} ({anak.jenisKelamin})
+                                {anakList.map((anak, idx) => {
+                                  const age = getResidentAge(anak.ttl, anak.nik);
+                                  return (
+                                    <div
+                                      key={anak.nik}
+                                      onClick={() => setSelectedGraphEntity({ type: "KTP", data: anak })}
+                                      className="cursor-pointer bg-white rounded-2xl border-2 border-emerald-200 hover:border-emerald-500 p-4 shadow-2xs hover:shadow-md transition-all group"
+                                    >
+                                      <div className="flex items-start justify-between pb-2.5 border-b border-slate-100">
+                                        <div className="flex items-center gap-2.5">
+                                          <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs">
+                                            A{idx + 1}
+                                          </div>
+                                          <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="text-[9px] font-extrabold text-emerald-700 uppercase tracking-wider block truncate">
+                                                Anak ke-{idx + 1}
+                                              </span>
+                                              {age.label !== "-" && (
+                                                <span className="px-1.5 py-0.2 rounded-md bg-emerald-50 text-emerald-800 text-[9px] font-bold border border-emerald-200">
+                                                  {age.label}
+                                                </span>
+                                              )}
+                                            </div>
+                                            <h5 className="font-bold text-xs text-slate-900 truncate group-hover:text-emerald-700 transition">
+                                              {anak.nama}
+                                            </h5>
+                                          </div>
+                                        </div>
+                                        <span
+                                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${
+                                            anak.jenisKelamin === "Perempuan"
+                                              ? "bg-pink-50 text-pink-700 border-pink-200"
+                                              : "bg-blue-50 text-blue-700 border-blue-200"
+                                          }`}
+                                        >
+                                          {anak.jenisKelamin === "Perempuan" ? "P" : "L"}
                                         </span>
-                                        <h5 className="font-bold text-xs text-slate-900 truncate group-hover:text-emerald-700 transition">
-                                          {anak.nama}
-                                        </h5>
                                       </div>
-                                    </div>
-                                    <div className="mt-2.5 space-y-1 text-[11px] text-slate-600">
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400 font-mono text-[10px]">NIK:</span>
-                                        <span className="font-mono text-slate-800">{anak.nik}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400">Pekerjaan:</span>
-                                        <span className="font-medium text-slate-800">{anak.pekerjaan}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400">TTL:</span>
-                                        <span>{anak.ttl}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
 
-                                {tanggunganList.map((fam, idx) => (
-                                  <div
-                                    key={fam.nik}
-                                    onClick={() => setSelectedGraphEntity({ type: "KTP", data: fam })}
-                                    className="cursor-pointer bg-white rounded-2xl border-2 border-purple-200 hover:border-purple-500 p-4 shadow-2xs hover:shadow-md transition-all group"
-                                  >
-                                    <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100">
-                                      <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 font-bold flex items-center justify-center text-xs shrink-0">
-                                        T{idx + 1}
+                                      <div className="mt-2.5 space-y-1.5 text-[11px] text-slate-600">
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400 font-mono text-[10px]">NIK:</span>
+                                          <span className="font-mono font-bold text-slate-800">{anak.nik}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Pekerjaan:</span>
+                                          <span className="font-semibold text-slate-800">{anak.pekerjaan || "Belum Bekerja"}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Kelahiran:</span>
+                                          <span className="text-slate-700 truncate max-w-[130px]" title={anak.ttl}>
+                                            {anak.ttl || "Kuningan"}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between pt-1 border-t border-slate-100 text-[10px]">
+                                          <span className="text-slate-400">Status Kawin:</span>
+                                          <span className="text-slate-600 font-medium">{anak.statusPerkawinan || "Belum Kawin"}</span>
+                                        </div>
                                       </div>
-                                      <div className="min-w-0 flex-1">
-                                        <span className="text-[9px] font-bold text-purple-700 uppercase tracking-wider block truncate">
-                                          {fam.hubunganKeluarga || "Famili Lain"}
+                                    </div>
+                                  );
+                                })}
+
+                                {tanggunganList.map((fam, idx) => {
+                                  const age = getResidentAge(fam.ttl, fam.nik);
+                                  return (
+                                    <div
+                                      key={fam.nik}
+                                      onClick={() => setSelectedGraphEntity({ type: "KTP", data: fam })}
+                                      className="cursor-pointer bg-white rounded-2xl border-2 border-purple-200 hover:border-purple-500 p-4 shadow-2xs hover:shadow-md transition-all group"
+                                    >
+                                      <div className="flex items-start justify-between pb-2.5 border-b border-slate-100">
+                                        <div className="flex items-center gap-2.5">
+                                          <div className="w-8 h-8 rounded-lg bg-purple-100 text-purple-800 font-bold flex items-center justify-center text-xs shrink-0 shadow-2xs">
+                                            T{idx + 1}
+                                          </div>
+                                          <div className="min-w-0 flex-1">
+                                            <div className="flex items-center gap-1.5">
+                                              <span className="text-[9px] font-extrabold text-purple-700 uppercase tracking-wider block truncate">
+                                                {fam.hubunganKeluarga || "Famili Lain"}
+                                              </span>
+                                              {age.label !== "-" && (
+                                                <span className="px-1.5 py-0.2 rounded-md bg-purple-50 text-purple-800 text-[9px] font-bold border border-purple-200">
+                                                  {age.label}
+                                                </span>
+                                              )}
+                                            </div>
+                                            <h5 className="font-bold text-xs text-slate-900 truncate group-hover:text-purple-700 transition">
+                                              {fam.nama}
+                                            </h5>
+                                          </div>
+                                        </div>
+                                        <span
+                                          className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${
+                                            fam.jenisKelamin === "Perempuan"
+                                              ? "bg-pink-50 text-pink-700 border-pink-200"
+                                              : "bg-blue-50 text-blue-700 border-blue-200"
+                                          }`}
+                                        >
+                                          {fam.jenisKelamin === "Perempuan" ? "P" : "L"}
                                         </span>
-                                        <h5 className="font-bold text-xs text-slate-900 truncate group-hover:text-purple-700 transition">
-                                          {fam.nama}
-                                        </h5>
+                                      </div>
+
+                                      <div className="mt-2.5 space-y-1.5 text-[11px] text-slate-600">
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400 font-mono text-[10px]">NIK:</span>
+                                          <span className="font-mono font-bold text-slate-800">{fam.nik}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Pekerjaan:</span>
+                                          <span className="font-semibold text-slate-800">{fam.pekerjaan || "-"}</span>
+                                        </div>
+                                        <div className="flex justify-between">
+                                          <span className="text-slate-400">Kelahiran:</span>
+                                          <span className="text-slate-700 truncate max-w-[130px]" title={fam.ttl}>
+                                            {fam.ttl || "Kuningan"}
+                                          </span>
+                                        </div>
+                                        <div className="flex justify-between pt-1 border-t border-slate-100 text-[10px]">
+                                          <span className="text-slate-400">Status Kawin:</span>
+                                          <span className="text-slate-600 font-medium">{fam.statusPerkawinan || "-"}</span>
+                                        </div>
                                       </div>
                                     </div>
-                                    <div className="mt-2.5 space-y-1 text-[11px] text-slate-600">
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400 font-mono text-[10px]">NIK:</span>
-                                        <span className="font-mono text-slate-800">{fam.nik}</span>
-                                      </div>
-                                      <div className="flex justify-between">
-                                        <span className="text-slate-400">Status:</span>
-                                        <span className="font-medium text-slate-800">{fam.statusPerkawinan}</span>
-                                      </div>
-                                    </div>
-                                  </div>
-                                ))}
+                                  );
+                                })}
                               </div>
                             )}
                           </div>
