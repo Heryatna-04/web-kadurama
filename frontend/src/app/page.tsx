@@ -1774,10 +1774,11 @@ export default function Home() {
   const [isNewsModalOpen, setIsNewsModalOpen] = useState(false);
   const [editingNews, setEditingNews] = useState<NewsItem | null>(null);
 
-  // APBDes 2026 Transparansi States
+  // APBDes 2026 Transparansi States (Dinamis dari Supabase)
   const [apbdesTotals, setApbdesTotals] = useState({
     pendapatan: 898152227,
     belanja: 856452227,
+    realisasi: 0,
     serapan: 0,
   });
   const [apbdesBidangList, setApbdesBidangList] = useState<APBDesBidang[]>(INITIAL_APBDES_BIDANG);
@@ -1789,7 +1790,7 @@ export default function Home() {
   const isMapMounted = true;
   const setIsMapMounted = (_v: boolean) => {};
 
-  // Zero-Overhead APBDes Number Counter (Native requestAnimationFrame, 0 external bundle, 0 scroll lag)
+  // Zero-Overhead APBDes Number Counter (Native requestAnimationFrame dinamis dari data Supabase)
   useEffect(() => {
     const apbdesEl = document.getElementById("apbdes");
     if (!apbdesEl || typeof window === "undefined" || !("IntersectionObserver" in window)) return;
@@ -1802,11 +1803,10 @@ export default function Home() {
           hasAnimated = true;
           observer.disconnect();
 
-          // Animate progress bar via hardware-accelerated CSS transition
           const barEl = document.getElementById("apbdes-progress-bar");
           if (barEl) {
             barEl.style.transition = "width 1.2s cubic-bezier(0.16, 1, 0.3, 1)";
-            barEl.style.width = "95.4%";
+            barEl.style.width = `${Math.min(apbdesTotals.serapan, 100)}%`;
           }
 
           const animateCounter = (
@@ -1822,7 +1822,6 @@ export default function Home() {
             const step = (now: number) => {
               const elapsed = now - startTime;
               const progress = Math.min(elapsed / duration, 1);
-              // Ease-out cubic: 1 - (1 - t)^3
               const ease = 1 - Math.pow(1 - progress, 3);
               const current = start + (end - start) * ease;
               el.innerText = formatFn(current);
@@ -1833,10 +1832,11 @@ export default function Home() {
             requestAnimationFrame(step);
           };
 
-          // Animate APBDes values smoothly
-          animateCounter("apbdes-pendapatan-val", 0, 898152227, 1200, (v) => "Rp " + Math.floor(v).toLocaleString("id-ID"));
-          animateCounter("apbdes-belanja-val", 0, 856452227, 1200, (v) => "Rp " + Math.floor(v).toLocaleString("id-ID"));
-          animateCounter("apbdes-serapan-val", 0, 95.4, 1200, (v) => v.toFixed(1) + "%");
+          // Animate APBDes values sesuai data dinamis Supabase
+          animateCounter("apbdes-pendapatan-val", 0, apbdesTotals.pendapatan, 1000, (v) => "Rp " + Math.floor(v).toLocaleString("id-ID"));
+          animateCounter("apbdes-belanja-val", 0, apbdesTotals.belanja, 1000, (v) => "Rp " + Math.floor(v).toLocaleString("id-ID"));
+          animateCounter("apbdes-realisasi-val", 0, apbdesTotals.realisasi, 1000, (v) => "Rp " + Math.floor(v).toLocaleString("id-ID"));
+          animateCounter("apbdes-serapan-val", 0, apbdesTotals.serapan, 1000, (v) => v.toFixed(1) + "%");
         }
       },
       { threshold: 0.15 }
@@ -1844,7 +1844,7 @@ export default function Home() {
 
     observer.observe(apbdesEl);
     return () => observer.disconnect();
-  }, []);
+  }, [apbdesTotals]);
 
   // Fetch dynamic News & APBDes from Supabase (Lean & Fast, 0 Redundant Counts)
   useEffect(() => {
@@ -1897,6 +1897,7 @@ export default function Home() {
           setApbdesTotals({
             pendapatan: Number(summaryData.total_pendapatan) || 898152227,
             belanja: Number(summaryData.total_belanja) || 856452227,
+            realisasi: Number(summaryData.total_realisasi_belanja) || 0,
             serapan: Number(summaryData.persen_realisasi_belanja) || 0,
           });
         }
@@ -3672,13 +3673,25 @@ export default function Home() {
 
                   <div className="pt-4">
                     <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
-                      Total Realisasi Belanja
+                      Total Pagu Belanja
                     </div>
-                    <div id="apbdes-belanja-val" className="text-2xl font-black text-[#009388] font-mono mt-1">
+                    <div id="apbdes-belanja-val" className="text-2xl font-black text-[#eda50c] font-mono mt-1">
                       Rp {apbdesTotals.belanja.toLocaleString("id-ID")}
                     </div>
                     <div className="text-[11px] text-slate-500 mt-0.5">
-                      Realisasi serapan triwulan berjalan
+                      Alokasi 5 bidang penyelenggaraan desa
+                    </div>
+                  </div>
+
+                  <div className="pt-4">
+                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                      Realisasi Belanja Berjalan
+                    </div>
+                    <div id="apbdes-realisasi-val" className="text-2xl font-black text-[#009388] font-mono mt-1">
+                      Rp {apbdesTotals.realisasi.toLocaleString("id-ID")}
+                    </div>
+                    <div className="text-[11px] text-slate-500 mt-0.5">
+                      Realisasi serapan belanja ({apbdesTotals.serapan}% dari pagu)
                     </div>
                   </div>
 
@@ -3692,7 +3705,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Serapan Multi-Segment Visual */}
+                {/* Serapan Kas Dinamis dari Supabase */}
                 <div className="pt-2 border-t border-slate-100">
                   <div className="flex items-center justify-between text-xs mb-2">
                     <span className="font-bold text-slate-700">Rasio Penyerapan Kas</span>
@@ -3701,20 +3714,12 @@ export default function Home() {
                     </span>
                   </div>
 
-                  {/* Proportional Segment Bar (Tanpa Track Abu-abu Tebal Generik) */}
-                  <div className="h-2.5 rounded-full flex overflow-hidden gap-0.5">
-                    <div style={{ width: "35%" }} title="Penyelenggaraan (35%)" className="bg-[#009388]" />
-                    <div style={{ width: "38%" }} title="Pembangunan (38%)" className="bg-[#10b981]" />
-                    <div style={{ width: "12%" }} title="Pembinaan (12%)" className="bg-[#eda50c]" />
-                    <div style={{ width: "10%" }} title="Pemberdayaan (10%)" className="bg-sky-600" />
-                    <div style={{ width: "5%" }} title="Penanggulangan Bencana (5%)" className="bg-rose-500" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 mt-4 text-[10px] text-slate-600">
-                    <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#009388]" /><span>Penyelenggaraan</span></div>
-                    <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#10b981]" /><span>Pembangunan</span></div>
-                    <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-[#eda50c]" /><span>Pembinaan</span></div>
-                    <div className="flex items-center gap-1.5"><span className="w-2 h-2 rounded-full bg-sky-600" /><span>Pemberdayaan</span></div>
+                  <div className="h-2.5 rounded-full bg-slate-100 overflow-hidden">
+                    <div
+                      id="apbdes-progress-bar"
+                      style={{ width: `${Math.min(apbdesTotals.serapan, 100)}%` }}
+                      className="bg-[#009388] h-full rounded-full transition-all duration-700"
+                    />
                   </div>
                 </div>
               </div>

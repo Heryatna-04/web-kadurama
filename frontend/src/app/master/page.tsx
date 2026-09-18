@@ -45,6 +45,7 @@ import {
   Printer,
   ChevronLeft,
   ChevronRight,
+  ChevronDown,
   ChevronsLeft,
   ChevronsRight,
   Building2,
@@ -423,6 +424,7 @@ export default function MasterPanelPage() {
     keterangan: "",
   });
   const [isSubmittingApbdes, setIsSubmittingApbdes] = useState(false);
+  const [expandedSectorId, setExpandedSectorId] = useState<number | null>(null);
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [auditLogSearch, setAuditLogSearch] = useState<string>("");
@@ -662,6 +664,7 @@ export default function MasterPanelPage() {
         supabase
           .from("apbdes_sectors")
           .select("*")
+          .eq("tahun", 2026)
           .eq("is_deleted", false)
           .order("id", { ascending: true }),
       ]);
@@ -670,13 +673,7 @@ export default function MasterPanelPage() {
         setSummaryForm((prev: any) => ({ ...prev, ...summaryData }));
       }
       if (apbdesData) {
-        const uniqueMap = new Map();
-        apbdesData.forEach((item: any) => {
-          if (!uniqueMap.has(item.id)) {
-            uniqueMap.set(item.id, item);
-          }
-        });
-        setApbdesList(Array.from(uniqueMap.values()));
+        setApbdesList(apbdesData);
       }
 
       // 4. News Articles
@@ -5628,49 +5625,98 @@ export default function MasterPanelPage() {
                     return (
                       <div
                         key={`apbdes-sector-${sec.id ?? idx}-${idx}`}
-                        className="p-4 rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+                        className="rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition overflow-hidden"
                       >
-                        <div className="min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-bold font-mono text-[11px] px-2 py-0.5 rounded bg-slate-200 text-slate-700">
-                              Bidang 0{sec.id}
-                            </span>
-                            <span className="font-bold text-slate-900 text-xs">{sec.nama}</span>
-                          </div>
-                          <div className="text-[11px] text-slate-500 mt-1">{sec.keterangan}</div>
+                        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-bold font-mono text-[11px] px-2 py-0.5 rounded bg-slate-200 text-slate-700">
+                                Bidang 0{sec.id}
+                              </span>
+                              <span className="font-bold text-slate-900 text-xs">{sec.nama}</span>
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-1">{sec.keterangan}</div>
 
-                          {/* Progress bar */}
-                          <div className="mt-2.5 w-full max-w-lg bg-slate-200 h-2 rounded-full overflow-hidden">
-                            <div
-                              className="bg-[#009388] h-full rounded-full transition-all duration-300"
-                              style={{ width: `${Math.min(sec.persen || 0, 100)}%` }}
-                            />
+                            {/* Progress bar */}
+                            <div className="mt-2.5 w-full max-w-lg bg-slate-200 h-2 rounded-full overflow-hidden">
+                              <div
+                                className="bg-[#009388] h-full rounded-full transition-all duration-300"
+                                style={{ width: `${Math.min(sec.persen || 0, 100)}%` }}
+                              />
+                            </div>
+
+                            {/* Tombol Lihat Rincian Baliho */}
+                            {Array.isArray(sec.sub_kegiatan) && sec.sub_kegiatan.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => setExpandedSectorId(expandedSectorId === sec.id ? null : sec.id)}
+                                className="mt-2.5 inline-flex items-center gap-1.5 text-[11px] font-bold text-[#009388] hover:text-[#007b71] transition"
+                              >
+                                <span>
+                                  {expandedSectorId === sec.id
+                                    ? "Tutup Rincian Kegiatan"
+                                    : `Rincian Pos Belanja Baliho (${sec.sub_kegiatan.length} Kegiatan)`}
+                                </span>
+                                <ChevronDown
+                                  className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                    expandedSectorId === sec.id ? "rotate-180" : ""
+                                  }`}
+                                />
+                              </button>
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-4 sm:justify-end shrink-0">
+                            <div className="text-right">
+                              <div className="font-bold font-mono text-xs text-[#009388]">
+                                Realisasi: Rp {realNum.toLocaleString("id-ID")}
+                              </div>
+                              <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                                Pagu: Rp {paguNum.toLocaleString("id-ID")} ({sec.persen}%)
+                              </div>
+                              <div className="text-[10px] text-slate-400 font-mono">
+                                Sisa: Rp {sisaAnggaran.toLocaleString("id-ID")}
+                              </div>
+                            </div>
+
+                            {canManageApbdes && (
+                              <button
+                                onClick={() => handleOpenEditSector(sec)}
+                                className="p-2 rounded-xl text-slate-500 hover:text-[#009388] hover:bg-emerald-50 transition border border-slate-200 bg-white"
+                                title="Edit Pagu / Realisasi Bidang"
+                              >
+                                <Edit3 className="w-4 h-4" />
+                              </button>
+                            )}
                           </div>
                         </div>
 
-                        <div className="flex items-center gap-4 sm:justify-end shrink-0">
-                          <div className="text-right">
-                            <div className="font-bold font-mono text-xs text-[#009388]">
-                              Realisasi: Rp {realNum.toLocaleString("id-ID")}
+                        {/* Collapsible Sub-kegiatan List */}
+                        {expandedSectorId === sec.id && Array.isArray(sec.sub_kegiatan) && sec.sub_kegiatan.length > 0 && (
+                          <div className="bg-white border-t border-slate-200 p-4 space-y-2">
+                            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+                              <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
+                                Rincian Pos Belanja Baliho APBDes Bidang 0{sec.id}
+                              </div>
+                              <span className="text-[10px] font-mono text-slate-400">
+                                Total Pagu Bidang: Rp {paguNum.toLocaleString("id-ID")}
+                              </span>
                             </div>
-                            <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                              Pagu: Rp {paguNum.toLocaleString("id-ID")} ({sec.persen}%)
-                            </div>
-                            <div className="text-[10px] text-slate-400 font-mono">
-                              Sisa: Rp {sisaAnggaran.toLocaleString("id-ID")}
+                            <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
+                              {sec.sub_kegiatan.map((sub: any, subIdx: number) => (
+                                <div
+                                  key={`sub-${sec.id}-${subIdx}`}
+                                  className="p-2.5 flex items-center justify-between text-xs bg-slate-50/50 hover:bg-slate-50 transition"
+                                >
+                                  <span className="text-slate-700 font-medium">{sub.nama}</span>
+                                  <span className="font-mono font-bold text-slate-900 shrink-0 ml-4">
+                                    Rp {(Number(sub.anggaran) || 0).toLocaleString("id-ID")}
+                                  </span>
+                                </div>
+                              ))}
                             </div>
                           </div>
-
-                          {canManageApbdes && (
-                            <button
-                              onClick={() => handleOpenEditSector(sec)}
-                              className="p-2 rounded-xl text-slate-500 hover:text-[#009388] hover:bg-emerald-50 transition border border-slate-200 bg-white"
-                              title="Edit Pagu / Realisasi Bidang"
-                            >
-                              <Edit3 className="w-4 h-4" />
-                            </button>
-                          )}
-                        </div>
+                        )}
                       </div>
                     );
                   })}
