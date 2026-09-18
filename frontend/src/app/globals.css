@@ -107,3 +107,10 @@ html {
     transparent 40px
   );
 }
+
+/* Cream Off-White Blueprint Dot-Grid for Civic Graph & Canvas */
+.canvas-dot-grid {
+  background-color: #fbf9f5;
+  background-image: radial-gradient(#d3ccc0 1.25px, transparent 1.25px);
+  background-size: 22px 22px;
+}

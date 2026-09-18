@@ -20,6 +20,12 @@ import {
   ClipboardCheck,
   Users,
   UserCheck,
+  Network,
+  GitFork,
+  Share2,
+  ZoomIn,
+  ZoomOut,
+  Heart,
   PieChart,
   Newspaper,
   Bell,
@@ -90,8 +96,16 @@ export default function MasterPanelPage() {
   // STATE NAVIGASI TAB UTAMA
   // --------------------------------------------------------------------------
   const [activeTab, setActiveTab] = useState<
-    "sensus" | "residents" | "apbdes" | "berita" | "pengumuman" | "agenda" | "audit"
+    "sensus" | "residents" | "relasi" | "apbdes" | "berita" | "pengumuman" | "agenda" | "audit"
   >("sensus");
+
+  // State Peta Relasi KK & KTP (Civic Knowledge Graph)
+  const [relasiSubView, setRelasiSubView] = useState<"tree" | "matrix" | "cluster">("tree");
+  const [selectedRelasiKkNo, setSelectedRelasiKkNo] = useState<string>("");
+  const [relasiSearch, setRelasiSearch] = useState<string>("");
+  const [relasiDusunFilter, setRelasiDusunFilter] = useState<string>("all");
+  const [selectedGraphEntity, setSelectedGraphEntity] = useState<{ type: "KTP" | "KK"; data: any } | null>(null);
+  const [clusterZoom, setClusterZoom] = useState<number>(1);
 
   // --------------------------------------------------------------------------
   // DATA DARI SUPABASE (DENGAN REFRESH REAL-TIME)
@@ -2106,6 +2120,24 @@ export default function MasterPanelPage() {
               <span>Data Penduduk (3 Dusun)</span>
             </button>
 
+            {/* TAB: PETA RELASI KK & KTP (CIVIC GRAPH) */}
+            <button
+              onClick={() => setActiveTab("relasi")}
+              className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-xs font-semibold text-left transition ${
+                activeTab === "relasi"
+                  ? "bg-[#009388] text-white shadow-sm font-bold"
+                  : "text-emerald-100 hover:bg-[#005851]"
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Network className="w-4 h-4 text-emerald-300" />
+                <span>Peta Relasi KK & KTP</span>
+              </div>
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-[#eda50c] text-slate-950 uppercase">
+                Baru
+              </span>
+            </button>
+
             <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-200/70 px-3 pt-4 pb-2">
               Transparansi & Fiskal
             </div>
@@ -2736,6 +2768,891 @@ export default function MasterPanelPage() {
               </div>
             </div>
           )}
+
+          {/* ================================================================ */}
+          {/* TAB 2B: PETA RELASI KK & KTP (CIVIC KNOWLEDGE GRAPH TERPADU)      */}
+          {/* ================================================================ */}
+          {activeTab === "relasi" && (() => {
+            const filteredRelasiKks = sensusList.filter((s) => {
+              const matchDusun = relasiDusunFilter === "all" || s.dusun === relasiDusunFilter;
+              const matchSearch =
+                !relasiSearch.trim() ||
+                s.namaKepalaKeluarga.toLowerCase().includes(relasiSearch.toLowerCase()) ||
+                s.noKk.includes(relasiSearch);
+              return matchDusun && matchSearch;
+            });
+
+            const activeKk =
+              sensusList.find((s) => s.noKk === selectedRelasiKkNo) ||
+              filteredRelasiKks[0] ||
+              sensusList[0];
+
+            const currentMembers = activeKk
+              ? residentsList.filter((r) => r.noKk === activeKk.noKk)
+              : [];
+
+            const kepala = currentMembers.find((r) =>
+              r.hubunganKeluarga?.toLowerCase().includes("kepala")
+            );
+            const istriList = currentMembers.filter((r) =>
+              r.hubunganKeluarga?.toLowerCase().includes("istri")
+            );
+            const anakList = currentMembers.filter((r) =>
+              r.hubunganKeluarga?.toLowerCase().includes("anak")
+            );
+            const tanggunganList = currentMembers.filter(
+              (r) =>
+                !r.hubunganKeluarga?.toLowerCase().includes("kepala") &&
+                !r.hubunganKeluarga?.toLowerCase().includes("istri") &&
+                !r.hubunganKeluarga?.toLowerCase().includes("anak")
+            );
+
+            return (
+              <div className="space-y-6">
+                {/* Header Tab */}
+                <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-200">
+                  <div>
+                    <div className="flex items-center gap-2 text-[11px] font-semibold text-[#009388] uppercase tracking-wider mb-1">
+                      <span>Data Center</span>
+                      <span>•</span>
+                      <span>Kependudukan SIAK</span>
+                      <span>•</span>
+                      <span>Modul Relasi Kependudukan</span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-extrabold text-slate-950 flex items-center gap-2.5 tracking-tight">
+                      <div className="w-8 h-8 rounded-xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center">
+                        <Network className="w-5 h-5" />
+                      </div>
+                      <span>Peta Relasi KK & KTP Elektronik</span>
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-1">
+                      Visualisasi silsilah keluarga, keterhubungan Nomor Kartu Keluarga (KK) dengan KTP (NIK), garis perkawinan, dan kerentanan sosial di 3 Dusun.
+                    </p>
+                  </div>
+
+                  {/* Actions */}
+                  <div className="flex items-center gap-2.5">
+                    {activeKk && (
+                      <button
+                        onClick={() => setSelectedSensusForPdf(activeKk)}
+                        className="px-3.5 py-2 rounded-xl border border-slate-300 bg-white text-slate-700 hover:bg-slate-50 font-bold text-xs shadow-2xs flex items-center gap-2 transition"
+                      >
+                        <Printer className="w-4 h-4 text-slate-500" />
+                        <span>Cetak Profil KK</span>
+                      </button>
+                    )}
+                    <button
+                      onClick={() => handleOpenCreateResident()}
+                      className="px-4 py-2 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm flex items-center gap-2 transition"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>+ Tambah Anggota</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* KPI Metrics Ribbon */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                      Total Kartu Keluarga
+                    </div>
+                    <div className="text-2xl font-black text-slate-900 mt-1">
+                      {sensusList.length} <span className="text-xs font-normal text-slate-400">KK</span>
+                    </div>
+                    <div className="text-[10px] text-emerald-600 mt-0.5 font-bold">Terverifikasi Dusun</div>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                      Total Jiwa Terdata
+                    </div>
+                    <div className="text-2xl font-black text-slate-900 mt-1">
+                      {residentsList.length} <span className="text-xs font-normal text-slate-400">Jiwa</span>
+                    </div>
+                    <div className="text-[10px] text-blue-600 mt-0.5 font-bold">
+                      {(residentsList.length / Math.max(1, sensusList.length)).toFixed(1)} Jiwa / KK
+                    </div>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                      Keluarga Desil 1 (Rentan)
+                    </div>
+                    <div className="text-2xl font-black text-red-600 mt-1">
+                      {sensusList.filter((s) => s.desil === 1).length}{" "}
+                      <span className="text-xs font-normal text-slate-400">KK</span>
+                    </div>
+                    <div className="text-[10px] text-red-700 mt-0.5 font-bold">Prioritas BLT-DD & PKH</div>
+                  </div>
+                  <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs">
+                    <div className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+                      Kondisi Rumah RTLH
+                    </div>
+                    <div className="text-2xl font-black text-amber-600 mt-1">
+                      {sensusList.filter((s) => s.kondisiRumah === "RTLH").length}{" "}
+                      <span className="text-xs font-normal text-slate-400">KK</span>
+                    </div>
+                    <div className="text-[10px] text-slate-500 mt-0.5 font-medium">Perlu Bedah Rumah</div>
+                  </div>
+                </div>
+
+                {/* Toolbar: Dusun Filter, Search, & View Switcher */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-4">
+                  <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Filter Dusun
+                      </label>
+                      <select
+                        value={relasiDusunFilter}
+                        onChange={(e) => setRelasiDusunFilter(e.target.value)}
+                        className="bg-slate-50 border border-slate-300 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#009388] focus:outline-none"
+                      >
+                        <option value="all">Semua Dusun (Manis, Pahing, Wage)</option>
+                        <option value="Manis">Dusun Manis</option>
+                        <option value="Pahing">Dusun Pahing</option>
+                        <option value="Wage">Dusun Wage</option>
+                      </select>
+                    </div>
+
+                    <div className="flex-1 min-w-[220px]">
+                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                        Cari Kepala Keluarga / No. KK
+                      </label>
+                      <div className="relative">
+                        <input
+                          type="text"
+                          value={relasiSearch}
+                          onChange={(e) => setRelasiSearch(e.target.value)}
+                          placeholder="Ketik Nama atau No. KK..."
+                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 pl-9 text-xs text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#009388] font-mono transition"
+                        />
+                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      </div>
+                    </div>
+
+                    {filteredRelasiKks.length > 0 && (
+                      <div className="min-w-[220px]">
+                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                          Pilih Keluarga Aktif ({filteredRelasiKks.length})
+                        </label>
+                        <select
+                          value={activeKk?.noKk || ""}
+                          onChange={(e) => setSelectedRelasiKkNo(e.target.value)}
+                          className="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs font-semibold rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#009388] focus:outline-none"
+                        >
+                          {filteredRelasiKks.slice(0, 50).map((k) => (
+                            <option key={k.noKk} value={k.noKk}>
+                              {k.namaKepalaKeluarga} (Dusun {k.dusun} RT {k.rt})
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* View Mode Switcher */}
+                  <div>
+                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                      Model Visualisasi
+                    </label>
+                    <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+                      <button
+                        onClick={() => setRelasiSubView("tree")}
+                        className={`px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${
+                          relasiSubView === "tree"
+                            ? "bg-[#009388] text-white shadow-xs"
+                            : "text-slate-600 hover:text-slate-900 font-semibold"
+                        }`}
+                      >
+                        <GitFork className="w-3.5 h-3.5" />
+                        <span>Pohon Relasi KK</span>
+                      </button>
+                      <button
+                        onClick={() => setRelasiSubView("matrix")}
+                        className={`px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${
+                          relasiSubView === "matrix"
+                            ? "bg-[#009388] text-white shadow-xs"
+                            : "text-slate-600 hover:text-slate-900 font-semibold"
+                        }`}
+                      >
+                        <FileText className="w-3.5 h-3.5" />
+                        <span>Matriks Anggota</span>
+                      </button>
+                      <button
+                        onClick={() => setRelasiSubView("cluster")}
+                        className={`px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${
+                          relasiSubView === "cluster"
+                            ? "bg-[#009388] text-white shadow-xs"
+                            : "text-slate-600 hover:text-slate-900 font-semibold"
+                        }`}
+                      >
+                        <Share2 className="w-3.5 h-3.5" />
+                        <span>Graf Makro Dusun</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ============================================================== */}
+                {/* SUB-VIEW 1: BAGAN POHON RELASI KELUARGA (FAMILY TREE CARDS)     */}
+                {/* ============================================================== */}
+                {relasiSubView === "tree" && (
+                  <div className="bg-white rounded-3xl border border-slate-200 p-6 sm:p-8 shadow-sm relative overflow-hidden">
+                    {activeKk ? (
+                      <div>
+                        {/* Header Keluarga Terpilih */}
+                        <div className="flex items-center justify-between pb-4 mb-6 border-b border-slate-100">
+                          <div className="flex items-center gap-3">
+                            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                            <span className="text-xs font-bold text-slate-800 uppercase tracking-wider">
+                              Struktur Keluarga:{" "}
+                              <strong className="text-[#009388]">
+                                Keluarga Bpk. {activeKk.namaKepalaKeluarga} (Dusun {activeKk.dusun})
+                              </strong>
+                            </span>
+                          </div>
+                          <div className="text-xs text-slate-400 font-mono">
+                            {currentMembers.length} Jiwa Terhubung • No. KK: {activeKk.noKk}
+                          </div>
+                        </div>
+
+                        {/* LEVEL 1: CENTRAL HOUSEHOLD HUB (KARTU KELUARGA) */}
+                        <div className="flex justify-center mb-10">
+                          <div
+                            onClick={() => setSelectedGraphEntity({ type: "KK", data: activeKk })}
+                            className="cursor-pointer group relative bg-gradient-to-br from-amber-50 to-orange-50/70 border-2 border-amber-300/80 hover:border-amber-500 rounded-2xl p-5 w-full max-w-md shadow-sm hover:shadow-lg transition-all duration-300"
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-amber-500 text-white flex items-center justify-center font-black text-xs shadow-sm">
+                                  KK
+                                </div>
+                                <div>
+                                  <span className="text-[10px] font-extrabold uppercase tracking-wider text-amber-800 bg-amber-200/60 px-2 py-0.5 rounded-md">
+                                    Pusat Rumah Tangga
+                                  </span>
+                                  <h3 className="font-extrabold text-slate-900 text-base mt-0.5 group-hover:text-amber-900 transition">
+                                    {activeKk.namaKepalaKeluarga}
+                                  </h3>
+                                </div>
+                              </div>
+                              <span
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-black border ${
+                                  activeKk.desil === 1
+                                    ? "bg-red-100 text-red-700 border-red-200"
+                                    : activeKk.desil === 2
+                                    ? "bg-amber-100 text-amber-700 border-amber-200"
+                                    : "bg-emerald-100 text-emerald-700 border-emerald-200"
+                                }`}
+                              >
+                                Desil {activeKk.desil}
+                              </span>
+                            </div>
+
+                            <div className="mt-4 pt-3 border-t border-amber-200/60 grid grid-cols-2 gap-2 text-xs">
+                              <div>
+                                <span className="text-[10px] text-slate-500 block">Nomor KK</span>
+                                <span className="font-mono font-bold text-slate-900 text-[11px]">
+                                  {activeKk.noKk}
+                                </span>
+                              </div>
+                              <div>
+                                <span className="text-[10px] text-slate-500 block">Wilayah Domisili</span>
+                                <span className="font-bold text-slate-800">
+                                  Dusun {activeKk.dusun} (RT {activeKk.rt}/{activeKk.rw})
+                                </span>
+                              </div>
+                              <div className="col-span-2 flex items-center justify-between mt-1 text-[11px]">
+                                <span className="text-slate-600">
+                                  PBB:{" "}
+                                  <strong
+                                    className={
+                                      activeKk.statusPbb === "Lunas"
+                                        ? "text-emerald-700"
+                                        : "text-amber-700"
+                                    }
+                                  >
+                                    {activeKk.statusPbb}
+                                  </strong>{" "}
+                                  • Rumah: <strong>{activeKk.kondisiRumah}</strong>
+                                </span>
+                                <span className="text-amber-800 font-bold underline text-[10px] group-hover:translate-x-1 transition">
+                                  Detail KK →
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* LEVEL 2: KEPALA KELUARGA & ISTRI (SPOUSE LEVEL) */}
+                        <div className="max-w-4xl mx-auto">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10 relative">
+                            {/* Pasangan Suami-Istri Ribbon */}
+                            {istriList.length > 0 && (
+                              <div className="hidden md:flex absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10 items-center justify-center">
+                                <div className="bg-pink-50 border border-pink-300 text-pink-700 px-3 py-1 rounded-full text-[10px] font-extrabold shadow-sm flex items-center gap-1.5 whitespace-nowrap">
+                                  <Heart className="w-3 h-3 text-pink-500 fill-pink-500" />
+                                  <span>Pasangan Suami - Istri</span>
+                                </div>
+                              </div>
+                            )}
+
+                            {/* KEPALA KELUARGA CARD */}
+                            {kepala ? (
+                              <div
+                                onClick={() => setSelectedGraphEntity({ type: "KTP", data: kepala })}
+                                className="cursor-pointer bg-white rounded-2xl border-2 border-blue-200 hover:border-blue-500 p-5 shadow-sm hover:shadow-lg transition-all group"
+                              >
+                                <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                  <div className="flex items-center gap-2.5">
+                                    <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center font-bold text-xs">
+                                      L
+                                    </div>
+                                    <div>
+                                      <span className="text-[10px] font-bold text-blue-600 uppercase tracking-wider">
+                                        Kepala Keluarga
+                                      </span>
+                                      <h4 className="font-bold text-sm text-slate-900 group-hover:text-blue-600 transition">
+                                        {kepala.nama}
+                                      </h4>
+                                    </div>
+                                  </div>
+                                  <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                                    {kepala.statusPerkawinan || "Kawin"}
+                                  </span>
+                                </div>
+                                <div className="mt-3 space-y-1.5 text-xs text-slate-600">
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-slate-400">NIK:</span>
+                                    <span className="font-mono font-bold text-slate-800">{kepala.nik}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-slate-400">TTL:</span>
+                                    <span>{kepala.ttl || "Kuningan"}</span>
+                                  </div>
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-slate-400">Pekerjaan:</span>
+                                    <span className="font-semibold text-slate-800">{kepala.pekerjaan}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-5 text-center text-slate-400 text-xs flex flex-col items-center justify-center">
+                                <span>Data Kepala Keluarga belum terdaftar di NIK</span>
+                              </div>
+                            )}
+
+                            {/* ISTRI CARD */}
+                            {istriList.length > 0 ? (
+                              istriList.map((istri) => (
+                                <div
+                                  key={istri.nik}
+                                  onClick={() => setSelectedGraphEntity({ type: "KTP", data: istri })}
+                                  className="cursor-pointer bg-white rounded-2xl border-2 border-pink-200 hover:border-pink-500 p-5 shadow-sm hover:shadow-lg transition-all group"
+                                >
+                                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                                    <div className="flex items-center gap-2.5">
+                                      <div className="w-8 h-8 rounded-lg bg-pink-100 text-pink-700 flex items-center justify-center font-bold text-xs">
+                                        P
+                                      </div>
+                                      <div>
+                                        <span className="text-[10px] font-bold text-pink-600 uppercase tracking-wider">
+                                          Istri
+                                        </span>
+                                        <h4 className="font-bold text-sm text-slate-900 group-hover:text-pink-600 transition">
+                                          {istri.nama}
+                                        </h4>
+                                      </div>
+                                    </div>
+                                    <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-pink-50 text-pink-700 border border-pink-200">
+                                      {istri.statusPerkawinan || "Kawin"}
+                                    </span>
+                                  </div>
+                                  <div className="mt-3 space-y-1.5 text-xs text-slate-600">
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-slate-400">NIK:</span>
+                                      <span className="font-mono font-bold text-slate-800">{istri.nik}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-slate-400">TTL:</span>
+                                      <span>{istri.ttl || "Kuningan"}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="text-slate-400">Pekerjaan:</span>
+                                      <span className="font-semibold text-slate-800">{istri.pekerjaan}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              ))
+                            ) : (
+                              <div className="bg-slate-50 rounded-2xl border border-dashed border-slate-300 p-5 text-center text-slate-400 text-xs flex flex-col items-center justify-center">
+                                <span>Tidak ada data Istri tercatat di KK ini</span>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* LEVEL 3: ANAK KANDUNG & TANGGUNGAN LAIN */}
+                          <div className="space-y-4">
+                            <div className="flex items-center gap-3">
+                              <div className="h-px flex-1 bg-slate-200"></div>
+                              <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 bg-slate-100 px-3 py-1 rounded-full border border-slate-200">
+                                Anak Kandung & Tanggungan ({anakList.length + tanggunganList.length})
+                              </span>
+                              <div className="h-px flex-1 bg-slate-200"></div>
+                            </div>
+
+                            {anakList.length === 0 && tanggunganList.length === 0 ? (
+                              <div className="bg-slate-50 rounded-2xl border border-slate-200 p-6 text-center text-slate-400 text-xs">
+                                Tidak ada anak atau tanggungan terdaftar pada Kartu Keluarga ini.
+                              </div>
+                            ) : (
+                              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+                                {anakList.map((anak, idx) => (
+                                  <div
+                                    key={anak.nik}
+                                    onClick={() => setSelectedGraphEntity({ type: "KTP", data: anak })}
+                                    className="cursor-pointer bg-white rounded-2xl border-2 border-emerald-200 hover:border-emerald-500 p-4 shadow-2xs hover:shadow-md transition-all group"
+                                  >
+                                    <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100">
+                                      <div className="w-7 h-7 rounded-lg bg-emerald-100 text-emerald-800 font-bold flex items-center justify-center text-xs shrink-0">
+                                        A{idx + 1}
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <span className="text-[9px] font-bold text-emerald-700 uppercase tracking-wider block truncate">
+                                          Anak ke-{idx + 1} ({anak.jenisKelamin})
+                                        </span>
+                                        <h5 className="font-bold text-xs text-slate-900 truncate group-hover:text-emerald-700 transition">
+                                          {anak.nama}
+                                        </h5>
+                                      </div>
+                                    </div>
+                                    <div className="mt-2.5 space-y-1 text-[11px] text-slate-600">
+                                      <div className="flex justify-between">
+                                        <span className="text-slate-400 font-mono text-[10px]">NIK:</span>
+                                        <span className="font-mono text-slate-800">{anak.nik}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-slate-400">Pekerjaan:</span>
+                                        <span className="font-medium text-slate-800">{anak.pekerjaan}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-slate-400">TTL:</span>
+                                        <span>{anak.ttl}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+
+                                {tanggunganList.map((fam, idx) => (
+                                  <div
+                                    key={fam.nik}
+                                    onClick={() => setSelectedGraphEntity({ type: "KTP", data: fam })}
+                                    className="cursor-pointer bg-white rounded-2xl border-2 border-purple-200 hover:border-purple-500 p-4 shadow-2xs hover:shadow-md transition-all group"
+                                  >
+                                    <div className="flex items-center gap-2.5 pb-2.5 border-b border-slate-100">
+                                      <div className="w-7 h-7 rounded-lg bg-purple-100 text-purple-800 font-bold flex items-center justify-center text-xs shrink-0">
+                                        T{idx + 1}
+                                      </div>
+                                      <div className="min-w-0 flex-1">
+                                        <span className="text-[9px] font-bold text-purple-700 uppercase tracking-wider block truncate">
+                                          {fam.hubunganKeluarga || "Famili Lain"}
+                                        </span>
+                                        <h5 className="font-bold text-xs text-slate-900 truncate group-hover:text-purple-700 transition">
+                                          {fam.nama}
+                                        </h5>
+                                      </div>
+                                    </div>
+                                    <div className="mt-2.5 space-y-1 text-[11px] text-slate-600">
+                                      <div className="flex justify-between">
+                                        <span className="text-slate-400 font-mono text-[10px]">NIK:</span>
+                                        <span className="font-mono text-slate-800">{fam.nik}</span>
+                                      </div>
+                                      <div className="flex justify-between">
+                                        <span className="text-slate-400">Status:</span>
+                                        <span className="font-medium text-slate-800">{fam.statusPerkawinan}</span>
+                                      </div>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-12 text-center text-slate-400 text-sm">
+                        Tidak ada data keluarga yang cocok dengan filter.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ============================================================== */}
+                {/* SUB-VIEW 2: MATRIKS KONEKTOR TABEL LENGKAP                    */}
+                {/* ============================================================== */}
+                {relasiSubView === "matrix" && (
+                  <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-2xs">
+                    <table className="w-full text-left text-xs text-slate-700">
+                      <thead className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                        <tr>
+                          <th className="py-3 px-4">NIK (KTP Warga)</th>
+                          <th className="py-3 px-4">Nama Lengkap & TTL</th>
+                          <th className="py-3 px-4">Relasi dalam KK</th>
+                          <th className="py-3 px-4">Nomor KK Terhubung</th>
+                          <th className="py-3 px-4">Dusun / RT / RW</th>
+                          <th className="py-3 px-4">Pekerjaan</th>
+                          <th className="py-3 px-4 text-right">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100">
+                        {currentMembers.map((m) => (
+                          <tr key={m.nik} className="hover:bg-slate-50/80 transition">
+                            <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
+                              {m.nik}
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <div className="font-bold text-slate-900">{m.nama}</div>
+                              <div className="text-[10px] text-slate-500">{m.ttl}</div>
+                            </td>
+                            <td className="py-3.5 px-4">
+                              <span
+                                className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                                  m.hubunganKeluarga?.toLowerCase().includes("kepala")
+                                    ? "bg-blue-50 text-blue-700 border-blue-200"
+                                    : m.hubunganKeluarga?.toLowerCase().includes("istri")
+                                    ? "bg-pink-50 text-pink-700 border-pink-200"
+                                    : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                                }`}
+                              >
+                                {m.hubunganKeluarga || "Anggota"}
+                              </span>
+                            </td>
+                            <td className="py-3.5 px-4 font-mono text-slate-700">{m.noKk}</td>
+                            <td className="py-3.5 px-4">
+                              Dusun {m.dusun} (RT {m.rt}/{m.rw})
+                            </td>
+                            <td className="py-3.5 px-4 text-slate-600">{m.pekerjaan}</td>
+                            <td className="py-3.5 px-4 text-right">
+                              <button
+                                onClick={() => setSelectedGraphEntity({ type: "KTP", data: m })}
+                                className="px-2.5 py-1 rounded-lg bg-[#009388] text-white font-bold hover:bg-[#007b71] transition text-[11px]"
+                              >
+                                Sorot Relasi
+                              </button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+
+                {/* ============================================================== */}
+                {/* SUB-VIEW 3: GRAF MAKRO DUSUN (OFF-WHITE / CREAM DOT GRID)     */}
+                {/* ============================================================== */}
+                {relasiSubView === "cluster" && (
+                  <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-100">
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="w-2.5 h-2.5 rounded-full bg-[#009388] animate-pulse"></span>
+                          <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">
+                            Graf Konstelasi Relasi Kependudukan 3 Dusun Kadurama
+                          </h3>
+                        </div>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Kanvas off-white dot-grid keterhubungan Dusun Manis, Pahing, dan Wage dengan pusat Kartu Keluarga dan warga.
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <div className="hidden xl:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-[10px] font-semibold text-slate-600">
+                          <span className="flex items-center gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#009388]"></span>Dusun
+                          </span>
+                          <span className="text-slate-300">•</span>
+                          <span className="flex items-center gap-1">
+                            <span className="w-2.5 h-2.5 rounded-md bg-[#d97706]"></span>Hub KK
+                          </span>
+                          <span className="text-slate-300">•</span>
+                          <span className="flex items-center gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]"></span>Kepala (L)
+                          </span>
+                          <span className="text-slate-300">•</span>
+                          <span className="flex items-center gap-1">
+                            <span className="w-2.5 h-2.5 rounded-full bg-[#db2777]"></span>Istri (P)
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+                          <button
+                            onClick={() => setClusterZoom((prev) => Math.min(prev + 0.2, 2.5))}
+                            className="p-1.5 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow-2xs text-xs font-bold"
+                            title="Perbesar"
+                          >
+                            <ZoomIn className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setClusterZoom((prev) => Math.max(prev - 0.2, 0.5))}
+                            className="p-1.5 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow-2xs text-xs font-bold"
+                            title="Perkecil"
+                          >
+                            <ZoomOut className="w-3.5 h-3.5" />
+                          </button>
+                          <button
+                            onClick={() => setClusterZoom(1)}
+                            className="px-2.5 py-1.5 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow-2xs text-xs font-bold flex items-center gap-1"
+                            title="Reset Skala"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5 text-[#009388]" />
+                            <span>100%</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Canvas Area with Dot Grid */}
+                    <div className="relative overflow-hidden rounded-2xl canvas-dot-grid border border-[#e6e0d5] shadow-inner h-[540px] flex items-center justify-center">
+                      <div
+                        style={{ transform: `scale(${clusterZoom})`, transition: "transform 0.3s ease-out" }}
+                        className="w-full h-full flex items-center justify-around p-8 relative"
+                      >
+                        {/* 3 Dusun Clusters */}
+                        {(["Pahing", "Wage", "Manis"] as const).map((dusunName) => {
+                          const dusunKks = sensusList.filter((s) => s.dusun === dusunName).slice(0, 3);
+                          return (
+                            <div key={dusunName} className="flex flex-col items-center gap-6">
+                              {/* Dusun Node */}
+                              <div className="bg-[#009388] text-white px-5 py-3 rounded-2xl shadow-lg border-2 border-[#006d64] text-center font-bold text-xs tracking-wide">
+                                DUSUN {dusunName.toUpperCase()}
+                                <span className="block text-[9px] font-normal text-emerald-100 mt-0.5">
+                                  {sensusList.filter((s) => s.dusun === dusunName).length} Kepala Keluarga
+                                </span>
+                              </div>
+
+                              {/* KK Satellite Nodes */}
+                              <div className="space-y-3">
+                                {dusunKks.map((kk) => {
+                                  const kkMembers = residentsList.filter((r) => r.noKk === kk.noKk);
+                                  return (
+                                    <div
+                                      key={kk.noKk}
+                                      onClick={() => {
+                                        setSelectedRelasiKkNo(kk.noKk);
+                                        setSelectedGraphEntity({ type: "KK", data: kk });
+                                      }}
+                                      className="cursor-pointer bg-[#fffbeb] border-2 border-[#d97706] hover:border-amber-600 p-3 rounded-xl shadow-xs hover:shadow-md transition text-left w-52 group"
+                                    >
+                                      <div className="flex items-center justify-between">
+                                        <span className="text-[9px] font-bold text-amber-800 bg-amber-200/80 px-1.5 py-0.5 rounded">
+                                          Desil {kk.desil}
+                                        </span>
+                                        <span className="text-[9px] text-slate-500 font-mono">RT {kk.rt}</span>
+                                      </div>
+                                      <div className="font-bold text-xs text-slate-900 mt-1 truncate group-hover:text-amber-900">
+                                        {kk.namaKepalaKeluarga}
+                                      </div>
+                                      <div className="text-[10px] text-slate-500 mt-0.5 flex items-center justify-between">
+                                        <span>{kkMembers.length} Jiwa</span>
+                                        <span className="text-amber-800 font-bold underline text-[9px]">Pohon Relasi →</span>
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      {/* Helper Note Overlay */}
+                      <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-xs border border-slate-200/80 px-3 py-1.5 rounded-xl shadow-xs text-[10px] text-slate-600 flex items-center gap-2">
+                        <Info className="w-3.5 h-3.5 text-[#009388]" />
+                        <span>Klik salah satu kartu KK di atas untuk memeriksa silsilah keluarga lengkap</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* ============================================================== */}
+                {/* SLIDE-OVER INSPECTOR DRAWER (DETAIL KTP / KK)                 */}
+                {/* ============================================================== */}
+                {selectedGraphEntity && (
+                  <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-2xs flex justify-end">
+                    <div className="w-84 sm:w-96 bg-white border-l border-slate-200 shadow-2xl h-full p-6 flex flex-col justify-between overflow-y-auto animate-in slide-in-from-right duration-200">
+                      <div>
+                        {/* Drawer Header */}
+                        <div className="flex items-center justify-between pb-4 border-b border-slate-200">
+                          <div className="flex items-center gap-3">
+                            <div
+                              className={`w-9 h-9 rounded-xl font-bold flex items-center justify-center text-xs ${
+                                selectedGraphEntity.type === "KTP"
+                                  ? "bg-blue-100 text-blue-700"
+                                  : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {selectedGraphEntity.type}
+                            </div>
+                            <div>
+                              <span
+                                className={`text-[10px] font-bold uppercase tracking-wider ${
+                                  selectedGraphEntity.type === "KTP"
+                                    ? "text-blue-600"
+                                    : "text-amber-700"
+                                }`}
+                              >
+                                {selectedGraphEntity.type === "KTP"
+                                  ? "Entitas e-KTP Warga"
+                                  : "Kartu Keluarga (Hub)"}
+                              </span>
+                              <h3 className="font-extrabold text-slate-900 text-base leading-tight truncate max-w-[200px]">
+                                {selectedGraphEntity.type === "KTP"
+                                  ? selectedGraphEntity.data.nama
+                                  : selectedGraphEntity.data.namaKepalaKeluarga}
+                              </h3>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => setSelectedGraphEntity(null)}
+                            className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
+                        </div>
+
+                        {/* Drawer Details Content */}
+                        <div className="mt-5 space-y-3 text-xs">
+                          {selectedGraphEntity.type === "KTP" ? (
+                            <>
+                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span className="text-slate-400 text-[10px] block">NIK Warga</span>
+                                <span className="font-mono font-bold text-slate-900 text-xs">
+                                  {selectedGraphEntity.data.nik}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                  <span className="text-slate-400 text-[10px] block">Hubungan</span>
+                                  <span className="font-bold text-slate-800">
+                                    {selectedGraphEntity.data.hubunganKeluarga}
+                                  </span>
+                                </div>
+                                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                  <span className="text-slate-400 text-[10px] block">Jenis Kelamin</span>
+                                  <span className="font-bold text-slate-800">
+                                    {selectedGraphEntity.data.jenisKelamin}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                <span className="text-slate-400 text-[10px] block">Tempat, Tanggal Lahir</span>
+                                <span className="font-bold text-slate-800">
+                                  {selectedGraphEntity.data.ttl || "Kuningan"}
+                                </span>
+                              </div>
+                              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                <span className="text-slate-400 text-[10px] block">Mata Pencaharian</span>
+                                <span className="font-bold text-slate-800">
+                                  {selectedGraphEntity.data.pekerjaan}
+                                </span>
+                              </div>
+                              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                <span className="text-slate-400 text-[10px] block">Nomor KK</span>
+                                <span className="font-mono font-bold text-[#009388]">
+                                  {selectedGraphEntity.data.noKk}
+                                </span>
+                              </div>
+                            </>
+                          ) : (
+                            <>
+                              <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                                <span className="text-slate-400 text-[10px] block">Nomor Kartu Keluarga</span>
+                                <span className="font-mono font-bold text-slate-900 text-xs">
+                                  {selectedGraphEntity.data.noKk}
+                                </span>
+                              </div>
+                              <div className="grid grid-cols-2 gap-2">
+                                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                  <span className="text-slate-400 text-[10px] block">Desil Kesejahteraan</span>
+                                  <span className="font-bold text-red-600">
+                                    Desil {selectedGraphEntity.data.desil}
+                                  </span>
+                                </div>
+                                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                  <span className="text-slate-400 text-[10px] block">Status PBB</span>
+                                  <span className="font-bold text-emerald-600">
+                                    {selectedGraphEntity.data.statusPbb}
+                                  </span>
+                                </div>
+                              </div>
+                              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                <span className="text-slate-400 text-[10px] block">Kondisi Rumah</span>
+                                <span className="font-bold text-slate-800">
+                                  {selectedGraphEntity.data.kondisiRumah}
+                                </span>
+                              </div>
+                              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                <span className="text-slate-400 text-[10px] block">Alamat</span>
+                                <span className="font-medium text-slate-800">
+                                  {selectedGraphEntity.data.alamat}
+                                </span>
+                              </div>
+                              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+                                <span className="text-slate-400 text-[10px] block">Bansos Aktif</span>
+                                <span className="font-bold text-indigo-600">
+                                  {selectedGraphEntity.data.bansosAktif || "Non-Bansos"}
+                                </span>
+                              </div>
+                            </>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Drawer Actions */}
+                      <div className="mt-6 pt-4 border-t border-slate-200 space-y-2">
+                        {selectedGraphEntity.type === "KTP" ? (
+                          <button
+                            onClick={() => {
+                              const found = residentsList.find(
+                                (r) => r.nik === selectedGraphEntity.data.nik
+                              );
+                              if (found) {
+                                setEditingResident(found);
+                                setIsEditingResidentExisting(true);
+                                setIsResidentModalOpen(true);
+                                setSelectedGraphEntity(null);
+                              }
+                            }}
+                            className="w-full py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition"
+                          >
+                            <Edit3 className="w-4 h-4" />
+                            <span>Ubah Data Warga Ini</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              setSelectedSensusForPdf(selectedGraphEntity.data);
+                              setSelectedGraphEntity(null);
+                            }}
+                            className="w-full py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm flex items-center justify-center gap-2 transition"
+                          >
+                            <Printer className="w-4 h-4" />
+                            <span>Cetak Lembar Profil KK</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setSelectedGraphEntity(null)}
+                          className="w-full py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 font-semibold text-xs transition"
+                        >
+                          Tutup
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })()}
 
           {/* ================================================================ */}
           {/* TAB: MANAJEMEN KABAR DESA (FULL CRUD SUPABASE)                    */}
