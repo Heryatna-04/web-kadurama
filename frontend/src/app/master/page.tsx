@@ -223,9 +223,28 @@ function getResidentAge(ttl?: string, nik?: string): { age: number | null; label
   return { age: null, label: "-" };
 }
 
+// Helper Validasi Format 16 Digit NIK & No. KK Standar Nasional Dukcapil
+export function validateNikOrKk(val: string, label: "NIK" | "No. KK") {
+  const clean = (val || "").trim();
+  if (!clean) return { valid: false, message: `${label} wajib diisi!` };
+  if (!/^\d+$/.test(clean)) return { valid: false, message: `${label} hanya boleh berisi karakter angka (0-9)!` };
+  if (clean.length !== 16) return { valid: false, message: `${label} harus tepat 16 digit angka (saat ini: ${clean.length} digit)!` };
+  return { valid: true, message: `${label} 16 digit valid` };
+}
+
+// Helper Sensor Privasi NIK (Kepatuhan UU No. 27/2022 tentang Perlindungan Data Pribadi)
+export function formatMaskedNik(val: string, masked: boolean) {
+  if (!val) return "-";
+  if (!masked || val.length < 10) return val;
+  return `${val.slice(0, 6)}******${val.slice(-4)}`;
+}
+
 export default function MasterPanelPage() {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
+
+  // Keamanan & Privasi Data Warga (Kepatuhan UU PDP No. 27/2022)
+  const [maskSensitiveData, setMaskSensitiveData] = useState<boolean>(true);
 
   // --------------------------------------------------------------------------
   // STATE OTORISASI & PENGGUNA AKTIF
@@ -487,6 +506,11 @@ export default function MasterPanelPage() {
   useEffect(() => {
     if (currentUser) {
       document.title = `Panel Data Center (${currentUser.role.toUpperCase()}) | Pemdes Kadurama`;
+      if (currentUser.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all") {
+        setSensusDusunFilter(currentUser.dusun);
+        setResidentDusunFilter(currentUser.dusun);
+        setRelasiDusunFilter(currentUser.dusun);
+      }
     } else {
       document.title = "Otorisasi Akses Pamong & Data Center | Pemdes Kadurama";
     }
@@ -938,6 +962,20 @@ export default function MasterPanelPage() {
       return;
     }
 
+    const kkCheck = validateNikOrKk(editingSensus.noKk, "No. KK");
+    if (!kkCheck.valid) {
+      alert(kkCheck.message);
+      return;
+    }
+
+    if (editingSensus.nikKepalaKeluarga && editingSensus.nikKepalaKeluarga.trim()) {
+      const nikCheck = validateNikOrKk(editingSensus.nikKepalaKeluarga, "NIK");
+      if (!nikCheck.valid) {
+        alert(nikCheck.message);
+        return;
+      }
+    }
+
     // Auto scoring desil vs penetapan manual aparatur desa
     const autoDesil = calculateDesil(
       editingSensus.dinding,
@@ -1174,8 +1212,22 @@ export default function MasterPanelPage() {
     const cleanNik = editingResident.nik.trim();
     const cleanNoKk = editingResident.noKk.trim();
 
+    const nikCheck = validateNikOrKk(cleanNik, "NIK");
+    if (!nikCheck.valid) {
+      alert(nikCheck.message);
+      return;
+    }
+
+    if (cleanNoKk) {
+      const kkCheck = validateNikOrKk(cleanNoKk, "No. KK");
+      if (!kkCheck.valid) {
+        alert(kkCheck.message);
+        return;
+      }
+    }
+
     if (isNew && residentsList.some((r) => r.nik === cleanNik)) {
-      alert(`NIK ${cleanNik} sudah terdaftar dalam sistem! Harap periksa kembali.`);
+      alert(`NIK ${cleanNik} sudah terdaftar atas nama warga lain dalam sistem! Harap periksa kembali.`);
       return;
     }
 
@@ -2089,7 +2141,11 @@ export default function MasterPanelPage() {
     return matchDusun && matchSearch;
   });
   const filteredSensus = sensusList.filter((item) => {
-    const matchDusun = sensusDusunFilter === "all" || item.dusun === sensusDusunFilter;
+    const effectiveDusun =
+      currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all"
+        ? currentUser.dusun
+        : sensusDusunFilter;
+    const matchDusun = effectiveDusun === "all" || item.dusun === effectiveDusun;
     const matchDesil = sensusDesilFilter === "all" || item.desil.toString() === sensusDesilFilter;
     const matchSearch =
       !sensusSearch.trim() ||
@@ -2100,7 +2156,11 @@ export default function MasterPanelPage() {
   });
 
   const filteredResidents = residentsList.filter((res) => {
-    const matchDusun = residentDusunFilter === "all" || res.dusun === residentDusunFilter;
+    const effectiveDusun =
+      currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all"
+        ? currentUser.dusun
+        : residentDusunFilter;
+    const matchDusun = effectiveDusun === "all" || res.dusun === effectiveDusun;
     const matchSearch =
       !residentSearch.trim() ||
       res.nama.toLowerCase().includes(residentSearch.toLowerCase()) ||
@@ -2621,16 +2681,23 @@ export default function MasterPanelPage() {
 
                   <div className="flex items-center gap-2">
                     <Filter className="w-3.5 h-3.5 text-slate-400" />
-                    <select
-                      value={sensusDusunFilter}
-                      onChange={(e) => setSensusDusunFilter(e.target.value)}
-                      className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-semibold text-slate-700"
-                    >
-                      <option value="all">Semua Dusun</option>
-                      <option value="Manis">Dusun Manis</option>
-                      <option value="Pahing">Dusun Pahing</option>
-                      <option value="Wage">Dusun Wage</option>
-                    </select>
+                    {currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all" ? (
+                      <div className="px-3 py-2 text-xs rounded-xl border border-emerald-200 bg-emerald-50 font-bold text-emerald-800 flex items-center gap-1.5 shadow-2xs">
+                        <Lock className="w-3 h-3 text-emerald-600" />
+                        <span>Dusun {currentUser.dusun} (Terkunci Sesuai Wilayah)</span>
+                      </div>
+                    ) : (
+                      <select
+                        value={sensusDusunFilter}
+                        onChange={(e) => setSensusDusunFilter(e.target.value)}
+                        className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-semibold text-slate-700"
+                      >
+                        <option value="all">Semua Dusun</option>
+                        <option value="Manis">Dusun Manis</option>
+                        <option value="Pahing">Dusun Pahing</option>
+                        <option value="Wage">Dusun Wage</option>
+                      </select>
+                    )}
 
                     <select
                       value={sensusDesilFilter}
@@ -2643,6 +2710,33 @@ export default function MasterPanelPage() {
                       <option value="3">Desil 3 (Pra-Sejahtera)</option>
                       <option value="4">Desil 4 (Mandiri)</option>
                     </select>
+
+                    <button
+                      onClick={() => {
+                        const nextMasked = !maskSensitiveData;
+                        setMaskSensitiveData(nextMasked);
+                        if (!nextMasked) {
+                          recordAuditLog({
+                            actor_email: currentUser?.email || "pamong",
+                            actor_name: currentUser?.nama || "Pamong",
+                            actor_role: currentUser?.role || "kadus",
+                            action: "UPDATE",
+                            entity_type: "residents",
+                            entity_id: "ALL",
+                            description: `${currentUser?.nama} membuka sensor NIK warga pada tabel sensus (Kepatuhan UU PDP No. 27/2022)`,
+                          });
+                        }
+                      }}
+                      className={`px-3 py-2 text-xs rounded-xl border font-bold flex items-center gap-1.5 transition ${
+                        maskSensitiveData
+                          ? "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
+                          : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+                      }`}
+                      title={maskSensitiveData ? "Sensor NIK Aktif sesuai UU PDP No. 27/2022. Klik untuk membuka." : "Klik untuk mengaktifkan sensor NIK"}
+                    >
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      <span>{maskSensitiveData ? "Sensor NIK: Aktif" : "Sensor NIK: Terbuka"}</span>
+                    </button>
                   </div>
                 </div>
               </div>
@@ -2697,8 +2791,8 @@ export default function MasterPanelPage() {
                         {paginatedSensus.map((item) => (
                           <tr key={item.id} className="hover:bg-slate-50/70 transition">
                             <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                              <div>{item.noKk}</div>
-                              <div className="text-[10px] text-slate-400 font-normal">NIK: {item.nikKepalaKeluarga}</div>
+                              <div>{formatMaskedNik(item.noKk, maskSensitiveData)}</div>
+                              <div className="text-[10px] text-slate-400 font-normal">NIK: {formatMaskedNik(item.nikKepalaKeluarga, maskSensitiveData)}</div>
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="font-bold text-slate-800">{item.namaKepalaKeluarga}</div>
@@ -2872,16 +2966,52 @@ export default function MasterPanelPage() {
                   />
                 </div>
 
-                <select
-                  value={residentDusunFilter}
-                  onChange={(e) => setResidentDusunFilter(e.target.value)}
-                  className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-semibold text-slate-700"
-                >
-                  <option value="all">Semua Dusun (Manis, Pahing, Wage)</option>
-                  <option value="Manis">Dusun Manis</option>
-                  <option value="Pahing">Dusun Pahing</option>
-                  <option value="Wage">Dusun Wage</option>
-                </select>
+                <div className="flex items-center gap-2">
+                  {currentUser?.role === "kadus" && currentUser.dusun && currentUser.dusun !== "all" ? (
+                    <div className="px-3 py-2 text-xs rounded-xl border border-emerald-200 bg-emerald-50 font-bold text-emerald-800 flex items-center gap-1.5 shadow-2xs">
+                      <Lock className="w-3 h-3 text-emerald-600" />
+                      <span>Dusun {currentUser.dusun} (Terkunci Sesuai Wilayah)</span>
+                    </div>
+                  ) : (
+                    <select
+                      value={residentDusunFilter}
+                      onChange={(e) => setResidentDusunFilter(e.target.value)}
+                      className="px-3 py-2 text-xs rounded-xl border border-slate-200 bg-slate-50 font-semibold text-slate-700"
+                    >
+                      <option value="all">Semua Dusun (Manis, Pahing, Wage)</option>
+                      <option value="Manis">Dusun Manis</option>
+                      <option value="Pahing">Dusun Pahing</option>
+                      <option value="Wage">Dusun Wage</option>
+                    </select>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      const nextMasked = !maskSensitiveData;
+                      setMaskSensitiveData(nextMasked);
+                      if (!nextMasked) {
+                        recordAuditLog({
+                          actor_email: currentUser?.email || "pamong",
+                          actor_name: currentUser?.nama || "Pamong",
+                          actor_role: currentUser?.role || "kadus",
+                          action: "UPDATE",
+                          entity_type: "residents",
+                          entity_id: "ALL",
+                          description: `${currentUser?.nama} membuka sensor NIK warga pada tabel e-KTP (Kepatuhan UU PDP No. 27/2022)`,
+                        });
+                      }
+                    }}
+                    className={`px-3 py-2 text-xs rounded-xl border font-bold flex items-center gap-1.5 transition ${
+                      maskSensitiveData
+                        ? "bg-emerald-50 text-emerald-800 border-emerald-200 hover:bg-emerald-100"
+                        : "bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100"
+                    }`}
+                    title={maskSensitiveData ? "Sensor NIK Aktif sesuai UU PDP No. 27/2022. Klik untuk membuka." : "Klik untuk mengaktifkan sensor NIK"}
+                  >
+                    <ShieldCheck className="w-3.5 h-3.5" />
+                    <span>{maskSensitiveData ? "Sensor NIK: Aktif" : "Sensor NIK: Terbuka"}</span>
+                  </button>
+                </div>
               </div>
 
               {/* Tabel Residents */}
@@ -2933,8 +3063,8 @@ export default function MasterPanelPage() {
                         {paginatedResidents.map((res) => (
                           <tr key={res.nik} className="hover:bg-slate-50/70 transition">
                             <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                              <div>{res.nik}</div>
-                              <div className="text-[10px] text-slate-400 font-normal">KK: {res.noKk}</div>
+                              <div>{formatMaskedNik(res.nik, maskSensitiveData)}</div>
+                              <div className="text-[10px] text-slate-400 font-normal">KK: {formatMaskedNik(res.noKk, maskSensitiveData)}</div>
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="font-bold text-slate-800">{res.nama}</div>
@@ -3100,6 +3230,16 @@ export default function MasterPanelPage() {
                 !r.hubunganKeluarga?.toLowerCase().includes("anak")
             );
 
+            // Analisis Demografi & Kerentanan Anggota Keluarga
+            const totalJiwa = currentMembers.length;
+            const lakiCount = currentMembers.filter((r) => r.jenisKelamin === "Laki-laki").length;
+            const perempuanCount = currentMembers.filter((r) => r.jenisKelamin === "Perempuan").length;
+            const memberAges = currentMembers.map((r) => getResidentAge(r.ttl, r.nik).age);
+            const balitaCount = memberAges.filter((a) => a !== null && a <= 5).length;
+            const sekolahCount = memberAges.filter((a) => a !== null && a >= 6 && a <= 17).length;
+            const produktifCount = memberAges.filter((a) => a !== null && a >= 18 && a <= 59).length;
+            const lansiaCount = memberAges.filter((a) => a !== null && a >= 60).length;
+
             return (
               <div className="space-y-6">
                 {/* Header Tab */}
@@ -3188,91 +3328,172 @@ export default function MasterPanelPage() {
                   </div>
                 </div>
 
-                {/* Toolbar: Dusun Filter, Search, & View Switcher */}
-                <div className="bg-white p-4 rounded-2xl border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-4">
-                  <div className="flex flex-wrap items-center gap-3 flex-1 min-w-[280px]">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                        Filter Dusun
-                      </label>
-                      <select
-                        value={relasiDusunFilter}
-                        onChange={(e) => setRelasiDusunFilter(e.target.value)}
-                        className="bg-slate-50 border border-slate-300 text-slate-800 text-xs font-bold rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#009388] focus:outline-none"
-                      >
-                        <option value="all">Semua Dusun (Manis, Pahing, Wage)</option>
-                        <option value="Manis">Dusun Manis</option>
-                        <option value="Pahing">Dusun Pahing</option>
-                        <option value="Wage">Dusun Wage</option>
-                      </select>
-                    </div>
-
-                    <div className="flex-1 min-w-[220px]">
-                      <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                        Cari Kepala Keluarga / No. KK
-                      </label>
-                      <div className="relative">
-                        <input
-                          type="text"
-                          value={relasiSearch}
-                          onChange={(e) => setRelasiSearch(e.target.value)}
-                          placeholder="Ketik Nama atau No. KK..."
-                          className="w-full bg-slate-50 border border-slate-300 rounded-xl px-3.5 py-2 pl-9 text-xs text-slate-900 font-medium placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-[#009388] font-mono transition"
-                        />
-                        <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                {/* MATRIKS KOMPOSISI DEMOGRAFI & KERENTANAN KELUARGA TERPILIH */}
+                <div className="bg-white p-5 rounded-3xl border border-slate-200 shadow-2xs space-y-4">
+                  {/* Baris Atas: Info Keluarga Terpilih & Tombol Ganti Data (CTA) */}
+                  <div className="flex flex-wrap items-center justify-between gap-4 pb-4 border-b border-slate-100">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-2xl bg-[#e6f7f5] text-[#009388] flex items-center justify-center font-bold text-sm shadow-2xs">
+                        KK
+                      </div>
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs font-extrabold text-slate-900">
+                            {activeKk ? `Keluarga Bpk. ${activeKk.namaKepalaKeluarga}` : "Belum Ada Keluarga Terpilih"}
+                          </span>
+                          {activeKk && (
+                            <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-[#009388]/10 text-[#009388]">
+                              Dusun {activeKk.dusun} RT {activeKk.rt}/RW {activeKk.rw}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                          {activeKk
+                            ? `No. KK: ${formatMaskedNik(activeKk.noKk, maskSensitiveData)} • Desil ${activeKk.desil} • Rumah ${activeKk.kondisiRumah}`
+                            : "Silakan pilih keluarga melalui tabel data sensus atau kependudukan"}
+                        </p>
                       </div>
                     </div>
 
-                    {filteredRelasiKks.length > 0 && (
-                      <div className="min-w-[220px]">
-                        <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                          Pilih Keluarga Aktif ({filteredRelasiKks.length})
-                        </label>
-                        <select
-                          value={activeKk?.noKk || ""}
-                          onChange={(e) => setSelectedRelasiKkNo(e.target.value)}
-                          className="w-full bg-slate-50 border border-slate-300 text-slate-800 text-xs font-semibold rounded-xl px-3 py-2 focus:ring-2 focus:ring-[#009388] focus:outline-none"
+                    {/* Tombol CTA Ganti Data & Switcher Mode Visualisasi */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <div className="flex items-center gap-1.5 bg-slate-50 p-1 rounded-xl border border-slate-200">
+                        <button
+                          onClick={() => setActiveTab("sensus")}
+                          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold shadow-2xs border border-slate-200 flex items-center gap-1.5 transition"
+                          title="Buka tabel Sensus KK untuk memilih keluarga lain"
                         >
-                          {filteredRelasiKks.slice(0, 50).map((k) => (
-                            <option key={k.noKk} value={k.noKk}>
-                              {k.namaKepalaKeluarga} (Dusun {k.dusun} RT {k.rt})
-                            </option>
-                          ))}
-                        </select>
+                          <ClipboardCheck className="w-3.5 h-3.5 text-[#009388]" />
+                          <span>Pilih dari Sensus KK</span>
+                        </button>
+                        <button
+                          onClick={() => setActiveTab("residents")}
+                          className="px-3 py-1.5 rounded-lg bg-white hover:bg-slate-100 text-slate-700 text-xs font-bold shadow-2xs border border-slate-200 flex items-center gap-1.5 transition"
+                          title="Buka tabel Data Penduduk untuk memilih warga lain"
+                        >
+                          <Users className="w-3.5 h-3.5 text-blue-600" />
+                          <span>Pilih dari Data e-KTP</span>
+                        </button>
                       </div>
-                    )}
-                  </div>
 
-                  {/* View Mode Switcher */}
-                  <div>
-                    <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
-                      Model Visualisasi
-                    </label>
-                    <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
-                      <button
-                        onClick={() => setRelasiSubView("tree")}
-                        className={`px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${
-                          relasiSubView === "tree"
-                            ? "bg-[#009388] text-white shadow-xs"
-                            : "text-slate-600 hover:text-slate-900 font-semibold"
-                        }`}
-                      >
-                        <GitFork className="w-3.5 h-3.5" />
-                        <span>Pohon Relasi KK</span>
-                      </button>
-                      <button
-                        onClick={() => setRelasiSubView("matrix")}
-                        className={`px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${
-                          relasiSubView === "matrix"
-                            ? "bg-[#009388] text-white shadow-xs"
-                            : "text-slate-600 hover:text-slate-900 font-semibold"
-                        }`}
-                      >
-                        <FileText className="w-3.5 h-3.5" />
-                        <span>Matriks Anggota</span>
-                      </button>
+                      {/* View Switcher */}
+                      <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 text-xs">
+                        <button
+                          onClick={() => setRelasiSubView("tree")}
+                          className={`px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${
+                            relasiSubView === "tree"
+                              ? "bg-[#009388] text-white shadow-xs"
+                              : "text-slate-600 hover:text-slate-900 font-semibold"
+                          }`}
+                        >
+                          <GitFork className="w-3.5 h-3.5" />
+                          <span>Pohon Relasi</span>
+                        </button>
+                        <button
+                          onClick={() => setRelasiSubView("matrix")}
+                          className={`px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${
+                            relasiSubView === "matrix"
+                              ? "bg-[#009388] text-white shadow-xs"
+                              : "text-slate-600 hover:text-slate-900 font-semibold"
+                          }`}
+                        >
+                          <FileText className="w-3.5 h-3.5" />
+                          <span>Matriks Tabel</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
+
+                  {/* 4 Kolom Matriks Demografi & Analisis Kerentanan Keluarga Terpilih */}
+                  {activeKk ? (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+                      {/* Metrik 1: Komposisi Jiwa & Gender */}
+                      <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 space-y-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                          1. Komposisi Anggota
+                        </span>
+                        <div className="text-xl font-black text-slate-900 font-mono">
+                          {totalJiwa} <span className="text-xs font-normal text-slate-500">Jiwa Terdaftar</span>
+                        </div>
+                        <div className="text-[11px] text-slate-600 font-medium flex items-center gap-1.5 pt-1 border-t border-slate-200/60">
+                          <span className="text-blue-700 font-bold">{lakiCount} Laki-laki</span>
+                          <span>•</span>
+                          <span className="text-pink-700 font-bold">{perempuanCount} Perempuan</span>
+                        </div>
+                      </div>
+
+                      {/* Metrik 2: Rentang Usia & Kelompok Rentan */}
+                      <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 space-y-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                          2. Struktur Usia & Rentan
+                        </span>
+                        <div className="text-xl font-black text-emerald-800 font-mono">
+                          {produktifCount} <span className="text-xs font-normal text-slate-500">Usia Produktif</span>
+                        </div>
+                        <div className="text-[11px] text-slate-600 font-medium flex items-center gap-1.5 pt-1 border-t border-slate-200/60 truncate">
+                          <span>{balitaCount} Balita</span>
+                          <span>•</span>
+                          <span>{sekolahCount} Pelajar</span>
+                          <span>•</span>
+                          <span className={lansiaCount > 0 ? "text-purple-700 font-bold" : ""}>{lansiaCount} Lansia</span>
+                        </div>
+                      </div>
+
+                      {/* Metrik 3: Kesejahteraan & PBB */}
+                      <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 space-y-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                          3. Hunian & PBB Desa
+                        </span>
+                        <div className="text-xl font-black text-slate-900 font-mono">
+                          Desil {activeKk.desil}{" "}
+                          <span className="text-xs font-normal text-slate-500">({activeKk.desil <= 2 ? "Rentan" : "Mandiri"})</span>
+                        </div>
+                        <div className="text-[11px] text-slate-600 font-medium flex items-center gap-1.5 pt-1 border-t border-slate-200/60">
+                          <span>Kondisi: <strong>{activeKk.kondisiRumah}</strong></span>
+                          <span>•</span>
+                          <span className={activeKk.statusPbb === "Lunas" ? "text-emerald-700 font-bold" : "text-amber-700 font-bold"}>
+                            PBB {activeKk.statusPbb}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Metrik 4: Program Intervensi Bansos */}
+                      <div className="bg-slate-50/80 p-3.5 rounded-2xl border border-slate-200/80 space-y-1">
+                        <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block">
+                          4. Status Intervensi Desa
+                        </span>
+                        <div className="text-sm font-extrabold text-slate-900 truncate">
+                          {activeKk.desil === 1 || balitaCount > 0 || lansiaCount > 0
+                            ? "Prioritas Bansos & Posyandu"
+                            : "Pemberdayaan Reguler"}
+                        </div>
+                        <div className="text-[11px] text-slate-600 font-medium pt-1 border-t border-slate-200/60 truncate">
+                          {activeKk.bansosAktif || "Non-Bansos (Swa-Mandiri)"}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="bg-slate-50 p-6 rounded-2xl border border-dashed border-slate-300 text-center space-y-2">
+                      <div className="text-sm font-bold text-slate-700">Belum Ada Keluarga Terpilih</div>
+                      <p className="text-xs text-slate-500 max-w-md mx-auto">
+                        Akses tabel Sensus KK atau Data Penduduk e-KTP di tab navigasi, lalu klik tombol aksi mata untuk melihat struktur hubungan keluarga ini.
+                      </p>
+                      <div className="flex justify-center gap-2 pt-2">
+                        <button
+                          onClick={() => setActiveTab("sensus")}
+                          className="px-3.5 py-1.5 rounded-xl bg-[#009388] text-white text-xs font-bold shadow-xs hover:bg-[#007b71]"
+                        >
+                          Buka Tabel Sensus KK
+                        </button>
+                        <button
+                          onClick={() => setActiveTab("residents")}
+                          className="px-3.5 py-1.5 rounded-xl bg-slate-800 text-white text-xs font-bold shadow-xs hover:bg-slate-700"
+                        >
+                          Buka Data Penduduk (e-KTP)
+                        </button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 {/* ============================================================== */}
@@ -3294,7 +3515,7 @@ export default function MasterPanelPage() {
                             </span>
                           </div>
                           <div className="text-xs text-slate-400 font-mono">
-                            {currentMembers.length} Jiwa Terhubung • No. KK: {activeKk.noKk}
+                            {currentMembers.length} Jiwa Terhubung • No. KK: {formatMaskedNik(activeKk.noKk, maskSensitiveData)}
                           </div>
                         </div>
 
@@ -3335,7 +3556,7 @@ export default function MasterPanelPage() {
                               <div>
                                 <span className="text-[10px] text-slate-500 block">Nomor KK</span>
                                 <span className="font-mono font-bold text-slate-900 text-[11px]">
-                                  {activeKk.noKk}
+                                  {formatMaskedNik(activeKk.noKk, maskSensitiveData)}
                                 </span>
                               </div>
                               <div>
@@ -3416,7 +3637,7 @@ export default function MasterPanelPage() {
                                   <div className="mt-3.5 space-y-2 text-xs text-slate-600">
                                     <div className="flex items-center justify-between">
                                       <span className="text-slate-400">NIK:</span>
-                                      <span className="font-mono font-bold text-slate-900">{kepala.nik}</span>
+                                      <span className="font-mono font-bold text-slate-900">{formatMaskedNik(kepala.nik, maskSensitiveData)}</span>
                                     </div>
                                     <div className="flex items-center justify-between">
                                       <span className="text-slate-400">Kelahiran:</span>
@@ -3479,7 +3700,7 @@ export default function MasterPanelPage() {
                                     <div className="mt-3.5 space-y-2 text-xs text-slate-600">
                                       <div className="flex items-center justify-between">
                                         <span className="text-slate-400">NIK:</span>
-                                        <span className="font-mono font-bold text-slate-900">{istri.nik}</span>
+                                        <span className="font-mono font-bold text-slate-900">{formatMaskedNik(istri.nik, maskSensitiveData)}</span>
                                       </div>
                                       <div className="flex items-center justify-between">
                                         <span className="text-slate-400">Kelahiran:</span>
@@ -3565,7 +3786,7 @@ export default function MasterPanelPage() {
                                       <div className="mt-2.5 space-y-1.5 text-[11px] text-slate-600">
                                         <div className="flex justify-between">
                                           <span className="text-slate-400 font-mono text-[10px]">NIK:</span>
-                                          <span className="font-mono font-bold text-slate-800">{anak.nik}</span>
+                                          <span className="font-mono font-bold text-slate-800">{formatMaskedNik(anak.nik, maskSensitiveData)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                           <span className="text-slate-400">Pekerjaan:</span>
@@ -3629,7 +3850,7 @@ export default function MasterPanelPage() {
                                       <div className="mt-2.5 space-y-1.5 text-[11px] text-slate-600">
                                         <div className="flex justify-between">
                                           <span className="text-slate-400 font-mono text-[10px]">NIK:</span>
-                                          <span className="font-mono font-bold text-slate-800">{fam.nik}</span>
+                                          <span className="font-mono font-bold text-slate-800">{formatMaskedNik(fam.nik, maskSensitiveData)}</span>
                                         </div>
                                         <div className="flex justify-between">
                                           <span className="text-slate-400">Pekerjaan:</span>
@@ -3683,7 +3904,7 @@ export default function MasterPanelPage() {
                         {currentMembers.map((m) => (
                           <tr key={m.nik} className="hover:bg-slate-50/80 transition">
                             <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
-                              {m.nik}
+                              {formatMaskedNik(m.nik, maskSensitiveData)}
                             </td>
                             <td className="py-3.5 px-4">
                               <div className="font-bold text-slate-900">{m.nama}</div>
@@ -3702,7 +3923,9 @@ export default function MasterPanelPage() {
                                 {m.hubunganKeluarga || "Anggota"}
                               </span>
                             </td>
-                            <td className="py-3.5 px-4 font-mono text-slate-700">{m.noKk}</td>
+                            <td className="py-3.5 px-4 font-mono text-slate-700">
+                              {formatMaskedNik(m.noKk, maskSensitiveData)}
+                            </td>
                             <td className="py-3.5 px-4">
                               Dusun {m.dusun} (RT {m.rt}/{m.rw})
                             </td>
@@ -3777,7 +4000,7 @@ export default function MasterPanelPage() {
                               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                                 <span className="text-slate-400 text-[10px] block">NIK Warga</span>
                                 <span className="font-mono font-bold text-slate-900 text-xs">
-                                  {selectedGraphEntity.data.nik}
+                                  {formatMaskedNik(selectedGraphEntity.data.nik, maskSensitiveData)}
                                 </span>
                               </div>
                               <div className="grid grid-cols-2 gap-2">
@@ -3809,7 +4032,7 @@ export default function MasterPanelPage() {
                               <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200">
                                 <span className="text-slate-400 text-[10px] block">Nomor KK</span>
                                 <span className="font-mono font-bold text-[#009388]">
-                                  {selectedGraphEntity.data.noKk}
+                                  {formatMaskedNik(selectedGraphEntity.data.noKk, maskSensitiveData)}
                                 </span>
                               </div>
                             </>
@@ -3875,7 +4098,7 @@ export default function MasterPanelPage() {
                               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                                 <span className="text-slate-400 text-[10px] block">Nomor Kartu Keluarga</span>
                                 <span className="font-mono font-bold text-slate-900 text-xs">
-                                  {selectedGraphEntity.data.noKk}
+                                  {formatMaskedNik(selectedGraphEntity.data.noKk, maskSensitiveData)}
                                 </span>
                               </div>
                               <div className="grid grid-cols-2 gap-2">
@@ -4847,24 +5070,66 @@ export default function MasterPanelPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">Nomor Kartu Keluarga (KK)</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-slate-700">Nomor Kartu Keluarga (KK) <span className="text-red-500">*</span></label>
+                      <span className={`text-[10px] font-mono font-bold ${
+                        editingSensus.noKk.length === 16 && /^\d+$/.test(editingSensus.noKk)
+                          ? "text-emerald-600"
+                          : "text-amber-600"
+                      }`}>
+                        {editingSensus.noKk.length}/16 Digit
+                      </span>
+                    </div>
                     <input
                       type="text"
+                      maxLength={16}
                       value={editingSensus.noKk}
-                      onChange={(e) => setEditingSensus({ ...editingSensus, noKk: e.target.value })}
+                      onChange={(e) => setEditingSensus({ ...editingSensus, noKk: e.target.value.replace(/\D/g, "") })}
                       placeholder="16 digit No KK"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono focus:ring-2 focus:ring-[#009388]"
                     />
+                    <div className="mt-1 text-[10px]">
+                      {editingSensus.noKk.length === 16 ? (
+                        <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                          <Check className="w-3 h-3" /> 16 digit angka valid
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">
+                          Format 16 digit angka sesuai blanko KK
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div>
-                    <label className="block text-[11px] font-bold text-slate-700 mb-1">NIK Kepala Keluarga</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-bold text-slate-700">NIK Kepala Keluarga</label>
+                      <span className={`text-[10px] font-mono font-bold ${
+                        editingSensus.nikKepalaKeluarga.length === 16 && /^\d+$/.test(editingSensus.nikKepalaKeluarga)
+                          ? "text-emerald-600"
+                          : "text-amber-600"
+                      }`}>
+                        {editingSensus.nikKepalaKeluarga.length}/16 Digit
+                      </span>
+                    </div>
                     <input
                       type="text"
+                      maxLength={16}
                       value={editingSensus.nikKepalaKeluarga}
-                      onChange={(e) => setEditingSensus({ ...editingSensus, nikKepalaKeluarga: e.target.value })}
+                      onChange={(e) => setEditingSensus({ ...editingSensus, nikKepalaKeluarga: e.target.value.replace(/\D/g, "") })}
                       placeholder="16 digit NIK"
-                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono"
+                      className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono focus:ring-2 focus:ring-[#009388]"
                     />
+                    <div className="mt-1 text-[10px]">
+                      {editingSensus.nikKepalaKeluarga.length === 16 ? (
+                        <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                          <Check className="w-3 h-3" /> 16 digit angka valid
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">
+                          Format 16 digit angka KTP-el
+                        </span>
+                      )}
+                    </div>
                   </div>
                   <div>
                     <label className="block text-[11px] font-bold text-slate-700 mb-1">Nama Lengkap Kepala Keluarga</label>
@@ -5254,20 +5519,29 @@ export default function MasterPanelPage() {
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      NIK (16 Digit) <span className="text-red-500">*</span>
-                      {isEditingResidentExisting && (
-                        <span className="ml-1.5 text-[9px] font-bold text-amber-700 bg-amber-100/80 px-1.5 py-0.5 rounded">
-                          Terkunci (Primary Key)
-                        </span>
-                      )}
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-semibold text-slate-700">
+                        NIK (16 Digit) <span className="text-red-500">*</span>
+                        {isEditingResidentExisting && (
+                          <span className="ml-1.5 text-[9px] font-bold text-amber-700 bg-amber-100/80 px-1.5 py-0.5 rounded">
+                            Terkunci (Primary Key)
+                          </span>
+                        )}
+                      </label>
+                      <span className={`text-[10px] font-mono font-bold ${
+                        editingResident.nik.length === 16 && /^\d+$/.test(editingResident.nik)
+                          ? "text-emerald-600"
+                          : "text-amber-600"
+                      }`}>
+                        {editingResident.nik.length}/16 Digit
+                      </span>
+                    </div>
                     <input
                       type="text"
                       maxLength={16}
                       disabled={isEditingResidentExisting}
                       value={editingResident.nik}
-                      onChange={(e) => setEditingResident({ ...editingResident, nik: e.target.value })}
+                      onChange={(e) => setEditingResident({ ...editingResident, nik: e.target.value.replace(/\D/g, "") })}
                       placeholder="320815..."
                       className={`w-full px-3 py-2 rounded-xl border font-mono ${
                         isEditingResidentExisting
@@ -5275,20 +5549,51 @@ export default function MasterPanelPage() {
                           : "bg-white border-slate-300 focus:ring-2 focus:ring-[#009388]"
                       }`}
                     />
+                    <div className="mt-1 text-[10px]">
+                      {editingResident.nik.length === 16 ? (
+                        <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                          <Check className="w-3 h-3" /> 16 digit angka valid (Standar KTP-el)
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">
+                          Wajib 16 digit angka sesuai fisik KTP / Akta
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-700 mb-1">
-                      Nomor Kartu Keluarga (No. KK) <span className="text-red-500">*</span>
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-[11px] font-semibold text-slate-700">
+                        Nomor Kartu Keluarga (No. KK) <span className="text-red-500">*</span>
+                      </label>
+                      <span className={`text-[10px] font-mono font-bold ${
+                        editingResident.noKk.length === 16 && /^\d+$/.test(editingResident.noKk)
+                          ? "text-emerald-600"
+                          : "text-amber-600"
+                      }`}>
+                        {editingResident.noKk.length}/16 Digit
+                      </span>
+                    </div>
                     <input
                       type="text"
                       maxLength={16}
                       value={editingResident.noKk}
-                      onChange={(e) => setEditingResident({ ...editingResident, noKk: e.target.value })}
+                      onChange={(e) => setEditingResident({ ...editingResident, noKk: e.target.value.replace(/\D/g, "") })}
                       placeholder="320815..."
                       className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono focus:ring-2 focus:ring-[#009388]"
                     />
+                    <div className="mt-1 text-[10px]">
+                      {editingResident.noKk.length === 16 ? (
+                        <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                          <Check className="w-3 h-3" /> 16 digit angka valid
+                        </span>
+                      ) : (
+                        <span className="text-slate-400">
+                          Wajib 16 digit angka sesuai blanko KK
+                        </span>
+                      )}
+                    </div>
                   </div>
 
                   <div className="sm:col-span-2">
@@ -5591,7 +5896,7 @@ export default function MasterPanelPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <span className="text-slate-500">Nomor Kartu Keluarga:</span>
-                  <div className="font-mono font-bold text-slate-900">{selectedSensusForPdf.noKk}</div>
+                  <div className="font-mono font-bold text-slate-900">{formatMaskedNik(selectedSensusForPdf.noKk, maskSensitiveData)}</div>
                 </div>
                 <div>
                   <span className="text-slate-500">Nama Kepala Keluarga:</span>
@@ -5860,8 +6165,8 @@ export default function MasterPanelPage() {
                         <tbody className="divide-y divide-slate-100">
                           {importParsedResidents.slice(0, 10).map((r, i) => (
                             <tr key={i} className="hover:bg-slate-50">
-                              <td className="py-2 px-3 font-mono font-bold text-slate-900">{r.nik}</td>
-                              <td className="py-2 px-3 font-mono text-slate-500">{r.noKk}</td>
+                              <td className="py-2 px-3 font-mono font-bold text-slate-900">{formatMaskedNik(r.nik, maskSensitiveData)}</td>
+                              <td className="py-2 px-3 font-mono text-slate-500">{formatMaskedNik(r.noKk, maskSensitiveData)}</td>
                               <td className="py-2 px-3 font-semibold text-slate-800">{r.nama}</td>
                               <td className="py-2 px-3">{r.jenisKelamin === "Laki-laki" ? "L" : "P"}</td>
                               <td className="py-2 px-3">{r.hubunganKeluarga}</td>
@@ -5886,9 +6191,9 @@ export default function MasterPanelPage() {
                         <tbody className="divide-y divide-slate-100">
                           {importParsedSensus.slice(0, 10).map((s, i) => (
                             <tr key={i} className="hover:bg-slate-50">
-                              <td className="py-2 px-3 font-mono font-bold text-slate-900">{s.no_kk}</td>
+                              <td className="py-2 px-3 font-mono font-bold text-slate-900">{formatMaskedNik(s.no_kk, maskSensitiveData)}</td>
                               <td className="py-2 px-3 font-semibold text-slate-800">{s.nama_kepala_keluarga}</td>
-                              <td className="py-2 px-3 font-mono text-slate-500">{s.nik_kepala_keluarga}</td>
+                              <td className="py-2 px-3 font-mono text-slate-500">{formatMaskedNik(s.nik_kepala_keluarga, maskSensitiveData)}</td>
                               <td className="py-2 px-3">{s.dusun} RT {s.rt}/{s.rw}</td>
                               <td className="py-2 px-3">{s.jumlah_anggota} Jiwa</td>
                               <td className="py-2 px-3 font-bold text-[#009388]">Desil {s.desil}</td>
@@ -6955,7 +7260,7 @@ export default function MasterPanelPage() {
                 <>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Nomor KK:</span>
-                    <span className="font-mono font-bold text-slate-800">{deleteModal.sensusItem.noKk}</span>
+                    <span className="font-mono font-bold text-slate-800">{formatMaskedNik(deleteModal.sensusItem.noKk, maskSensitiveData)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Kepala Keluarga:</span>
@@ -6972,7 +7277,7 @@ export default function MasterPanelPage() {
                 <>
                   <div className="flex justify-between">
                     <span className="text-slate-400">NIK Warga:</span>
-                    <span className="font-mono font-bold text-slate-800">{deleteModal.residentItem.nik}</span>
+                    <span className="font-mono font-bold text-slate-800">{formatMaskedNik(deleteModal.residentItem.nik, maskSensitiveData)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-slate-400">Nama Lengkap:</span>
@@ -6981,7 +7286,7 @@ export default function MasterPanelPage() {
                   <div className="flex justify-between">
                     <span className="text-slate-400">Nomor KK / Wilayah:</span>
                     <span className="font-semibold text-slate-700">
-                      KK: {deleteModal.residentItem.noKk} (Dusun {deleteModal.residentItem.dusun})
+                      KK: {formatMaskedNik(deleteModal.residentItem.noKk, maskSensitiveData)} (Dusun {deleteModal.residentItem.dusun})
                     </span>
                   </div>
                 </>
