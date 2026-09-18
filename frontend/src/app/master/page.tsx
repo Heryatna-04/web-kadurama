@@ -46,7 +46,10 @@ import {
   Trash2,
   Check,
   Printer,
+  ChevronLeft,
   ChevronRight,
+  ChevronsLeft,
+  ChevronsRight,
   Building2,
   FileSpreadsheet,
   AlertTriangle,
@@ -63,6 +66,132 @@ import {
   Info,
   Mail,
 } from "lucide-react";
+
+// ----------------------------------------------------------------------------
+// KOMPONEN KONTROL PAGINASI TABEL MASTER TERPADU
+// ----------------------------------------------------------------------------
+function PaginationControls({
+  currentPage,
+  totalPages,
+  pageSize,
+  totalItems,
+  onPageChange,
+  onPageSizeChange,
+  itemLabel = "data",
+}: {
+  currentPage: number;
+  totalPages: number;
+  pageSize: number;
+  totalItems: number;
+  onPageChange: (page: number) => void;
+  onPageSizeChange: (size: number) => void;
+  itemLabel?: string;
+}) {
+  const startItem = totalItems === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const endItem = Math.min(currentPage * pageSize, totalItems);
+
+  const getPageNumbers = () => {
+    if (totalPages <= 7) {
+      return Array.from({ length: totalPages }, (_, i) => i + 1);
+    }
+    if (currentPage <= 3) {
+      return [1, 2, 3, 4, "...", totalPages];
+    }
+    if (currentPage >= totalPages - 2) {
+      return [1, "...", totalPages - 3, totalPages - 2, totalPages - 1, totalPages];
+    }
+    return [1, "...", currentPage - 1, currentPage, currentPage + 1, "...", totalPages];
+  };
+
+  return (
+    <div className="px-4 py-3 bg-white border-t border-slate-200 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-600">
+      <div className="flex items-center gap-3">
+        <span>
+          Menampilkan{" "}
+          <strong className="text-slate-900 font-semibold">{startItem}</strong> -{" "}
+          <strong className="text-slate-900 font-semibold">{endItem}</strong> dari{" "}
+          <strong className="text-slate-900 font-semibold">{totalItems.toLocaleString("id-ID")}</strong>{" "}
+          {itemLabel}
+        </span>
+
+        <div className="flex items-center gap-1.5 pl-3 border-l border-slate-200">
+          <span className="text-slate-400">Baris:</span>
+          <select
+            value={pageSize}
+            onChange={(e) => {
+              onPageSizeChange(Number(e.target.value));
+              onPageChange(1);
+            }}
+            className="px-2 py-1 bg-slate-50 border border-slate-200 rounded-lg text-slate-700 font-semibold focus:outline-hidden focus:ring-2 focus:ring-[#009388]"
+          >
+            <option value={10}>10</option>
+            <option value={20}>20</option>
+            <option value={50}>50</option>
+            <option value={100}>100</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="flex items-center gap-1">
+        <button
+          onClick={() => onPageChange(1)}
+          disabled={currentPage <= 1}
+          className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition"
+          title="Halaman Pertama"
+        >
+          <ChevronsLeft className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage <= 1}
+          className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition"
+          title="Halaman Sebelumnya"
+        >
+          <ChevronLeft className="w-3.5 h-3.5" />
+        </button>
+
+        <div className="flex items-center gap-1 mx-1">
+          {getPageNumbers().map((p, idx) =>
+            p === "..." ? (
+              <span key={`ellipsis-${idx}`} className="px-2 text-slate-400 select-none">
+                ...
+              </span>
+            ) : (
+              <button
+                key={`page-${p}`}
+                onClick={() => onPageChange(Number(p))}
+                className={`min-w-[30px] h-[30px] px-2 rounded-lg text-xs font-semibold transition ${
+                  currentPage === p
+                    ? "bg-[#009388] text-white shadow-xs font-bold"
+                    : "border border-slate-200 text-slate-700 hover:bg-slate-50"
+                }`}
+              >
+                {p}
+              </button>
+            )
+          )}
+        </div>
+
+        <button
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage >= totalPages}
+          className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition"
+          title="Halaman Selanjutnya"
+        >
+          <ChevronRight className="w-3.5 h-3.5" />
+        </button>
+        <button
+          onClick={() => onPageChange(totalPages)}
+          disabled={currentPage >= totalPages}
+          className="p-1.5 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100 disabled:opacity-30 disabled:hover:bg-transparent disabled:cursor-not-allowed transition"
+          title="Halaman Terakhir"
+        >
+          <ChevronsRight className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function MasterPanelPage() {
   const router = useRouter();
@@ -234,6 +363,22 @@ export default function MasterPanelPage() {
 
   const [residentDusunFilter, setResidentDusunFilter] = useState<string>("all");
   const [residentSearch, setResidentSearch] = useState("");
+
+  // Paginasi Sensus Keluarga & Master Penduduk
+  const [sensusPage, setSensusPage] = useState<number>(1);
+  const [sensusPageSize, setSensusPageSize] = useState<number>(20);
+
+  const [residentPage, setResidentPage] = useState<number>(1);
+  const [residentPageSize, setResidentPageSize] = useState<number>(20);
+
+  // Reset halaman saat filter/pencarian berubah
+  useEffect(() => {
+    setSensusPage(1);
+  }, [sensusDusunFilter, sensusDesilFilter, sensusSearch]);
+
+  useEffect(() => {
+    setResidentPage(1);
+  }, [residentDusunFilter, residentSearch]);
 
   // Modals
   const [isSensusModalOpen, setIsSensusModalOpen] = useState(false);
@@ -1878,6 +2023,21 @@ export default function MasterPanelPage() {
     return matchDusun && matchSearch;
   });
 
+  // Kalkulasi Halaman & Paginasi
+  const totalSensusPages = Math.max(1, Math.ceil(filteredSensus.length / sensusPageSize));
+  const currentSensusPage = Math.min(sensusPage, totalSensusPages);
+  const paginatedSensus = useMemo(() => {
+    const start = (currentSensusPage - 1) * sensusPageSize;
+    return filteredSensus.slice(start, start + sensusPageSize);
+  }, [filteredSensus, currentSensusPage, sensusPageSize]);
+
+  const totalResidentPages = Math.max(1, Math.ceil(filteredResidents.length / residentPageSize));
+  const currentResidentPage = Math.min(residentPage, totalResidentPages);
+  const paginatedResidents = useMemo(() => {
+    const start = (currentResidentPage - 1) * residentPageSize;
+    return filteredResidents.slice(start, start + residentPageSize);
+  }, [filteredResidents, currentResidentPage, residentPageSize]);
+
   // KPI Metrics Sensus
   const totalKk = sensusList.length;
   const desil1Count = sensusList.filter((s) => s.desil === 1).length;
@@ -2448,7 +2608,7 @@ export default function MasterPanelPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {filteredSensus.map((item) => (
+                        {paginatedSensus.map((item) => (
                           <tr key={item.id} className="hover:bg-slate-50/70 transition">
                             <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
                               <div>{item.noKk}</div>
@@ -2507,6 +2667,19 @@ export default function MasterPanelPage() {
                             <td className="py-3.5 px-4 text-right">
                               <div className="flex items-center justify-end gap-1.5">
                                 <button
+                                  onClick={() => {
+                                    setSelectedRelasiKkNo(item.noKk);
+                                    setSelectedGraphEntity({ type: "KK", data: item });
+                                    setRelasiSubView("tree");
+                                    setActiveTab("relasi");
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                  }}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-[#009388] hover:bg-[#e6f7f5] transition"
+                                  title="Lihat Pohon Silsilah & Peta Relasi KK"
+                                >
+                                  <Eye className="w-4 h-4 text-[#009388]" />
+                                </button>
+                                <button
                                   onClick={() => setSelectedSensusForPdf(item)}
                                   className="p-1.5 rounded-lg text-slate-500 hover:text-[#009388] hover:bg-[#e6f7f5] transition"
                                   title="Cetak Profil Lembar KK"
@@ -2543,6 +2716,17 @@ export default function MasterPanelPage() {
                       </tbody>
                     </table>
                   </div>
+                )}
+                {filteredSensus.length > 0 && (
+                  <PaginationControls
+                    currentPage={currentSensusPage}
+                    totalPages={totalSensusPages}
+                    pageSize={sensusPageSize}
+                    totalItems={filteredSensus.length}
+                    onPageChange={setSensusPage}
+                    onPageSizeChange={setSensusPageSize}
+                    itemLabel="Kepala Keluarga"
+                  />
                 )}
               </div>
             </div>
@@ -2665,7 +2849,7 @@ export default function MasterPanelPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-100">
-                        {filteredResidents.map((res) => (
+                        {paginatedResidents.map((res) => (
                           <tr key={res.nik} className="hover:bg-slate-50/70 transition">
                             <td className="py-3.5 px-4 font-mono font-bold text-slate-900">
                               <div>{res.nik}</div>
@@ -2723,47 +2907,75 @@ export default function MasterPanelPage() {
                               )}
                             </td>
                             <td className="py-3.5 px-4 text-right">
-                              {canModify(res.dusun) ? (
-                                <div className="flex items-center justify-end gap-1.5">
-                                  <button
-                                    onClick={() => {
-                                      setIsEditingResidentExisting(true);
-                                      setEditingResident({
-                                        ...res,
-                                        ttl: res.ttl || "Kuningan, ",
-                                        jenisKelamin: res.jenisKelamin || "Laki-laki",
-                                        pekerjaan: res.pekerjaan || "Wiraswasta",
-                                        agama: res.agama || "Islam",
-                                        statusPerkawinan: res.statusPerkawinan || "Kawin",
-                                        hubunganKeluarga: res.hubunganKeluarga || "Kepala Keluarga",
-                                        alamat: res.alamat || `Dusun ${res.dusun} RT ${res.rt} / RW ${res.rw}`,
-                                        status: res.status || "Warga Tetap",
-                                        syncStatus: res.syncStatus || "Tersinkronisasi",
-                                      });
-                                      setIsResidentModalOpen(true);
-                                    }}
-                                    className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition"
-                                    title="Edit Data Warga"
-                                  >
-                                    <Edit3 className="w-4 h-4" />
-                                  </button>
-                                  <button
-                                    onClick={() => handleSoftDeleteResident(res)}
-                                    className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition"
-                                    title="Hapus / Arsipkan Warga"
-                                  >
-                                    <Trash2 className="w-4 h-4" />
-                                  </button>
-                                </div>
-                              ) : (
-                                <span className="text-[10px] text-slate-400 italic">Read-Only</span>
-                              )}
+                              <div className="flex items-center justify-end gap-1.5">
+                                <button
+                                  onClick={() => {
+                                    if (res.noKk) {
+                                      setSelectedRelasiKkNo(res.noKk);
+                                    }
+                                    setSelectedGraphEntity({ type: "KTP", data: res });
+                                    setRelasiSubView("tree");
+                                    setActiveTab("relasi");
+                                    window.scrollTo({ top: 0, behavior: "smooth" });
+                                  }}
+                                  className="p-1.5 rounded-lg text-slate-500 hover:text-[#009388] hover:bg-[#e6f7f5] transition"
+                                  title="Lihat Pohon Silsilah & Relasi Warga"
+                                >
+                                  <Eye className="w-4 h-4 text-[#009388]" />
+                                </button>
+                                {canModify(res.dusun) ? (
+                                  <>
+                                    <button
+                                      onClick={() => {
+                                        setIsEditingResidentExisting(true);
+                                        setEditingResident({
+                                          ...res,
+                                          ttl: res.ttl || "Kuningan, ",
+                                          jenisKelamin: res.jenisKelamin || "Laki-laki",
+                                          pekerjaan: res.pekerjaan || "Wiraswasta",
+                                          agama: res.agama || "Islam",
+                                          statusPerkawinan: res.statusPerkawinan || "Kawin",
+                                          hubunganKeluarga: res.hubunganKeluarga || "Kepala Keluarga",
+                                          alamat: res.alamat || `Dusun ${res.dusun} RT ${res.rt} / RW ${res.rw}`,
+                                          status: res.status || "Warga Tetap",
+                                          syncStatus: res.syncStatus || "Tersinkronisasi",
+                                        });
+                                        setIsResidentModalOpen(true);
+                                      }}
+                                      className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition"
+                                      title="Edit Data Warga"
+                                    >
+                                      <Edit3 className="w-4 h-4" />
+                                    </button>
+                                    <button
+                                      onClick={() => handleSoftDeleteResident(res)}
+                                      className="p-1.5 rounded-lg text-slate-500 hover:text-red-600 hover:bg-red-50 transition"
+                                      title="Hapus / Arsipkan Warga"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </button>
+                                  </>
+                                ) : (
+                                  <span className="text-[10px] text-slate-400 italic">Read-Only</span>
+                                )}
+                              </div>
                             </td>
                           </tr>
                         ))}
                       </tbody>
                     </table>
                   </div>
+                )}
+                {filteredResidents.length > 0 && (
+                  <PaginationControls
+                    currentPage={currentResidentPage}
+                    totalPages={totalResidentPages}
+                    pageSize={residentPageSize}
+                    totalItems={filteredResidents.length}
+                    onPageChange={setResidentPage}
+                    onPageSizeChange={setResidentPageSize}
+                    itemLabel="Warga"
+                  />
                 )}
               </div>
             </div>
