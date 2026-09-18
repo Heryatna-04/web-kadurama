@@ -34,15 +34,15 @@ Dokumen ini berisi daftar akun resmi dan kredensial default untuk mengakses **Pa
 1. **Master (`master`):**
    * Akses penuh ke seluruh modul sensus, keuangan APBDes, berita, agenda, pengumuman, log audit, dan manajemen data.
 2. **Sekretaris Desa (`sekdes`):**
-   * Akses verifikasi sensus kependudukan, pengesahan dokumen, tata kelola persuratan, dan transparansi anggaran.
+   * Akses verifikasi sensus kependudukan, pengawasan master data warga, monitoring APBDes, dan publikasi warta desa.
 3. **Kepala Dusun (`kadus`):**
-   * Dibatasi hanya untuk melihat, mengedit, dan memverifikasi data keluarga & warga di **wilayah dusun masing-masing** (Pahing / Wage / Manis).
+   * Dibatasi hanya untuk melihat, mengedit, dan memverifikasi data keluarga & warga di **wilayah dusun masing-masing** (Pahing / Wage / Manis), verifikasi kelayakan rumah (RTLH), serta pemantauan PBB.
 4. **Kaur Keuangan (`keuangan`):**
-   * Fokus pada pembukuan PBB, status pelunasan pajak warga, dan realisasi penyerapan anggaran APBDes.
+   * Pengelolaan APBDes 2026, input pos rincian kegiatan belanja, pencatatan realisasi kas riil, dan penerimaan pendapatan desa.
 5. **Kasi Kesra (`kesra`):**
    * Pemetaan desil kemiskinan warga, keluarga rentan (RTLH, lansia tunggal, balita stunting), dan verifikasi penerima bansos (PKH, BPNT, BLT-DD).
 6. **Operator (`operator`):**
-   * Input dan update harian administrasi kependudukan dan surat pengantar warga.
+   * Entri dan update harian sensus kependudukan warga, publikasi berita, pengumuman warga, dan agenda balai desa.
 
 ---
 

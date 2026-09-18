@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Daftar Akun Pamong & Operator Desa Kadurama 2026</title>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 10mm;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      background-color: #0b1329;
+      color: #f1f5f9;
+      padding: 30px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    .toolbar {
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      justify-content: flex-end;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .btn {
+      background: #009388;
+      color: white;
+      border: none;
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      transition: opacity 0.2s;
+    }
+    .btn:hover {
+      opacity: 0.9;
+    }
+    .btn-secondary {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+    .card {
+      width: 100%;
+      max-width: 1100px;
+      background: linear-gradient(180deg, #0d1e2b 0%, #0f172a 100%);
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 32px 36px;
+      box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+      position: relative;
+      overflow: hidden;
+    }
+    .card::before {
+      content: "";
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: #009388;
+    }
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 24px;
+    }
+    .header-left {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .logo {
+      width: 44px;
+      height: 52px;
+      object-fit: contain;
+    }
+    .village-name {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: #f8fafc;
+    }
+    .village-sub {
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .status-badge {
+      background: #064e3b;
+      border: 1px solid #10b981;
+      color: #a7f3d0;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 12px;
+      border-radius: 20px;
+      letter-spacing: 0.5px;
+    }
+    .title-section {
+      margin-bottom: 20px;
+    }
+    .title {
+      font-size: 26px;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 12px;
+    }
+    .url-bar {
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+    }
+    .url-label {
+      color: #94a3b8;
+    }
+    .url-link {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      color: #2dd4bf;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .url-redirect {
+      color: #e2e8f0;
+      margin-left: auto;
+      font-size: 12px;
+    }
+    table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 0 4px;
+      margin-bottom: 20px;
+      font-size: 13px;
+    }
+    th {
+      background: transparent;
+      color: #94a3b8;
+      font-size: 11px;
+      font-weight: 700;
+      text-align: left;
+      padding: 8px 12px;
+      letter-spacing: 0.5px;
+    }
+    th.center, td.center {
+      text-align: center;
+    }
+    tr.account-row td {
+      background: #1e293b;
+      border-top: 1px solid #334155;
+      border-bottom: 1px solid #334155;
+      padding: 10px 12px;
+      vertical-align: middle;
+    }
+    tr.account-row td:first-child {
+      border-left: 1px solid #334155;
+      border-top-left-radius: 8px;
+      border-bottom-left-radius: 8px;
+    }
+    tr.account-row td:last-child {
+      border-right: 1px solid #334155;
+      border-top-right-radius: 8px;
+      border-bottom-right-radius: 8px;
+    }
+    .name-main {
+      font-weight: 700;
+      color: #ffffff;
+    }
+    .name-sub {
+      font-size: 11px;
+      color: #94a3b8;
+    }
+    .email-code {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #0f172a;
+      border: 1px solid #475569;
+      color: #38bdf8;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      display: inline-block;
+    }
+    .pwd-badge {
+      font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+      background: #064e3b;
+      border: 1px solid #10b981;
+      color: #a7f3d0;
+      padding: 4px 10px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 12px;
+      display: inline-block;
+    }
+    .scope-text {
+      color: #cbd5e1;
+      font-size: 12px;
+    }
+    .notice-box {
+      background: #131c2e;
+      border: 1px solid #334155;
+      border-left: 4px solid #009388;
+      border-radius: 8px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+    }
+    .notice-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #f8fafc;
+      margin-bottom: 6px;
+    }
+    .notice-list {
+      font-size: 12px;
+      color: #94a3b8;
+      line-height: 1.6;
+      list-style: none;
+    }
+    .notice-list li span {
+      color: #e2e8f0;
+      font-weight: 600;
+    }
+    .footer {
+      border-top: 1px solid #334155;
+      padding-top: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 12px;
+      color: #94a3b8;
+    }
+    .footer-brand {
+      color: #2dd4bf;
+      font-weight: 700;
+    }
+    @media print {
+      body {
+        background: #ffffff;
+        color: #0f172a;
+        padding: 0;
+      }
+      .toolbar {
+        display: none;
+      }
+      .card {
+        background: #ffffff;
+        border: 1px solid #cbd5e1;
+        box-shadow: none;
+        padding: 20px;
+      }
+      .title, .village-name, .name-main {
+        color: #0f172a;
+      }
+      .url-bar, tr.account-row td {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+      }
+      .email-code {
+        background: #f1f5f9;
+        color: #0284c7;
+        border-color: #cbd5e1;
+      }
+      .pwd-badge {
+        background: #ecfdf5;
+        border-color: #a7f3d0;
+        color: #047857;
+      }
+      .scope-text, .notice-list {
+        color: #334155;
+      }
+      .notice-box {
+        background: #f8fafc;
+        border-color: #cbd5e1;
+        border-left-color: #009388;
+      }
+      .notice-title {
+        color: #0f172a;
+      }
+      .footer {
+        border-color: #e2e8f0;
+        color: #64748b;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="toolbar">
+    <button class="btn" onclick="window.print()">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"></polyline><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><rect x="6" y="14" width="12" height="8"></rect></svg>
+      Cetak / Simpan PDF (window.print)
+    </button>
+    <a href="/penyerahan_akun_desa_kadurama.jpg" download="penyerahan_akun_desa_kadurama.jpg" class="btn btn-secondary">
+      Unduh Gambar JPG
+    </a>
+  </div>
+
+  <div class="card">
+    <div class="header">
+      <div class="header-left">
+        <img src="/logo-kuningan.png" alt="Logo Kuningan" class="logo" onerror="this.src='/logo-kuningan-sm.webp'">
+        <div>
+          <div class="village-name">PEMERINTAH DESA KADURAMA</div>
+          <div class="village-sub">KECAMATAN CIAWIGEBANG, KABUPATEN KUNINGAN</div>
+        </div>
+      </div>
+      <div class="status-badge">AKUN RESMI AKTIF 2026</div>
+    </div>
+
+    <div class="title-section">
+      <h1 class="title">Daftar Akun Pamong & Operator Desa</h1>
+      <div class="url-bar">
+        <span class="url-label">Portal Login:</span>
+        <a href="https://kadurama.desa.id/login" target="_blank" class="url-link">https://kadurama.desa.id/login</a>
+        <span class="url-redirect">&rarr; Otomatis Masuk ke Panel Kendali: <strong>/master</strong></span>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th class="center" style="width: 40px;">NO</th>
+          <th style="width: 230px;">NAMA & JABATAN APARATUR</th>
+          <th style="width: 250px;">EMAIL LOGIN (USER ID)</th>
+          <th class="center" style="width: 140px;">KATA SANDI</th>
+          <th>WEWENANG & TUGAS SISTEM</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr class="account-row">
+          <td class="center">1</td>
+          <td>
+            <div class="name-main">Sumiati, SE</div>
+            <div class="name-sub">Sekretaris Desa</div>
+          </td>
+          <td><span class="email-code">sekdes@kadurama.com</span></td>
+          <td class="center"><span class="pwd-badge">kadurama2026</span></td>
+          <td class="scope-text">Master data kependudukan, validasi sensus warga, pantau APBDes & warta</td>
+        </tr>
+        <tr class="account-row">
+          <td class="center">2</td>
+          <td>
+            <div class="name-main">Trida Sentosa</div>
+            <div class="name-sub">Kepala Dusun I Pahing</div>
+          </td>
+          <td><span class="email-code">kadus.pahing@kadurama.com</span></td>
+          <td class="center"><span class="pwd-badge">kadurama2026</span></td>
+          <td class="scope-text">Sensus KK Dusun Pahing, verifikasi kelayakan RTLH & setor PBB</td>
+        </tr>
+        <tr class="account-row">
+          <td class="center">3</td>
+          <td>
+            <div class="name-main">Andri Rukmana</div>
+            <div class="name-sub">Kepala Dusun II Wage</div>
+          </td>
+          <td><span class="email-code">kadus.wage@kadurama.com</span></td>
+          <td class="center"><span class="pwd-badge">kadurama2026</span></td>
+          <td class="scope-text">Sensus KK Dusun Wage, verifikasi kelayakan RTLH & setor PBB</td>
+        </tr>
+        <tr class="account-row">
+          <td class="center">4</td>
+          <td>
+            <div class="name-main">Jamaludin</div>
+            <div class="name-sub">Kepala Dusun III Manis</div>
+          </td>
+          <td><span class="email-code">kadus.manis@kadurama.com</span></td>
+          <td class="center"><span class="pwd-badge">kadurama2026</span></td>
+          <td class="scope-text">Sensus KK Dusun Manis, verifikasi kelayakan RTLH & setor PBB</td>
+        </tr>
+        <tr class="account-row">
+          <td class="center">5</td>
+          <td>
+            <div class="name-main">Leni Sumiati</div>
+            <div class="name-sub">Kaur Keuangan</div>
+          </td>
+          <td><span class="email-code">keuangan@kadurama.com</span></td>
+          <td class="center"><span class="pwd-badge">kadurama2026</span></td>
+          <td class="scope-text">Pengelolaan APBDes 2026, pos kegiatan belanja, catat kas & pendapatan</td>
+        </tr>
+        <tr class="account-row">
+          <td class="center">6</td>
+          <td>
+            <div class="name-main">Ayub Suhandi</div>
+            <div class="name-sub">Kasi Kesejahteraan</div>
+          </td>
+          <td><span class="email-code">kesra@kadurama.com</span></td>
+          <td class="center"><span class="pwd-badge">kadurama2026</span></td>
+          <td class="scope-text">Pemantauan penerima bansos (PKH/BPNT) & verifikasi desil miskin ekstrem</td>
+        </tr>
+        <tr class="account-row">
+          <td class="center">7</td>
+          <td>
+            <div class="name-main">Operator Balai Desa</div>
+            <div class="name-sub">Staf Administrasi</div>
+          </td>
+          <td><span class="email-code">operator@kadurama.com</span></td>
+          <td class="center"><span class="pwd-badge">kadurama2026</span></td>
+          <td class="scope-text">Entri sensus & data warga, publikasi berita, pengumuman, & agenda desa</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="notice-box">
+      <div class="notice-title">Ketentuan Operasional & Akses Sistem:</div>
+      <ul class="notice-list">
+        <li>1. <span>Alamat Akses:</span> Masuk melalui peramban pada halaman <code>/login</code>. Setelah autentikasi berhasil, sistem langsung membuka dashboard kerja <code>/master</code>.</li>
+        <li>2. <span>Keseragaman Sandi:</span> Seluruh 7 akun pamong telah diseragamkan ke sandi awal: <code>kadurama2026</code>. Mohon ganti kata sandi secara mandiri setelah login pertama.</li>
+        <li>3. <span>Kerahasiaan:</span> Akun hanya untuk aparatur bersangkutan. Setiap perubahan data dan persuratan terekam otomatis di Jejak Audit (Audit Trail).</li>
+      </ul>
+    </div>
+
+    <div class="footer">
+      <div>
+        Tim Pengembang: <span class="footer-brand">Gemilang Labs</span> &bull; Sistem Informasi & Transparansi Tata Kelola Desa Kadurama 2026
+      </div>
+      <div>Dokumentasi Penyerahan Akun Resmi</div>
+    </div>
+  </div>
+
+</body>
+</html>
