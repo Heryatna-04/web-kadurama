@@ -24,6 +24,9 @@ import {
   GitFork,
   Heart,
   PieChart,
+  Layers,
+  TrendingUp,
+  Wallet,
   Newspaper,
   Bell,
   Calendar,
@@ -381,37 +384,38 @@ export default function MasterPanelPage() {
     status: "Akan Datang",
   });
 
-  // APBDes states & Siklus Anggaran Permendagri No. 20/2018
+  // APBDes states & Mode Input Toggle (Pagu vs Realisasi)
   const [apbdesList, setApbdesList] = useState<any[]>([]);
-  const [showApbdesGuide, setShowApbdesGuide] = useState(true);
+  const [apbdesInputMode, setApbdesInputMode] = useState<"pagu" | "realisasi">("realisasi");
+  const [sectorEditMode, setSectorEditMode] = useState<"pagu" | "realisasi">("realisasi");
   const [apbdesSummary, setApbdesSummary] = useState<any>({
     tahun: 2026,
-    total_pendapatan: 1488500000,
-    total_belanja: 1445000000,
-    total_realisasi_belanja: 1148782000,
-    persen_realisasi_belanja: 79.5,
-    surplus_defisit: 43500000,
-    silpa_tahun_lalu: 28400000,
+    total_pendapatan: 898152227,
+    total_belanja: 856452227,
+    total_realisasi_belanja: 0,
+    persen_realisasi_belanja: 0,
+    surplus_defisit: 41700000,
+    silpa_tahun_lalu: 0,
     tahap_anggaran: "APBDes Murni",
     periode_pelaporan: "Realisasi Semester I (Januari - Juni)",
     nomor_perdes: "Peraturan Desa Kadurama No. 04 Tahun 2025",
     tanggal_penetapan: "30 Desember 2025",
-    catatan_keuangan: "Realisasi berjalan sesuai SPP Dana Desa & ADD per triwulan.",
+    catatan_keuangan: "Realisasi kas berjalan TA 2026.",
   });
   const [isEditSummaryModalOpen, setIsEditSummaryModalOpen] = useState(false);
   const [summaryForm, setSummaryForm] = useState<any>({
     tahun: 2026,
-    total_pendapatan: 1488500000,
-    total_belanja: 1445000000,
-    total_realisasi_belanja: 1148782000,
-    persen_realisasi_belanja: 79.5,
-    surplus_defisit: 43500000,
-    silpa_tahun_lalu: 28400000,
+    total_pendapatan: 898152227,
+    total_belanja: 856452227,
+    total_realisasi_belanja: 0,
+    persen_realisasi_belanja: 0,
+    surplus_defisit: 41700000,
+    silpa_tahun_lalu: 0,
     tahap_anggaran: "APBDes Murni",
     periode_pelaporan: "Realisasi Semester I (Januari - Juni)",
     nomor_perdes: "Peraturan Desa Kadurama No. 04 Tahun 2025",
     tanggal_penetapan: "30 Desember 2025",
-    catatan_keuangan: "Realisasi berjalan sesuai SPP Dana Desa & ADD per triwulan.",
+    catatan_keuangan: "Realisasi kas berjalan TA 2026.",
   });
   const [isEditSectorModalOpen, setIsEditSectorModalOpen] = useState(false);
   const [editingSector, setEditingSector] = useState<any | null>(null);
@@ -425,6 +429,44 @@ export default function MasterPanelPage() {
   });
   const [isSubmittingApbdes, setIsSubmittingApbdes] = useState(false);
   const [expandedSectorId, setExpandedSectorId] = useState<number | null>(null);
+
+  // APBDes Tab Section: "belanja" (5 Bidang) vs "pendapatan" (Sumber Pendapatan)
+  const [apbdesActiveSection, setApbdesActiveSection] = useState<"belanja" | "pendapatan">("belanja");
+
+  // Pendapatan States (apbdes_revenues)
+  const [revenueList, setRevenueList] = useState<any[]>([]);
+  const [isRevenueModalOpen, setIsRevenueModalOpen] = useState(false);
+  const [editingRevenue, setEditingRevenue] = useState<any | null>(null);
+  const [revenueForm, setRevenueForm] = useState({
+    kategori: "Transfer",
+    nama: "",
+    anggaran: 0,
+    realisasi: 0,
+    keterangan: "",
+  });
+
+  // Sub-Kegiatan CRUD States (Bottom-Up Activity-Based APBDes)
+  const [isSubKegiatanModalOpen, setIsSubKegiatanModalOpen] = useState(false);
+  const [selectedSectorForSub, setSelectedSectorForSub] = useState<any | null>(null);
+  const [editingSubIndex, setEditingSubIndex] = useState<number | null>(null);
+  const [subKegiatanForm, setSubKegiatanForm] = useState({
+    id: "",
+    nama: "",
+    anggaran: 0,
+    realisasi: 0,
+    keterangan: "",
+  });
+
+  // Quick Expense Record Modal for Sub-Kegiatan
+  const [isSubExpenseModalOpen, setIsSubExpenseModalOpen] = useState(false);
+  const [selectedSubForExpense, setSelectedSubForExpense] = useState<{
+    sector: any;
+    sub: any;
+    index: number;
+  } | null>(null);
+  const [subExpenseAmount, setSubExpenseAmount] = useState<number>(0);
+  const [subExpenseMode, setSubExpenseMode] = useState<"set" | "tambah">("set");
+  const [subExpenseNotes, setSubExpenseNotes] = useState<string>("");
 
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
   const [auditLogSearch, setAuditLogSearch] = useState<string>("");
@@ -654,8 +696,8 @@ export default function MasterPanelPage() {
         );
       }
 
-      // 3. APBDes Summary & Sectors
-      const [{ data: summaryData }, { data: apbdesData }] = await Promise.all([
+      // 3. APBDes Summary, Sectors & Revenues (TA 2026)
+      const [{ data: summaryData }, { data: apbdesData }, { data: revData }] = await Promise.all([
         supabase
           .from("apbdes_summary")
           .select("*")
@@ -667,6 +709,11 @@ export default function MasterPanelPage() {
           .eq("tahun", 2026)
           .eq("is_deleted", false)
           .order("id", { ascending: true }),
+        supabase
+          .from("apbdes_revenues")
+          .select("*")
+          .eq("tahun", 2026)
+          .order("id", { ascending: true }),
       ]);
       if (summaryData) {
         setApbdesSummary((prev: any) => ({ ...prev, ...summaryData }));
@@ -674,6 +721,9 @@ export default function MasterPanelPage() {
       }
       if (apbdesData) {
         setApbdesList(apbdesData);
+      }
+      if (revData) {
+        setRevenueList(revData);
       }
 
       // 4. News Articles
@@ -2471,8 +2521,9 @@ export default function MasterPanelPage() {
     }
   };
 
-  const handleOpenEditSector = (sector: any) => {
+  const handleOpenEditSector = (sector: any, mode?: "pagu" | "realisasi") => {
     setEditingSector(sector);
+    setSectorEditMode(mode || apbdesInputMode);
     setSectorForm({
       id: sector.id,
       nama: sector.nama,
@@ -2505,9 +2556,28 @@ export default function MasterPanelPage() {
       const { error } = await supabase
         .from("apbdes_sectors")
         .update(payload)
-        .eq("id", editingSector.id);
+        .eq("id", editingSector.id)
+        .eq("tahun", 2026);
 
       if (error) throw error;
+
+      // Auto-sinkronisasi ringkasan APBDes 2026 di Supabase dari akumulasi 5 bidang
+      const updatedList = apbdesList.map((s) => (s.id === editingSector.id ? { ...s, ...payload } : s));
+      const totalBelanjaCalc = updatedList.reduce((acc, s) => acc + (Number(s.pagu) || 0), 0);
+      const totalRealisasiCalc = updatedList.reduce((acc, s) => acc + (Number(s.realisasi) || 0), 0);
+      const serapanCalc = totalBelanjaCalc > 0 ? Number(((totalRealisasiCalc / totalBelanjaCalc) * 100).toFixed(1)) : 0;
+      const surplusCalc = (Number(apbdesSummary.total_pendapatan) || 898152227) - totalBelanjaCalc;
+
+      await supabase
+        .from("apbdes_summary")
+        .update({
+          total_belanja: totalBelanjaCalc,
+          total_realisasi_belanja: totalRealisasiCalc,
+          persen_realisasi_belanja: serapanCalc,
+          surplus_defisit: surplusCalc,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("tahun", 2026);
 
       await recordAuditLog({
         actor_email: currentUser?.email || "unknown",
@@ -2516,16 +2586,584 @@ export default function MasterPanelPage() {
         action: "UPDATE",
         entity_type: "apbdes_sectors",
         entity_id: String(editingSector.id),
-        description: `Memperbarui Bidang APBDes 0${editingSector.id} (${sectorForm.nama}): Realisasi Rp ${realisasi.toLocaleString("id-ID")} (${persen}%)`,
+        description: `Memperbarui Bidang APBDes 0${editingSector.id} (${sectorForm.nama}): Pagu Rp ${pagu.toLocaleString("id-ID")}, Realisasi Rp ${realisasi.toLocaleString("id-ID")} (${persen}%)`,
       });
 
       setIsEditSectorModalOpen(false);
-      showToast(`Bidang 0${editingSector.id} berhasil diperbarui!`);
+      showToast(`Bidang 0${editingSector.id} & Ringkasan berhasil disinkronkan!`);
       await fetchAllData();
     } catch (err: any) {
       alert(`Gagal memperbarui bidang: ${err.message || err}`);
     } finally {
       setIsSubmittingApbdes(false);
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // HANDLER SUB-KEGIATAN (BOTTOM-UP ACTIVITY-BASED APBDES CRUD & AUTO-SUM)
+  // --------------------------------------------------------------------------
+  const handleOpenAddSubKegiatan = (sector: any) => {
+    setSelectedSectorForSub(sector);
+    setEditingSubIndex(null);
+    setSubKegiatanForm({
+      id: `sub-${sector.id}-${Date.now().toString(36)}`,
+      nama: "",
+      anggaran: 0,
+      realisasi: 0,
+      keterangan: "",
+    });
+    setIsSubKegiatanModalOpen(true);
+  };
+
+  const handleOpenEditSubKegiatan = (sector: any, sub: any, index: number) => {
+    setSelectedSectorForSub(sector);
+    setEditingSubIndex(index);
+    setSubKegiatanForm({
+      id: sub.id || `sub-${sector.id}-${index + 1}`,
+      nama: sub.nama || "",
+      anggaran: Number(sub.anggaran) || 0,
+      realisasi: Number(sub.realisasi) || 0,
+      keterangan: sub.keterangan || "",
+    });
+    setIsSubKegiatanModalOpen(true);
+  };
+
+  const handleSaveSubKegiatan = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSectorForSub) return;
+    if (!subKegiatanForm.nama.trim()) {
+      alert("Nama rincian kegiatan wajib diisi!");
+      return;
+    }
+    setIsSubmittingApbdes(true);
+    try {
+      const existingSubs = Array.isArray(selectedSectorForSub.sub_kegiatan)
+        ? [...selectedSectorForSub.sub_kegiatan]
+        : [];
+      const cleanItem = {
+        id: subKegiatanForm.id || `sub-${selectedSectorForSub.id}-${Date.now().toString(36)}`,
+        nama: subKegiatanForm.nama.trim(),
+        anggaran: Math.max(0, Number(subKegiatanForm.anggaran) || 0),
+        realisasi: Math.max(0, Number(subKegiatanForm.realisasi) || 0),
+        keterangan: subKegiatanForm.keterangan?.trim() || "",
+      };
+
+      let updatedSubs: any[];
+      if (editingSubIndex !== null && editingSubIndex >= 0 && editingSubIndex < existingSubs.length) {
+        updatedSubs = existingSubs.map((item, idx) => (idx === editingSubIndex ? cleanItem : item));
+      } else {
+        updatedSubs = [...existingSubs, cleanItem];
+      }
+
+      const newPagu = updatedSubs.reduce((acc, it) => acc + (Number(it.anggaran) || 0), 0);
+      const newRealisasi = updatedSubs.reduce((acc, it) => acc + (Number(it.realisasi) || 0), 0);
+      const newPersen = newPagu > 0 ? Number(((newRealisasi / newPagu) * 100).toFixed(1)) : 0;
+
+      // 1. Simpan pembaruan sub_kegiatan dan auto-sum pagu/realisasi bidang ke Supabase
+      const { error: secErr } = await supabase
+        .from("apbdes_sectors")
+        .update({
+          sub_kegiatan: updatedSubs,
+          pagu: newPagu,
+          realisasi: newRealisasi,
+          persen: newPersen,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", selectedSectorForSub.id)
+        .eq("tahun", 2026);
+
+      if (secErr) throw secErr;
+
+      // 2. Cascade Auto-Sum ke Ringkasan APBDes (apbdes_summary)
+      const updatedList = apbdesList.map((s) =>
+        s.id === selectedSectorForSub.id
+          ? { ...s, sub_kegiatan: updatedSubs, pagu: newPagu, realisasi: newRealisasi, persen: newPersen }
+          : s
+      );
+      const totalBelanjaCalc = updatedList.reduce((acc, s) => acc + (Number(s.pagu) || 0), 0);
+      const totalRealisasiCalc = updatedList.reduce((acc, s) => acc + (Number(s.realisasi) || 0), 0);
+      const serapanCalc = totalBelanjaCalc > 0 ? Number(((totalRealisasiCalc / totalBelanjaCalc) * 100).toFixed(1)) : 0;
+      const surplusCalc = (Number(apbdesSummary.total_pendapatan) || 0) - totalBelanjaCalc;
+
+      await supabase
+        .from("apbdes_summary")
+        .update({
+          total_belanja: totalBelanjaCalc,
+          total_realisasi_belanja: totalRealisasiCalc,
+          persen_realisasi_belanja: serapanCalc,
+          surplus_defisit: surplusCalc,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("tahun", 2026);
+
+      // 3. Catat audit log
+      await recordAuditLog({
+        actor_email: currentUser?.email || "unknown",
+        actor_name: currentUser?.nama || "Admin",
+        actor_role: currentUser?.role || "master",
+        action: editingSubIndex !== null ? "UPDATE" : "CREATE",
+        entity_type: "apbdes_sectors",
+        entity_id: `bidang-0${selectedSectorForSub.id}-${cleanItem.id}`,
+        description: `${editingSubIndex !== null ? "Memperbarui" : "Menambahkan"} kegiatan '${cleanItem.nama}' pada Bidang 0${selectedSectorForSub.id} (Pagu: Rp ${cleanItem.anggaran.toLocaleString("id-ID")}, Realisasi: Rp ${cleanItem.realisasi.toLocaleString("id-ID")})`,
+      });
+
+      setIsSubKegiatanModalOpen(false);
+      showToast(`Kegiatan '${cleanItem.nama}' berhasil disimpan & anggaran dihitung otomatis!`);
+      await fetchAllData();
+    } catch (err: any) {
+      alert(`Gagal menyimpan kegiatan: ${err.message || err}`);
+    } finally {
+      setIsSubmittingApbdes(false);
+    }
+  };
+
+  const handleDeleteSubKegiatan = async (sector: any, index: number) => {
+    const target = sector.sub_kegiatan?.[index];
+    if (!target) return;
+    if (
+      !window.confirm(
+        `Hapus rincian kegiatan '${target.nama}' dari Bidang 0${sector.id}? Pagu dan serapan belanja bidang akan otomatis dihitung ulang.`
+      )
+    ) {
+      return;
+    }
+    setIsSubmittingApbdes(true);
+    try {
+      const updatedSubs = sector.sub_kegiatan.filter((_: any, idx: number) => idx !== index);
+      const newPagu = updatedSubs.reduce((acc: number, it: any) => acc + (Number(it.anggaran) || 0), 0);
+      const newRealisasi = updatedSubs.reduce((acc: number, it: any) => acc + (Number(it.realisasi) || 0), 0);
+      const newPersen = newPagu > 0 ? Number(((newRealisasi / newPagu) * 100).toFixed(1)) : 0;
+
+      const { error: secErr } = await supabase
+        .from("apbdes_sectors")
+        .update({
+          sub_kegiatan: updatedSubs,
+          pagu: newPagu,
+          realisasi: newRealisasi,
+          persen: newPersen,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sector.id)
+        .eq("tahun", 2026);
+
+      if (secErr) throw secErr;
+
+      const updatedList = apbdesList.map((s) =>
+        s.id === sector.id
+          ? { ...s, sub_kegiatan: updatedSubs, pagu: newPagu, realisasi: newRealisasi, persen: newPersen }
+          : s
+      );
+      const totalBelanjaCalc = updatedList.reduce((acc, s) => acc + (Number(s.pagu) || 0), 0);
+      const totalRealisasiCalc = updatedList.reduce((acc, s) => acc + (Number(s.realisasi) || 0), 0);
+      const serapanCalc = totalBelanjaCalc > 0 ? Number(((totalRealisasiCalc / totalBelanjaCalc) * 100).toFixed(1)) : 0;
+      const surplusCalc = (Number(apbdesSummary.total_pendapatan) || 0) - totalBelanjaCalc;
+
+      await supabase
+        .from("apbdes_summary")
+        .update({
+          total_belanja: totalBelanjaCalc,
+          total_realisasi_belanja: totalRealisasiCalc,
+          persen_realisasi_belanja: serapanCalc,
+          surplus_defisit: surplusCalc,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("tahun", 2026);
+
+      await recordAuditLog({
+        actor_email: currentUser?.email || "unknown",
+        actor_name: currentUser?.nama || "Admin",
+        actor_role: currentUser?.role || "master",
+        action: "DELETE",
+        entity_type: "apbdes_sectors",
+        entity_id: `bidang-0${sector.id}-${target.id || index}`,
+        description: `Menghapus sub-kegiatan '${target.nama}' dari Bidang 0${sector.id} APBDes 2026`,
+      });
+
+      showToast(`Kegiatan '${target.nama}' berhasil dihapus & total belanja disinkronkan!`);
+      await fetchAllData();
+    } catch (err: any) {
+      alert(`Gagal menghapus kegiatan: ${err.message || err}`);
+    } finally {
+      setIsSubmittingApbdes(false);
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // HANDLER CATAT PENGELUARAN KAS RIIL PER SUB-KEGIATAN
+  // --------------------------------------------------------------------------
+  const handleOpenRecordSubExpense = (sector: any, sub: any, index: number) => {
+    setSelectedSubForExpense({ sector, sub, index });
+    setSubExpenseAmount(Number(sub.realisasi) || 0);
+    setSubExpenseMode("set");
+    setSubExpenseNotes(sub.keterangan || "");
+    setIsSubExpenseModalOpen(true);
+  };
+
+  const handleSaveSubExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedSubForExpense) return;
+    const { sector, sub, index } = selectedSubForExpense;
+    setIsSubmittingApbdes(true);
+    try {
+      const existingSubs = Array.isArray(sector.sub_kegiatan) ? [...sector.sub_kegiatan] : [];
+      const targetSub = existingSubs[index];
+      if (!targetSub) return;
+
+      let newSubRealisasi = 0;
+      if (subExpenseMode === "tambah") {
+        newSubRealisasi = (Number(targetSub.realisasi) || 0) + Number(subExpenseAmount);
+      } else {
+        newSubRealisasi = Number(subExpenseAmount);
+      }
+      newSubRealisasi = Math.max(0, newSubRealisasi);
+
+      const updatedItem = {
+        ...targetSub,
+        realisasi: newSubRealisasi,
+        keterangan: subExpenseNotes.trim() || targetSub.keterangan || "",
+      };
+
+      const updatedSubs = existingSubs.map((it, idx) => (idx === index ? updatedItem : it));
+      const newPagu = updatedSubs.reduce((acc, it) => acc + (Number(it.anggaran) || 0), 0);
+      const newRealisasi = updatedSubs.reduce((acc, it) => acc + (Number(it.realisasi) || 0), 0);
+      const newPersen = newPagu > 0 ? Number(((newRealisasi / newPagu) * 100).toFixed(1)) : 0;
+
+      const { error: secErr } = await supabase
+        .from("apbdes_sectors")
+        .update({
+          sub_kegiatan: updatedSubs,
+          pagu: newPagu,
+          realisasi: newRealisasi,
+          persen: newPersen,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", sector.id)
+        .eq("tahun", 2026);
+
+      if (secErr) throw secErr;
+
+      const updatedList = apbdesList.map((s) =>
+        s.id === sector.id
+          ? { ...s, sub_kegiatan: updatedSubs, pagu: newPagu, realisasi: newRealisasi, persen: newPersen }
+          : s
+      );
+      const totalBelanjaCalc = updatedList.reduce((acc, s) => acc + (Number(s.pagu) || 0), 0);
+      const totalRealisasiCalc = updatedList.reduce((acc, s) => acc + (Number(s.realisasi) || 0), 0);
+      const serapanCalc = totalBelanjaCalc > 0 ? Number(((totalRealisasiCalc / totalBelanjaCalc) * 100).toFixed(1)) : 0;
+      const surplusCalc = (Number(apbdesSummary.total_pendapatan) || 0) - totalBelanjaCalc;
+
+      await supabase
+        .from("apbdes_summary")
+        .update({
+          total_belanja: totalBelanjaCalc,
+          total_realisasi_belanja: totalRealisasiCalc,
+          persen_realisasi_belanja: serapanCalc,
+          surplus_defisit: surplusCalc,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("tahun", 2026);
+
+      await recordAuditLog({
+        actor_email: currentUser?.email || "unknown",
+        actor_name: currentUser?.nama || "Admin",
+        actor_role: currentUser?.role || "master",
+        action: "UPDATE",
+        entity_type: "apbdes_sectors",
+        entity_id: `bidang-0${sector.id}-${targetSub.id || index}`,
+        description: `Mencatat realisasi pengeluaran kas '${targetSub.nama}' Bidang 0${sector.id}: Rp ${newSubRealisasi.toLocaleString("id-ID")} dari Pagu Rp ${(Number(targetSub.anggaran) || 0).toLocaleString("id-ID")}`,
+      });
+
+      setIsSubExpenseModalOpen(false);
+      showToast(`Realisasi kas '${targetSub.nama}' berhasil dicatat!`);
+      await fetchAllData();
+    } catch (err: any) {
+      alert(`Gagal mencatat pengeluaran: ${err.message || err}`);
+    } finally {
+      setIsSubmittingApbdes(false);
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // HANDLER SUMBER PENDAPATAN DESA (apbdes_revenues CRUD & AUTO-SUM)
+  // --------------------------------------------------------------------------
+  const handleOpenAddRevenue = () => {
+    setEditingRevenue(null);
+    setRevenueForm({
+      kategori: "Transfer",
+      nama: "",
+      anggaran: 0,
+      realisasi: 0,
+      keterangan: "",
+    });
+    setIsRevenueModalOpen(true);
+  };
+
+  const handleOpenEditRevenue = (rev: any) => {
+    setEditingRevenue(rev);
+    setRevenueForm({
+      kategori: rev.kategori || "Transfer",
+      nama: rev.nama || "",
+      anggaran: Number(rev.anggaran) || 0,
+      realisasi: Number(rev.realisasi) || 0,
+      keterangan: rev.keterangan || "",
+    });
+    setIsRevenueModalOpen(true);
+  };
+
+  const handleSaveRevenue = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!revenueForm.nama.trim()) {
+      alert("Nama sumber penerimaan pendapatan wajib diisi!");
+      return;
+    }
+    setIsSubmittingApbdes(true);
+    try {
+      const payload = {
+        tahun: 2026,
+        kategori: revenueForm.kategori,
+        nama: revenueForm.nama.trim(),
+        anggaran: Math.max(0, Number(revenueForm.anggaran) || 0),
+        realisasi: Math.max(0, Number(revenueForm.realisasi) || 0),
+        keterangan: revenueForm.keterangan?.trim() || "",
+      };
+
+      let updatedRevList: any[];
+      if (editingRevenue) {
+        const { error } = await supabase
+          .from("apbdes_revenues")
+          .update(payload)
+          .eq("id", editingRevenue.id);
+        if (error) throw error;
+        updatedRevList = revenueList.map((r) => (r.id === editingRevenue.id ? { ...r, ...payload } : r));
+      } else {
+        const { data, error } = await supabase
+          .from("apbdes_revenues")
+          .insert([payload])
+          .select()
+          .single();
+        if (error) throw error;
+        updatedRevList = [...revenueList, data];
+      }
+
+      // Auto-sum total_pendapatan ke Ringkasan APBDes (apbdes_summary)
+      const totalPendapatanCalc = updatedRevList.reduce((acc, r) => acc + (Number(r.anggaran) || 0), 0);
+      const surplusCalc = totalPendapatanCalc - (Number(apbdesSummary.total_belanja) || 0);
+
+      await supabase
+        .from("apbdes_summary")
+        .update({
+          total_pendapatan: totalPendapatanCalc,
+          surplus_defisit: surplusCalc,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("tahun", 2026);
+
+      await recordAuditLog({
+        actor_email: currentUser?.email || "unknown",
+        actor_name: currentUser?.nama || "Admin",
+        actor_role: currentUser?.role || "master",
+        action: editingRevenue ? "UPDATE" : "CREATE",
+        entity_type: "apbdes_sectors",
+        entity_id: String(editingRevenue?.id || "new-revenue"),
+        description: `${editingRevenue ? "Memperbarui" : "Menambahkan"} sumber pendapatan '${payload.nama}' (Target: Rp ${payload.anggaran.toLocaleString("id-ID")}, Masuk: Rp ${payload.realisasi.toLocaleString("id-ID")})`,
+      });
+
+      setIsRevenueModalOpen(false);
+      showToast(`Sumber pendapatan berhasil disimpan dan ringkasan fiskal disinkronkan!`);
+      await fetchAllData();
+    } catch (err: any) {
+      alert(`Gagal menyimpan pendapatan: ${err.message || err}`);
+    } finally {
+      setIsSubmittingApbdes(false);
+    }
+  };
+
+  const handleDeleteRevenue = async (rev: any) => {
+    if (
+      !window.confirm(
+        `Hapus sumber pendapatan '${rev.nama}'? Total target pendapatan desa akan dihitung ulang secara otomatis.`
+      )
+    ) {
+      return;
+    }
+    setIsSubmittingApbdes(true);
+    try {
+      const { error } = await supabase.from("apbdes_revenues").delete().eq("id", rev.id);
+      if (error) throw error;
+
+      const updatedRevList = revenueList.filter((r) => r.id !== rev.id);
+      const totalPendapatanCalc = updatedRevList.reduce((acc, r) => acc + (Number(r.anggaran) || 0), 0);
+      const surplusCalc = totalPendapatanCalc - (Number(apbdesSummary.total_belanja) || 0);
+
+      await supabase
+        .from("apbdes_summary")
+        .update({
+          total_pendapatan: totalPendapatanCalc,
+          surplus_defisit: surplusCalc,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("tahun", 2026);
+
+      await recordAuditLog({
+        actor_email: currentUser?.email || "unknown",
+        actor_name: currentUser?.nama || "Admin",
+        actor_role: currentUser?.role || "master",
+        action: "DELETE",
+        entity_type: "apbdes_sectors",
+        entity_id: String(rev.id),
+        description: `Menghapus sumber pendapatan '${rev.nama}' dari APBDes 2026`,
+      });
+
+      showToast(`Sumber pendapatan '${rev.nama}' berhasil dihapus!`);
+      await fetchAllData();
+    } catch (err: any) {
+      alert(`Gagal menghapus sumber pendapatan: ${err.message || err}`);
+    } finally {
+      setIsSubmittingApbdes(false);
+    }
+  };
+
+  // --------------------------------------------------------------------------
+  // EKSPOR RESMI APBDES KE BERKAS SPREADSHEET EXCEL (.XLSX MULTI-SHEET)
+  // --------------------------------------------------------------------------
+  const exportApbdesOfficialExcel = () => {
+    try {
+      // Sheet 1: 5 Bidang Belanja & Rincian Kegiatan
+      const belanjaRows: any[][] = [
+        ["PEMERINTAH DESA KADURAMA - KECAMATAN CIKAJING KABUPATEN KUNINGAN"],
+        [`LAPORAN REALISASI ANGGARAN PENDAPATAN DAN BELANJA DESA (APBDes) TA ${apbdesSummary.tahun || 2026}`],
+        [
+          `Dasar Penetapan: ${apbdesSummary.nomor_perdes || "Perdes No. 04 Tahun 2025"} | Periode: ${
+            apbdesSummary.periode_pelaporan || "Semester I"
+          }`,
+        ],
+        [],
+        [
+          "Kode Rekening",
+          "Uraian Bidang / Sub Kegiatan Belanja",
+          "Pagu Anggaran (Rp)",
+          "Realisasi Kas (Rp)",
+          "Sisa Anggaran (Rp)",
+          "Persentase Serapan",
+          "Keterangan / Status",
+        ],
+      ];
+
+      apbdesList.forEach((sec) => {
+        const p = Number(sec.pagu) || 0;
+        const r = Number(sec.realisasi) || 0;
+        const sisa = Math.max(0, p - r);
+        const pct = p > 0 ? ((r / p) * 100).toFixed(1) + "%" : "0.0%";
+
+        belanjaRows.push([
+          `Bidang 0${sec.id}`,
+          sec.nama.toUpperCase(),
+          p,
+          r,
+          sisa,
+          pct,
+          sec.keterangan || "",
+        ]);
+
+        if (Array.isArray(sec.sub_kegiatan) && sec.sub_kegiatan.length > 0) {
+          sec.sub_kegiatan.forEach((sub: any, subIdx: number) => {
+            const sp = Number(sub.anggaran) || 0;
+            const sr = Number(sub.realisasi) || 0;
+            const ssisa = Math.max(0, sp - sr);
+            const spct = sp > 0 ? ((sr / sp) * 100).toFixed(1) + "%" : "0.0%";
+            belanjaRows.push([
+              `0${sec.id}.${subIdx + 1}`,
+              `   • ${sub.nama}`,
+              sp,
+              sr,
+              ssisa,
+              spct,
+              sub.keterangan || "-",
+            ]);
+          });
+        }
+      });
+
+      const totBelanja = Number(apbdesSummary.total_belanja) || 0;
+      const totRealBelanja = Number(apbdesSummary.total_realisasi_belanja) || 0;
+      const totSisaBelanja = Math.max(0, totBelanja - totRealBelanja);
+      const totPctBelanja = totBelanja > 0 ? ((totRealBelanja / totBelanja) * 100).toFixed(1) + "%" : "0.0%";
+
+      belanjaRows.push([]);
+      belanjaRows.push([
+        "TOTAL BELANJA DESA",
+        "Akumulasi 5 Bidang Penyelenggaraan",
+        totBelanja,
+        totRealBelanja,
+        totSisaBelanja,
+        totPctBelanja,
+        `Surplus/Defisit: Rp ${(Number(apbdesSummary.surplus_defisit) || 0).toLocaleString("id-ID")}`,
+      ]);
+
+      // Sheet 2: Struktur Sumber Pendapatan
+      const pendapatanRows: any[][] = [
+        ["PEMERINTAH DESA KADURAMA - KECAMATAN CIKAJING KABUPATEN KUNINGAN"],
+        [`STRUKTUR SUMBER PENERIMAAN KAS PENDAPATAN DESA TA ${apbdesSummary.tahun || 2026}`],
+        [],
+        [
+          "No",
+          "Kategori",
+          "Sumber Pendapatan Desa",
+          "Target Anggaran (Rp)",
+          "Realisasi Diterima (Rp)",
+          "Sisa Target (Rp)",
+          "Persentase Capaian",
+          "Keterangan Sumber",
+        ],
+      ];
+
+      revenueList.forEach((rev, idx) => {
+        const p = Number(rev.anggaran) || 0;
+        const r = Number(rev.realisasi) || 0;
+        const sisa = Math.max(0, p - r);
+        const pct = p > 0 ? ((r / p) * 100).toFixed(1) + "%" : "0.0%";
+        pendapatanRows.push([
+          idx + 1,
+          rev.kategori,
+          rev.nama,
+          p,
+          r,
+          sisa,
+          pct,
+          rev.keterangan || "-",
+        ]);
+      });
+
+      const totPendapatan = revenueList.reduce((acc, r) => acc + (Number(r.anggaran) || 0), 0);
+      const totRealPendapatan = revenueList.reduce((acc, r) => acc + (Number(r.realisasi) || 0), 0);
+      const totSisaPendapatan = Math.max(0, totPendapatan - totRealPendapatan);
+      const totPctPendapatan =
+        totPendapatan > 0 ? ((totRealPendapatan / totPendapatan) * 100).toFixed(1) + "%" : "0.0%";
+
+      pendapatanRows.push([]);
+      pendapatanRows.push([
+        "TOTAL PENDAPATAN DESA",
+        "",
+        "Akumulasi Seluruh Sumber Transfer & PADes",
+        totPendapatan,
+        totRealPendapatan,
+        totSisaPendapatan,
+        totPctPendapatan,
+        "",
+      ]);
+
+      const wb = XLSX.utils.book_new();
+      const wsBelanja = XLSX.utils.aoa_to_sheet(belanjaRows);
+      const wsPendapatan = XLSX.utils.aoa_to_sheet(pendapatanRows);
+
+      XLSX.utils.book_append_sheet(wb, wsBelanja, "5 Bidang Belanja");
+      XLSX.utils.book_append_sheet(wb, wsPendapatan, "Sumber Pendapatan");
+
+      const fileName = `APBDes_Kadurama_TA${apbdesSummary.tahun || 2026}_${new Date().toISOString().slice(0, 10)}.xlsx`;
+      XLSX.writeFile(wb, fileName);
+      showToast("Berkas Excel resmi APBDes berhasil diunduh!");
+    } catch (err: any) {
+      alert(`Gagal mengekspor data APBDes: ${err.message || err}`);
     }
   };
 
@@ -5450,14 +6088,45 @@ export default function MasterPanelPage() {
                   </p>
                 </div>
 
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2.5">
+                  {/* Mode Toggle: Buat Pagu vs Catat Realisasi */}
+                  <div className="flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200">
+                    <button
+                      type="button"
+                      onClick={() => setApbdesInputMode("pagu")}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                        apbdesInputMode === "pagu"
+                          ? "bg-amber-500 text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                      title="Fokus pada penganggaran plafon pagu belanja desa"
+                    >
+                      <Layers className="w-3.5 h-3.5" />
+                      <span>Mode Pagu Anggaran</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setApbdesInputMode("realisasi")}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
+                        apbdesInputMode === "realisasi"
+                          ? "bg-[#009388] text-white shadow-xs"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                      title="Fokus pada pencatatan kas keluar / serapan belanja berjalan"
+                    >
+                      <TrendingUp className="w-3.5 h-3.5" />
+                      <span>Mode Catat Realisasi</span>
+                    </button>
+                  </div>
+
                   <button
-                    onClick={() => setShowApbdesGuide(!showApbdesGuide)}
-                    className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition"
-                    title="Buka / Tutup Pedoman Siklus Pembaruan Anggaran Desa"
+                    type="button"
+                    onClick={exportApbdesOfficialExcel}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-900 font-bold text-xs hover:bg-emerald-100 transition shadow-2xs"
+                    title="Unduh Buku APBDes 2026 ke berkas Excel resmi (.xlsx)"
                   >
-                    <Info className="w-3.5 h-3.5 text-[#009388]" />
-                    <span>{showApbdesGuide ? "Sembunyikan Panduan" : "Panduan Siklus Anggaran"}</span>
+                    <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-700" />
+                    <span>Ekspor APBDes (.xlsx)</span>
                   </button>
 
                   <Link
@@ -5465,96 +6134,21 @@ export default function MasterPanelPage() {
                     target="_blank"
                     className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 font-bold text-xs hover:bg-slate-50 transition shadow-2xs"
                   >
-                    <span>Buka Transparansi Publik</span>
+                    <span>Buka Transparansi</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
 
                   {canManageApbdes && (
                     <button
                       onClick={handleOpenEditSummary}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm transition"
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition"
                     >
                       <Edit3 className="w-3.5 h-3.5" />
-                      <span>Edit Ringkasan &amp; Periode</span>
+                      <span>Edit Ringkasan Fiskal</span>
                     </button>
                   )}
                 </div>
               </div>
-
-              {/* Pedoman Siklus Anggaran & Ketentuan Pembaruan (Permendagri 20/2018) */}
-              {showApbdesGuide && (
-                <div className="p-5 rounded-2xl bg-gradient-to-br from-slate-900 to-slate-800 text-white shadow-md border border-slate-700 space-y-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
-                        <Info className="w-4 h-4" />
-                      </div>
-                      <div>
-                        <h4 className="font-bold text-sm text-white">
-                          Pedoman Siklus Anggaran &amp; Jadwal Pembaruan APBDes
-                        </h4>
-                        <p className="text-[11px] text-slate-300">
-                          Panduan resmi waktu pembaruan data keuangan desa sesuai Permendagri No. 20 Tahun 2018.
-                        </p>
-                      </div>
-                    </div>
-                    <button
-                      onClick={() => setShowApbdesGuide(false)}
-                      className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/10 transition"
-                      title="Tutup Panduan"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-3 pt-1 text-xs">
-                    <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
-                      <span className="text-[10px] font-mono font-bold text-emerald-400 block uppercase">
-                        1. Bulan Desember
-                      </span>
-                      <h5 className="font-bold text-white text-xs">Penetapan APBDes Murni</h5>
-                      <p className="text-[11px] text-slate-300 leading-relaxed">
-                        Diinput maksimal 31 Desember setelah disepakati Kuwu bersama BPD dan dievaluasi Camat. Memuat Pagu Pendapatan dan Pagu 5 Bidang Belanja.
-                      </p>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
-                      <span className="text-[10px] font-mono font-bold text-amber-400 block uppercase">
-                        2. Bulan Juli
-                      </span>
-                      <h5 className="font-bold text-white text-xs">Laporan Semester I</h5>
-                      <p className="text-[11px] text-slate-300 leading-relaxed">
-                        Paling lambat akhir Juli. Memperbarui realisasi belanja berjalan periode 1 Januari s.d. 30 Juni (serapan Dana Desa Tahap 1, ADD, dan belanja fisik).
-                      </p>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
-                      <span className="text-[10px] font-mono font-bold text-sky-400 block uppercase">
-                        3. Bulan Sept - Okt
-                      </span>
-                      <h5 className="font-bold text-white text-xs">APBDes Perubahan (PAK)</h5>
-                      <p className="text-[11px] text-slate-300 leading-relaxed">
-                        Diinput jika terjadi pergeseran anggaran, penguncian SiLPA tahun lalu, atau penambahan pagu transfer. Ubah tahap ke "APBDes Perubahan".
-                      </p>
-                    </div>
-
-                    <div className="p-3.5 rounded-xl bg-white/5 border border-white/10 space-y-1.5">
-                      <span className="text-[10px] font-mono font-bold text-purple-400 block uppercase">
-                        4. Bulan Januari
-                      </span>
-                      <h5 className="font-bold text-white text-xs">Laporan Akhir (LPPDes)</h5>
-                      <p className="text-[11px] text-slate-300 leading-relaxed">
-                        Maksimal 31 Januari tahun berikutnya. Menutup realisasi final 100%, menetapkan sisa kas sebagai SiLPA resmi, dan rilis infografis APBDes.
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="text-[11px] text-slate-400 flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-white/10">
-                    <span>Wewenang Pembaruan: <strong>Kaur Keuangan (Bendahara Desa)</strong> &amp; <strong>Sekretaris Desa</strong> atas otorisasi Kepala Desa (Kuwu).</span>
-                    <span className="text-emerald-400 font-mono text-[10px]">Permendagri 20/2018</span>
-                  </div>
-                </div>
-              )}
 
               {/* Fiscal Summary Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
@@ -5596,57 +6190,88 @@ export default function MasterPanelPage() {
                 </div>
               </div>
 
-              {/* 5 Sectors Breakdown */}
-              <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs">
-                <div className="flex flex-wrap items-center justify-between gap-3 mb-4 pb-3 border-b border-slate-100">
-                  <div>
-                    <h3 className="font-bold text-slate-900 text-sm">
-                      Realisasi 5 Bidang Penyelenggaraan APBDes
-                    </h3>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Pagu anggaran, serapan riil, dan sisa anggaran masing-masing bidang belanja desa.
-                    </p>
+              {/* Sub-Navigasi Section: Belanja (5 Bidang) vs Pendapatan Desa */}
+              <div className="flex items-center gap-2 border-b border-slate-200 pb-3 flex-wrap">
+                <button
+                  type="button"
+                  onClick={() => setApbdesActiveSection("belanja")}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                    apbdesActiveSection === "belanja"
+                      ? "bg-slate-900 text-white shadow-xs"
+                      : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Belanja Desa (5 Bidang Penyelenggaraan)</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setApbdesActiveSection("pendapatan")}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 ${
+                    apbdesActiveSection === "pendapatan"
+                      ? "bg-[#009388] text-white shadow-xs"
+                      : "bg-white text-slate-700 border border-slate-200 hover:bg-slate-50"
+                  }`}
+                >
+                  <Wallet className="w-3.5 h-3.5 text-emerald-300" />
+                  <span>Pendapatan Desa ({revenueList.length} Sumber Penerimaan)</span>
+                </button>
+              </div>
+
+              {/* ============================================================= */}
+              {/* SECTION 1: BELANJA DESA (5 BIDANG & RINCIAN SUB-KEGIATAN)      */}
+              {/* ============================================================= */}
+              {apbdesActiveSection === "belanja" && (
+                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm">
+                        Realisasi 5 Bidang Penyelenggaraan APBDes TA {apbdesSummary.tahun || 2026}
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Pagu anggaran, serapan riil, dan rincian pos kegiatan masing-masing bidang belanja desa.
+                      </p>
+                    </div>
+                    <button
+                      onClick={fetchAllData}
+                      className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
+                      title="Segarkan Data"
+                    >
+                      <RefreshCw className="w-3.5 h-3.5" />
+                    </button>
                   </div>
-                  <button
-                    onClick={fetchAllData}
-                    className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition"
-                    title="Segarkan Data"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                  </button>
-                </div>
 
-                <div className="space-y-3">
-                  {apbdesList.map((sec, idx) => {
-                    const paguNum = Number(sec.pagu) || 0;
-                    const realNum = Number(sec.realisasi) || 0;
-                    const sisaAnggaran = Math.max(0, paguNum - realNum);
+                  <div className="space-y-3">
+                    {apbdesList.map((sec, idx) => {
+                      const paguNum = Number(sec.pagu) || 0;
+                      const realNum = Number(sec.realisasi) || 0;
+                      const sisaAnggaran = Math.max(0, paguNum - realNum);
+                      const subsCount = Array.isArray(sec.sub_kegiatan) ? sec.sub_kegiatan.length : 0;
 
-                    return (
-                      <div
-                        key={`apbdes-sector-${sec.id ?? idx}-${idx}`}
-                        className="rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition overflow-hidden"
-                      >
-                        <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="font-bold font-mono text-[11px] px-2 py-0.5 rounded bg-slate-200 text-slate-700">
-                                Bidang 0{sec.id}
-                              </span>
-                              <span className="font-bold text-slate-900 text-xs">{sec.nama}</span>
-                            </div>
-                            <div className="text-[11px] text-slate-500 mt-1">{sec.keterangan}</div>
+                      return (
+                        <div
+                          key={`apbdes-sector-${sec.id ?? idx}-${idx}`}
+                          className="rounded-xl border border-slate-200 bg-slate-50/70 hover:bg-slate-50 transition overflow-hidden"
+                        >
+                          <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            <div className="min-w-0 flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold font-mono text-[11px] px-2 py-0.5 rounded bg-slate-200 text-slate-700">
+                                  Bidang 0{sec.id}
+                                </span>
+                                <span className="font-bold text-slate-900 text-xs">{sec.nama}</span>
+                              </div>
+                              <div className="text-[11px] text-slate-500 mt-1">{sec.keterangan}</div>
 
-                            {/* Progress bar */}
-                            <div className="mt-2.5 w-full max-w-lg bg-slate-200 h-2 rounded-full overflow-hidden">
-                              <div
-                                className="bg-[#009388] h-full rounded-full transition-all duration-300"
-                                style={{ width: `${Math.min(sec.persen || 0, 100)}%` }}
-                              />
-                            </div>
+                              {/* Progress bar */}
+                              <div className="mt-2.5 w-full max-w-lg bg-slate-200 h-2 rounded-full overflow-hidden">
+                                <div
+                                  className="bg-[#009388] h-full rounded-full transition-all duration-300"
+                                  style={{ width: `${Math.min(sec.persen || 0, 100)}%` }}
+                                />
+                              </div>
 
-                            {/* Tombol Lihat Rincian Baliho */}
-                            {Array.isArray(sec.sub_kegiatan) && sec.sub_kegiatan.length > 0 && (
+                              {/* Tombol Lihat Rincian Pos Kegiatan */}
                               <button
                                 type="button"
                                 onClick={() => setExpandedSectorId(expandedSectorId === sec.id ? null : sec.id)}
@@ -5655,7 +6280,9 @@ export default function MasterPanelPage() {
                                 <span>
                                   {expandedSectorId === sec.id
                                     ? "Tutup Rincian Kegiatan"
-                                    : `Rincian Pos Belanja Baliho (${sec.sub_kegiatan.length} Kegiatan)`}
+                                    : subsCount > 0
+                                    ? `Rincian Pos Kegiatan (${subsCount} Pos Kegiatan)`
+                                    : "Buka / Kelola Rincian Kegiatan (0 Pos)"}
                                 </span>
                                 <ChevronDown
                                   className={`w-3.5 h-3.5 transition-transform duration-200 ${
@@ -5663,65 +6290,362 @@ export default function MasterPanelPage() {
                                   }`}
                                 />
                               </button>
-                            )}
-                          </div>
-
-                          <div className="flex items-center gap-4 sm:justify-end shrink-0">
-                            <div className="text-right">
-                              <div className="font-bold font-mono text-xs text-[#009388]">
-                                Realisasi: Rp {realNum.toLocaleString("id-ID")}
-                              </div>
-                              <div className="text-[10px] text-slate-500 font-mono mt-0.5">
-                                Pagu: Rp {paguNum.toLocaleString("id-ID")} ({sec.persen}%)
-                              </div>
-                              <div className="text-[10px] text-slate-400 font-mono">
-                                Sisa: Rp {sisaAnggaran.toLocaleString("id-ID")}
-                              </div>
                             </div>
 
-                            {canManageApbdes && (
-                              <button
-                                onClick={() => handleOpenEditSector(sec)}
-                                className="p-2 rounded-xl text-slate-500 hover:text-[#009388] hover:bg-emerald-50 transition border border-slate-200 bg-white"
-                                title="Edit Pagu / Realisasi Bidang"
-                              >
-                                <Edit3 className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </div>
-
-                        {/* Collapsible Sub-kegiatan List */}
-                        {expandedSectorId === sec.id && Array.isArray(sec.sub_kegiatan) && sec.sub_kegiatan.length > 0 && (
-                          <div className="bg-white border-t border-slate-200 p-4 space-y-2">
-                            <div className="flex items-center justify-between pb-2 border-b border-slate-100">
-                              <div className="text-[11px] font-bold text-slate-700 uppercase tracking-wider">
-                                Rincian Pos Belanja Baliho APBDes Bidang 0{sec.id}
-                              </div>
-                              <span className="text-[10px] font-mono text-slate-400">
-                                Total Pagu Bidang: Rp {paguNum.toLocaleString("id-ID")}
-                              </span>
-                            </div>
-                            <div className="divide-y divide-slate-100 border border-slate-100 rounded-xl overflow-hidden">
-                              {sec.sub_kegiatan.map((sub: any, subIdx: number) => (
-                                <div
-                                  key={`sub-${sec.id}-${subIdx}`}
-                                  className="p-2.5 flex items-center justify-between text-xs bg-slate-50/50 hover:bg-slate-50 transition"
-                                >
-                                  <span className="text-slate-700 font-medium">{sub.nama}</span>
-                                  <span className="font-mono font-bold text-slate-900 shrink-0 ml-4">
-                                    Rp {(Number(sub.anggaran) || 0).toLocaleString("id-ID")}
-                                  </span>
+                            <div className="flex items-center gap-4 sm:justify-end shrink-0">
+                              <div className="text-right">
+                                <div className="font-bold font-mono text-xs text-[#009388]">
+                                  Realisasi: Rp {realNum.toLocaleString("id-ID")}
                                 </div>
-                              ))}
+                                <div className="text-[10px] text-slate-500 font-mono mt-0.5">
+                                  Pagu: Rp {paguNum.toLocaleString("id-ID")} ({sec.persen}%)
+                                </div>
+                                <div className="text-[10px] text-slate-400 font-mono">
+                                  Sisa: Rp {sisaAnggaran.toLocaleString("id-ID")}
+                                </div>
+                              </div>
+
+                              {canManageApbdes && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleOpenEditSector(sec, apbdesInputMode)}
+                                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition border shadow-2xs ${
+                                    apbdesInputMode === "pagu"
+                                      ? "bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300"
+                                      : "bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-300"
+                                  }`}
+                                  title={
+                                    apbdesInputMode === "pagu"
+                                      ? "Atur Plafon Pagu Anggaran Bidang Ini"
+                                      : "Catat Kas Keluar / Realisasi Berjalan"
+                                  }
+                                >
+                                  {apbdesInputMode === "pagu" ? (
+                                    <>
+                                      <Layers className="w-3.5 h-3.5 text-amber-600" />
+                                      <span>Atur Pagu</span>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
+                                      <span>+ Catat Realisasi</span>
+                                    </>
+                                  )}
+                                </button>
+                              )}
                             </div>
                           </div>
-                        )}
-                      </div>
-                    );
-                  })}
+
+                          {/* Collapsible Sub-kegiatan CRUD Section */}
+                          {expandedSectorId === sec.id && (
+                            <div className="bg-white border-t border-slate-200 p-4 sm:p-5 space-y-3">
+                              <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-100">
+                                <div>
+                                  <div className="text-xs font-bold text-slate-800 uppercase tracking-wider flex items-center gap-2">
+                                    <span>Rincian Pos Kegiatan Bidang 0{sec.id}: {sec.nama}</span>
+                                    <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 text-[10px] font-semibold">
+                                      {subsCount} Pos Kegiatan
+                                    </span>
+                                  </div>
+                                  <p className="text-[11px] text-slate-400 mt-0.5">
+                                    Pagu dan realisasi belanja bidang dihitung otomatis dari rincian kegiatan di bawah ini.
+                                  </p>
+                                </div>
+
+                                {canManageApbdes && (
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenAddSubKegiatan(sec)}
+                                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white text-xs font-bold shadow-xs transition"
+                                  >
+                                    <Plus className="w-3.5 h-3.5" />
+                                    <span>+ Tambah Pos Kegiatan Baru</span>
+                                  </button>
+                                )}
+                              </div>
+
+                              {!Array.isArray(sec.sub_kegiatan) || sec.sub_kegiatan.length === 0 ? (
+                                <div className="p-6 rounded-2xl bg-slate-50 border border-slate-100 text-center space-y-2">
+                                  <Layers className="w-8 h-8 mx-auto text-slate-300 stroke-1" />
+                                  <p className="text-xs font-bold text-slate-700">Belum Ada Rincian Pos Kegiatan</p>
+                                  <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                                    Bidang ini belum memiliki pos kegiatan spesifik. Tambahkan rincian kegiatan untuk
+                                    mengkalkulasi pagu bidang secara otomatis.
+                                  </p>
+                                  {canManageApbdes && (
+                                    <button
+                                      type="button"
+                                      onClick={() => handleOpenAddSubKegiatan(sec)}
+                                      className="mt-2 inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-800 text-white text-xs font-bold hover:bg-slate-700 transition"
+                                    >
+                                      <Plus className="w-3.5 h-3.5" />
+                                      <span>Tambah Pos Kegiatan Pertama</span>
+                                    </button>
+                                  )}
+                                </div>
+                              ) : (
+                                <div className="divide-y divide-slate-100 border border-slate-200/80 rounded-2xl overflow-hidden bg-white shadow-2xs">
+                                  {sec.sub_kegiatan.map((sub: any, subIdx: number) => {
+                                    const subPagu = Number(sub.anggaran) || 0;
+                                    const subReal = Number(sub.realisasi) || 0;
+                                    const subPct = subPagu > 0 ? Number(((subReal / subPagu) * 100).toFixed(1)) : 0;
+                                    const subSisa = Math.max(0, subPagu - subReal);
+
+                                    return (
+                                      <div
+                                        key={sub.id || `sub-${sec.id}-${subIdx}`}
+                                        className="p-3.5 sm:p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/70 transition"
+                                      >
+                                        <div className="min-w-0 flex-1 space-y-1">
+                                          <div className="flex items-center gap-2 flex-wrap">
+                                            <span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">
+                                              0{sec.id}.{subIdx + 1}
+                                            </span>
+                                            <span className="font-bold text-xs text-slate-900 leading-snug">
+                                              {sub.nama}
+                                            </span>
+                                            {subPct >= 100 ? (
+                                              <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                                Selesai 100%
+                                              </span>
+                                            ) : subPct > 0 ? (
+                                              <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
+                                                Berjalan {subPct}%
+                                              </span>
+                                            ) : (
+                                              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-semibold">
+                                                Belum Realisasi (0%)
+                                              </span>
+                                            )}
+                                          </div>
+                                          {sub.keterangan && (
+                                            <p className="text-[11px] text-slate-500 line-clamp-1">{sub.keterangan}</p>
+                                          )}
+                                          {/* Mini progress bar */}
+                                          <div className="w-full max-w-xs bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                                            <div
+                                              className="bg-[#009388] h-full rounded-full transition-all duration-300"
+                                              style={{ width: `${Math.min(subPct, 100)}%` }}
+                                            />
+                                          </div>
+                                        </div>
+
+                                        {/* Financial figures & actions */}
+                                        <div className="flex items-center gap-3 sm:justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                                          <div className="text-right">
+                                            <div className="text-xs font-mono font-bold text-slate-900">
+                                              Pagu: Rp {subPagu.toLocaleString("id-ID")}
+                                            </div>
+                                            <div className="text-[11px] font-mono font-bold text-[#009388]">
+                                              Realisasi: Rp {subReal.toLocaleString("id-ID")}
+                                            </div>
+                                            <div className="text-[10px] font-mono text-slate-400">
+                                              Sisa: Rp {subSisa.toLocaleString("id-ID")}
+                                            </div>
+                                          </div>
+
+                                          {canManageApbdes && (
+                                            <div className="flex items-center gap-1">
+                                              <button
+                                                type="button"
+                                                onClick={() => handleOpenRecordSubExpense(sec, sub, subIdx)}
+                                                className="px-2.5 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 text-[11px] font-bold transition flex items-center gap-1 shadow-2xs"
+                                                title="Catat Realisasi Pengeluaran Kas untuk kegiatan ini"
+                                              >
+                                                <TrendingUp className="w-3 h-3 text-emerald-700" />
+                                                <span className="hidden sm:inline">Catat Kas</span>
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleOpenEditSubKegiatan(sec, sub, subIdx)}
+                                                className="p-1.5 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
+                                                title="Edit Nama / Anggaran Kegiatan"
+                                              >
+                                                <Edit3 className="w-3.5 h-3.5" />
+                                              </button>
+                                              <button
+                                                type="button"
+                                                onClick={() => handleDeleteSubKegiatan(sec, subIdx)}
+                                                className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                                                title="Hapus Kegiatan"
+                                              >
+                                                <Trash2 className="w-3.5 h-3.5" />
+                                              </button>
+                                            </div>
+                                          )}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
                 </div>
-              </div>
+              )}
+
+              {/* ============================================================= */}
+              {/* SECTION 2: SUMBER PENDAPATAN DESA (apbdes_revenues CRUD)       */}
+              {/* ============================================================= */}
+              {apbdesActiveSection === "pendapatan" && (
+                <div className="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-slate-100">
+                    <div>
+                      <h3 className="font-bold text-slate-900 text-sm flex items-center gap-2">
+                        <Wallet className="w-4 h-4 text-[#009388]" />
+                        <span>Struktur Sumber Penerimaan Pendapatan Desa TA {apbdesSummary.tahun || 2026}</span>
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        Penerimaan transfer pusat, bagi hasil kabupaten/provinsi, dan Pendapatan Asli Desa (PADes).
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {canManageApbdes && (
+                        <button
+                          type="button"
+                          onClick={handleOpenAddRevenue}
+                          className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-[#009388] hover:bg-[#007b71] text-white font-bold text-xs shadow-sm transition"
+                        >
+                          <Plus className="w-4 h-4" />
+                          <span>+ Tambah Sumber Pendapatan</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Revenue Summary Stats */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200">
+                      <span className="text-[10px] font-bold text-slate-500 uppercase">Target Total Pendapatan</span>
+                      <div className="text-lg font-bold font-mono text-slate-900 mt-0.5">
+                        Rp{" "}
+                        {revenueList
+                          .reduce((acc, r) => acc + (Number(r.anggaran) || 0), 0)
+                          .toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-emerald-50/70 border border-emerald-200">
+                      <span className="text-[10px] font-bold text-emerald-800 uppercase">Kas Masuk Diterima</span>
+                      <div className="text-lg font-bold font-mono text-emerald-900 mt-0.5">
+                        Rp{" "}
+                        {revenueList
+                          .reduce((acc, r) => acc + (Number(r.realisasi) || 0), 0)
+                          .toLocaleString("id-ID")}
+                      </div>
+                    </div>
+                    <div className="p-3.5 rounded-xl bg-blue-50/70 border border-blue-200">
+                      <span className="text-[10px] font-bold text-blue-800 uppercase">Persentase Capaian</span>
+                      <div className="text-lg font-bold font-mono text-blue-900 mt-0.5">
+                        {(() => {
+                          const totTgt = revenueList.reduce((acc, r) => acc + (Number(r.anggaran) || 0), 0);
+                          const totRec = revenueList.reduce((acc, r) => acc + (Number(r.realisasi) || 0), 0);
+                          return totTgt > 0 ? ((totRec / totTgt) * 100).toFixed(1) : "0.0";
+                        })()}
+                        %
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Revenue List */}
+                  {revenueList.length === 0 ? (
+                    <div className="py-10 text-center space-y-2">
+                      <Wallet className="w-8 h-8 mx-auto text-slate-300 stroke-1" />
+                      <p className="text-xs font-bold text-slate-700">Belum Ada Sumber Pendapatan Tercatat</p>
+                      <p className="text-[11px] text-slate-400 max-w-sm mx-auto">
+                        Klik tombol &quot;+ Tambah Sumber Pendapatan&quot; untuk menambahkan pos penerimaan desa.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="divide-y divide-slate-100 border border-slate-200 rounded-2xl overflow-hidden bg-white">
+                      {revenueList.map((rev, idx) => {
+                        const revTgt = Number(rev.anggaran) || 0;
+                        const revRec = Number(rev.realisasi) || 0;
+                        const revPct = revTgt > 0 ? Number(((revRec / revTgt) * 100).toFixed(1)) : 0;
+                        const revSisa = Math.max(0, revTgt - revRec);
+
+                        return (
+                          <div
+                            key={rev.id || `rev-${idx}`}
+                            className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/70 transition"
+                          >
+                            <div className="min-w-0 flex-1 space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-700">
+                                  {rev.kategori}
+                                </span>
+                                <span className="font-bold text-xs text-slate-900">{rev.nama}</span>
+                                {revPct >= 100 ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-bold">
+                                    Cair 100%
+                                  </span>
+                                ) : revPct > 0 ? (
+                                  <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 text-[10px] font-bold">
+                                    Tercapai {revPct}%
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[10px] font-semibold">
+                                    Belum Dicairkan
+                                  </span>
+                                )}
+                              </div>
+                              {rev.keterangan && (
+                                <p className="text-[11px] text-slate-500 line-clamp-1">{rev.keterangan}</p>
+                              )}
+                              {/* Mini progress bar */}
+                              <div className="w-full max-w-xs bg-slate-100 h-1.5 rounded-full overflow-hidden mt-1">
+                                <div
+                                  className="bg-[#009388] h-full rounded-full transition-all duration-300"
+                                  style={{ width: `${Math.min(revPct, 100)}%` }}
+                                />
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-3 sm:justify-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100">
+                              <div className="text-right">
+                                <div className="text-xs font-mono font-bold text-slate-900">
+                                  Target: Rp {revTgt.toLocaleString("id-ID")}
+                                </div>
+                                <div className="text-[11px] font-mono font-bold text-[#009388]">
+                                  Diterima: Rp {revRec.toLocaleString("id-ID")}
+                                </div>
+                                <div className="text-[10px] font-mono text-slate-400">
+                                  Sisa Target: Rp {revSisa.toLocaleString("id-ID")}
+                                </div>
+                              </div>
+
+                              {canManageApbdes && (
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleOpenEditRevenue(rev)}
+                                    className="p-1.5 rounded-xl text-slate-500 hover:text-slate-900 hover:bg-slate-100 transition"
+                                    title="Edit Sumber Pendapatan"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleDeleteRevenue(rev)}
+                                    className="p-1.5 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition"
+                                    title="Hapus Sumber Pendapatan"
+                                  >
+                                    <Trash2 className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           )}
 
@@ -8360,22 +9284,35 @@ export default function MasterPanelPage() {
       )}
 
       {/* =================================================================== */}
-      {/* MODAL EDIT BIDANG APBDES 2026                                       */}
+      {/* MODAL EDIT BIDANG APBDES 2026 (TOGGLE: PAGU VS REALISASI)           */}
       {/* =================================================================== */}
       {isEditSectorModalOpen && editingSector && (
         <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
           <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 flex flex-col">
+            {/* Modal Header */}
             <div className="flex items-start justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center border border-amber-200 shrink-0">
-                  <PieChart className="w-5 h-5" />
+                <div
+                  className={`w-10 h-10 rounded-xl flex items-center justify-center border shrink-0 ${
+                    sectorEditMode === "pagu"
+                      ? "bg-amber-50 text-amber-700 border-amber-200"
+                      : "bg-emerald-50 text-emerald-700 border-emerald-200"
+                  }`}
+                >
+                  {sectorEditMode === "pagu" ? (
+                    <Layers className="w-5 h-5" />
+                  ) : (
+                    <TrendingUp className="w-5 h-5" />
+                  )}
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-950">
-                    Edit Bidang 0{editingSector.id}: {editingSector.nama}
+                    Bidang 0{editingSector.id}: {editingSector.nama}
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Perbarui pagu dan realisasi anggaran bidang ini.
+                    {sectorEditMode === "pagu"
+                      ? "Atur penetapan pagu plafon anggaran awal / perubahan."
+                      : "Catat pengeluaran kas atau serapan belanja riil."}
                   </p>
                 </div>
               </div>
@@ -8387,10 +9324,39 @@ export default function MasterPanelPage() {
               </button>
             </div>
 
-            <form onSubmit={handleSaveApbdesSector} className="py-5 space-y-4">
+            {/* Toggle Mode Input: Pagu vs Realisasi */}
+            <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl border border-slate-200 text-xs font-bold mt-4">
+              <button
+                type="button"
+                onClick={() => setSectorEditMode("pagu")}
+                className={`py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                  sectorEditMode === "pagu"
+                    ? "bg-amber-500 text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>1. Atur Pagu Anggaran</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setSectorEditMode("realisasi")}
+                className={`py-2 px-3 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                  sectorEditMode === "realisasi"
+                    ? "bg-[#009388] text-white shadow-xs"
+                    : "text-slate-600 hover:text-slate-900"
+                }`}
+              >
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span>2. Catat Realisasi Kas</span>
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveApbdesSector} className="py-4 space-y-4">
+              {/* Field Nama Bidang */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Nama Bidang
+                  Nama Bidang Penyelenggaraan
                 </label>
                 <input
                   type="text"
@@ -8401,72 +9367,292 @@ export default function MasterPanelPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Pagu Anggaran (Rp)
-                  </label>
+              {/* Mode Pagu Focus */}
+              {sectorEditMode === "pagu" ? (
+                <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-amber-950">
+                      Pagu Anggaran Ditetapkan (Rp)
+                    </label>
+                    <span className="text-[10px] font-mono text-amber-800 bg-amber-100 px-2 py-0.5 rounded font-semibold">
+                      Plafon Maksimal
+                    </span>
+                  </div>
                   <input
                     type="number"
                     required
                     value={sectorForm.pagu}
                     onChange={(e) => setSectorForm({ ...sectorForm, pagu: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-amber-300 bg-white font-mono text-xs text-slate-900 focus:ring-2 focus:ring-amber-500 font-bold"
                   />
-                  <p className="mt-1 text-[11px] font-mono text-slate-500 truncate">
-                    Terbaca: <span className="font-semibold text-slate-700">Rp {(Number(sectorForm.pagu) || 0).toLocaleString("id-ID")}</span>
+                  <p className="text-[11px] font-mono text-amber-900 truncate">
+                    Terbaca: <span className="font-bold">Rp {(Number(sectorForm.pagu) || 0).toLocaleString("id-ID")}</span>
                   </p>
+                  <div className="pt-2 border-t border-amber-200/70 text-[11px] text-slate-600 flex justify-between">
+                    <span>Realisasi Kas Berjalan Saat Ini:</span>
+                    <span className="font-mono font-bold text-slate-800">
+                      Rp {(Number(sectorForm.realisasi) || 0).toLocaleString("id-ID")}
+                    </span>
+                  </div>
                 </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Realisasi Anggaran (Rp)
-                  </label>
+              ) : (
+                /* Mode Realisasi Focus */
+                <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2.5">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-emerald-950">
+                      Realisasi Kas Keluar Berjalan (Rp)
+                    </label>
+                    <span className="text-[10px] font-mono text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded font-semibold">
+                      Uang Keluar SPP
+                    </span>
+                  </div>
                   <input
                     type="number"
                     required
                     value={sectorForm.realisasi}
                     onChange={(e) => setSectorForm({ ...sectorForm, realisasi: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 bg-white font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388] font-bold"
                   />
-                  <p className="mt-1 text-[11px] font-mono text-slate-500 truncate">
-                    Terbaca: <span className="font-semibold text-[#009388]">Rp {(Number(sectorForm.realisasi) || 0).toLocaleString("id-ID")}</span>
+                  <p className="text-[11px] font-mono text-emerald-900 truncate">
+                    Terbaca: <span className="font-bold">Rp {(Number(sectorForm.realisasi) || 0).toLocaleString("id-ID")}</span>
                   </p>
-                </div>
-              </div>
 
+                  {/* Preset Cepat Realisasi */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-emerald-200/70 text-[11px]">
+                    <span className="text-emerald-900 text-[10px] font-bold">Set Cepat:</span>
+                    <button
+                      type="button"
+                      onClick={() => setSectorForm({ ...sectorForm, realisasi: sectorForm.pagu })}
+                      className="px-2 py-1 rounded-lg bg-white border border-emerald-300 hover:bg-emerald-100 text-emerald-900 font-bold text-[10px] transition shadow-2xs"
+                    >
+                      100% Penuh Selesai
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSectorForm({ ...sectorForm, realisasi: Math.round(sectorForm.pagu * 0.5) })}
+                      className="px-2 py-1 rounded-lg bg-white border border-emerald-300 hover:bg-emerald-100 text-emerald-900 font-bold text-[10px] transition shadow-2xs"
+                    >
+                      50% Semester I
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setSectorForm({ ...sectorForm, realisasi: 0 })}
+                      className="px-2 py-1 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-[10px] transition shadow-2xs"
+                    >
+                      Reset Rp 0
+                    </button>
+                  </div>
+
+                  <div className="pt-1.5 text-[11px] text-slate-600 flex justify-between">
+                    <span>Pagu Ditetapkan:</span>
+                    <span className="font-mono font-bold text-slate-800">
+                      Rp {(Number(sectorForm.pagu) || 0).toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                </div>
+              )}
+
+              {/* Keterangan */}
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  Keterangan Singkat
+                  Keterangan Singkat Kegiatan
                 </label>
                 <textarea
                   rows={2}
                   value={sectorForm.keterangan}
                   onChange={(e) => setSectorForm({ ...sectorForm, keterangan: e.target.value })}
-                  placeholder="Kegiatan yang dibiayai dalam bidang ini..."
+                  placeholder="Kegiatan yang dibiayai atau progres pencairan kas..."
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
                 />
               </div>
 
+              {/* Kalkulasi Otomatis */}
               <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5 font-mono">
                 <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Persentase Serapan Bidang:</span>
+                  <span className="text-slate-500">Persentase Serapan Kas:</span>
                   <span className="font-bold text-[#009388]">
                     {sectorForm.pagu > 0 ? ((sectorForm.realisasi / sectorForm.pagu) * 100).toFixed(1) : "0"}%
                   </span>
                 </div>
                 <div className="flex justify-between items-center pt-1 border-t border-slate-200">
-                  <span className="text-slate-500">Sisa Pagu Anggaran Bidang:</span>
-                  <span className={`font-bold ${(sectorForm.pagu - sectorForm.realisasi) < 0 ? "text-rose-600" : "text-slate-700"}`}>
+                  <span className="text-slate-500">Sisa Pagu Belum Dibelanjakan:</span>
+                  <span
+                    className={`font-bold ${
+                      sectorForm.pagu - sectorForm.realisasi < 0 ? "text-rose-600" : "text-slate-700"
+                    }`}
+                  >
                     Rp {Math.max(0, sectorForm.pagu - sectorForm.realisasi).toLocaleString("id-ID")}
                   </span>
                 </div>
               </div>
 
+              {/* Action Buttons */}
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
                 <button
                   type="button"
                   onClick={() => setIsEditSectorModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingApbdes}
+                  className={`px-5 py-2.5 rounded-xl text-white text-xs font-bold shadow-md transition flex items-center gap-2 disabled:bg-slate-300 ${
+                    sectorEditMode === "pagu"
+                      ? "bg-amber-600 hover:bg-amber-700"
+                      : "bg-[#009388] hover:bg-[#007b71]"
+                  }`}
+                >
+                  {isSubmittingApbdes ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>
+                        {sectorEditMode === "pagu"
+                          ? "Simpan Pagu Anggaran"
+                          : "Simpan Realisasi Kas"}
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL 1: TAMBAH / EDIT SUB-KEGIATAN APBDES (BOTTOM-UP CRUD)         */}
+      {/* =================================================================== */}
+      {isSubKegiatanModalOpen && selectedSectorForSub && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 flex flex-col">
+            {/* Modal Header */}
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#009388] border border-teal-200 flex items-center justify-center shrink-0">
+                  <Layers className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-950">
+                    {editingSubIndex !== null ? "Edit Pos Rincian Kegiatan" : "Tambah Pos Rincian Kegiatan"}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Bidang 0{selectedSectorForSub.id}: {selectedSectorForSub.nama}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSubKegiatanModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSubKegiatan} className="py-4 space-y-4">
+              {/* Nama Kegiatan */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Nama Pos Rincian Kegiatan <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={subKegiatanForm.nama}
+                  onChange={(e) => setSubKegiatanForm({ ...subKegiatanForm, nama: e.target.value })}
+                  placeholder="Contoh: Pembangunan Jalan Usaha Tani Dusun Manis"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              {/* Anggaran Pagu & Realisasi */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-1">
+                  <label className="block text-[11px] font-bold text-amber-950">
+                    Pagu Anggaran Kegiatan (Rp) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    value={subKegiatanForm.anggaran}
+                    onChange={(e) =>
+                      setSubKegiatanForm({ ...subKegiatanForm, anggaran: Number(e.target.value) })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-amber-300 bg-white font-mono text-xs text-slate-900 focus:ring-2 focus:ring-amber-500 font-bold"
+                  />
+                  <p className="text-[10px] font-mono text-amber-900 truncate">
+                    Rp {(Number(subKegiatanForm.anggaran) || 0).toLocaleString("id-ID")}
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-1">
+                  <label className="block text-[11px] font-bold text-emerald-950">
+                    Realisasi Kas Berjalan (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={subKegiatanForm.realisasi}
+                    onChange={(e) =>
+                      setSubKegiatanForm({ ...subKegiatanForm, realisasi: Number(e.target.value) })
+                    }
+                    className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388] font-bold"
+                  />
+                  <p className="text-[10px] font-mono text-emerald-900 truncate">
+                    Rp {(Number(subKegiatanForm.realisasi) || 0).toLocaleString("id-ID")}
+                  </p>
+                </div>
+              </div>
+
+              {/* Keterangan */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Keterangan / Progres Kegiatan
+                </label>
+                <textarea
+                  rows={2}
+                  value={subKegiatanForm.keterangan}
+                  onChange={(e) => setSubKegiatanForm({ ...subKegiatanForm, keterangan: e.target.value })}
+                  placeholder="Contoh: Tahap I rabat beton selesai 100%, SPP termin I terserap"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              {/* Kalkulasi Ringkas */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1 font-mono">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Sisa Pagu Kegiatan:</span>
+                  <span className="font-bold text-slate-800">
+                    Rp {Math.max(0, subKegiatanForm.anggaran - subKegiatanForm.realisasi).toLocaleString("id-ID")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Persentase Serapan:</span>
+                  <span className="font-bold text-[#009388]">
+                    {subKegiatanForm.anggaran > 0
+                      ? ((subKegiatanForm.realisasi / subKegiatanForm.anggaran) * 100).toFixed(1)
+                      : "0"}
+                    %
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400 font-sans pt-1 border-t border-slate-200">
+                  Total pagu dan belanja Bidang 0{selectedSectorForSub.id} akan dihitung otomatis saat disimpan.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsSubKegiatanModalOpen(false)}
                   className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
                 >
                   Batal
@@ -8484,7 +9670,362 @@ export default function MasterPanelPage() {
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>Simpan Perubahan Bidang</span>
+                      <span>Simpan Rincian Kegiatan</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL 2: CATAT REALISASI PENGELUARAN KAS RIIL PER KEGIATAN          */}
+      {/* =================================================================== */}
+      {isSubExpenseModalOpen && selectedSubForExpense && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 flex flex-col">
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200 flex items-center justify-center shrink-0">
+                  <TrendingUp className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-950">Catat Realisasi Kas Keluar</h3>
+                  <p className="text-xs text-slate-500 mt-0.5 line-clamp-1">
+                    {selectedSubForExpense.sub.nama} (Bidang 0{selectedSubForExpense.sector.id})
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsSubExpenseModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveSubExpense} className="py-4 space-y-4">
+              {/* Target Kegiatan Info */}
+              <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-mono space-y-1.5">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Pagu Ditetapkan:</span>
+                  <span className="font-bold text-slate-900">
+                    Rp {(Number(selectedSubForExpense.sub.anggaran) || 0).toLocaleString("id-ID")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Realisasi Tercatat Saat Ini:</span>
+                  <span className="font-bold text-[#009388]">
+                    Rp {(Number(selectedSubForExpense.sub.realisasi) || 0).toLocaleString("id-ID")}
+                  </span>
+                </div>
+                <div className="flex justify-between pt-1 border-t border-slate-200">
+                  <span className="text-slate-500">Sisa Belum Dibelanjakan:</span>
+                  <span className="font-bold text-slate-700">
+                    Rp{" "}
+                    {Math.max(
+                      0,
+                      (Number(selectedSubForExpense.sub.anggaran) || 0) -
+                        (Number(selectedSubForExpense.sub.realisasi) || 0)
+                    ).toLocaleString("id-ID")}
+                  </span>
+                </div>
+              </div>
+
+              {/* Mode Input Switcher: Set Total vs Tambah Pengeluaran */}
+              <div className="grid grid-cols-2 p-1 bg-slate-100 rounded-2xl border border-slate-200 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSubExpenseMode("set");
+                    setSubExpenseAmount(Number(selectedSubForExpense.sub.realisasi) || 0);
+                  }}
+                  className={`py-2 px-3 rounded-xl transition text-center ${
+                    subExpenseMode === "set"
+                      ? "bg-[#009388] text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  Tetapkan Total Realisasi
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSubExpenseMode("tambah");
+                    setSubExpenseAmount(0);
+                  }}
+                  className={`py-2 px-3 rounded-xl transition text-center ${
+                    subExpenseMode === "tambah"
+                      ? "bg-[#009388] text-white shadow-xs"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  + Tambah Pengeluaran Baru
+                </button>
+              </div>
+
+              {/* Input Nominal */}
+              <div className="p-4 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-2">
+                <label className="block text-xs font-bold text-emerald-950">
+                  {subExpenseMode === "set"
+                    ? "Total Realisasi Kas Berjalan (Rp)"
+                    : "Nominal Pengeluaran Kas Baru (Rp)"}
+                </label>
+                <input
+                  type="number"
+                  required
+                  min={0}
+                  value={subExpenseAmount}
+                  onChange={(e) => setSubExpenseAmount(Number(e.target.value))}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-emerald-300 bg-white font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388] font-bold"
+                />
+                <p className="text-[11px] font-mono text-emerald-900 truncate">
+                  Terbaca: <span className="font-bold">Rp {(Number(subExpenseAmount) || 0).toLocaleString("id-ID")}</span>
+                </p>
+
+                {/* Quick Presets */}
+                <div className="flex flex-wrap items-center gap-1.5 pt-2 border-t border-emerald-200/70 text-[11px]">
+                  <span className="text-emerald-900 text-[10px] font-bold">Set Cepat:</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubExpenseMode("set");
+                      setSubExpenseAmount(Number(selectedSubForExpense.sub.anggaran) || 0);
+                    }}
+                    className="px-2 py-1 rounded-lg bg-white border border-emerald-300 hover:bg-emerald-100 text-emerald-900 font-bold text-[10px] transition shadow-2xs"
+                  >
+                    100% Penuh Selesai
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubExpenseMode("set");
+                      setSubExpenseAmount(Math.round((Number(selectedSubForExpense.sub.anggaran) || 0) * 0.5));
+                    }}
+                    className="px-2 py-1 rounded-lg bg-white border border-emerald-300 hover:bg-emerald-100 text-emerald-900 font-bold text-[10px] transition shadow-2xs"
+                  >
+                    50% Semester I
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setSubExpenseMode("set");
+                      setSubExpenseAmount(0);
+                    }}
+                    className="px-2 py-1 rounded-lg bg-white border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-[10px] transition shadow-2xs"
+                  >
+                    Reset Rp 0
+                  </button>
+                </div>
+              </div>
+
+              {/* Catatan SPP */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Catatan Pengeluaran / Uraian SPP
+                </label>
+                <input
+                  type="text"
+                  value={subExpenseNotes}
+                  onChange={(e) => setSubExpenseNotes(e.target.value)}
+                  placeholder="Contoh: Pencairan SPP Termin I pengerjaan fisik"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsSubExpenseModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingApbdes}
+                  className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] disabled:bg-slate-300 text-white text-xs font-bold shadow-md transition flex items-center gap-2"
+                >
+                  {isSubmittingApbdes ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Simpan Realisasi Kas</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL 3: TAMBAH / EDIT SUMBER PENDAPATAN DESA (apbdes_revenues)      */}
+      {/* =================================================================== */}
+      {isRevenueModalOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-3 sm:p-5 overflow-y-auto">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 sm:p-8 shadow-2xl border border-slate-200 flex flex-col">
+            <div className="flex items-start justify-between pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-teal-50 text-[#009388] border border-teal-200 flex items-center justify-center shrink-0">
+                  <Wallet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-base text-slate-950">
+                    {editingRevenue ? "Edit Sumber Pendapatan Desa" : "Tambah Sumber Pendapatan"}
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Penerimaan APBDes TA {apbdesSummary.tahun || 2026} Desa Kadurama
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsRevenueModalOpen(false)}
+                className="p-1.5 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition shrink-0"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveRevenue} className="py-4 space-y-4">
+              {/* Kategori & Nama */}
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Kategori <span className="text-rose-500">*</span>
+                  </label>
+                  <select
+                    value={revenueForm.kategori}
+                    onChange={(e) => setRevenueForm({ ...revenueForm, kategori: e.target.value })}
+                    className="w-full px-3 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 bg-white focus:ring-2 focus:ring-[#009388]"
+                  >
+                    <option value="Transfer">Transfer</option>
+                    <option value="PAD">PADes</option>
+                    <option value="Bantuan Keuangan">Bantuan Keuangan</option>
+                    <option value="Lain-lain">Lain-lain</option>
+                  </select>
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    Nama Sumber Pendapatan <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={revenueForm.nama}
+                    onChange={(e) => setRevenueForm({ ...revenueForm, nama: e.target.value })}
+                    placeholder="Contoh: Dana Desa (DD) / ADD / Bagi Hasil Pajak"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                  />
+                </div>
+              </div>
+
+              {/* Target & Realisasi Diterima */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3.5 rounded-2xl bg-slate-50 border border-slate-200 space-y-1">
+                  <label className="block text-[11px] font-bold text-slate-800">
+                    Target Anggaran Ditetapkan (Rp) <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="number"
+                    required
+                    min={0}
+                    value={revenueForm.anggaran}
+                    onChange={(e) => setRevenueForm({ ...revenueForm, anggaran: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388] font-bold"
+                  />
+                  <p className="text-[10px] font-mono text-slate-500 truncate">
+                    Rp {(Number(revenueForm.anggaran) || 0).toLocaleString("id-ID")}
+                  </p>
+                </div>
+
+                <div className="p-3.5 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-1">
+                  <label className="block text-[11px] font-bold text-emerald-950">
+                    Realisasi Kas Diterima (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    min={0}
+                    value={revenueForm.realisasi}
+                    onChange={(e) => setRevenueForm({ ...revenueForm, realisasi: Number(e.target.value) })}
+                    className="w-full px-3 py-2 rounded-xl border border-emerald-300 bg-white font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388] font-bold"
+                  />
+                  <p className="text-[10px] font-mono text-emerald-900 truncate">
+                    Rp {(Number(revenueForm.realisasi) || 0).toLocaleString("id-ID")}
+                  </p>
+                </div>
+              </div>
+
+              {/* Keterangan Sumber */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  Keterangan Sumber / Rekening
+                </label>
+                <textarea
+                  rows={2}
+                  value={revenueForm.keterangan}
+                  onChange={(e) => setRevenueForm({ ...revenueForm, keterangan: e.target.value })}
+                  placeholder="Contoh: Transfer APBN Pusat untuk pembangunan & ketahanan pangan"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+              </div>
+
+              {/* Kalkulasi Ringkas */}
+              <div className="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1 font-mono">
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Sisa Target Belum Cair:</span>
+                  <span className="font-bold text-slate-800">
+                    Rp {Math.max(0, revenueForm.anggaran - revenueForm.realisasi).toLocaleString("id-ID")}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-slate-500">Persentase Capaian:</span>
+                  <span className="font-bold text-[#009388]">
+                    {revenueForm.anggaran > 0
+                      ? ((revenueForm.realisasi / revenueForm.anggaran) * 100).toFixed(1)
+                      : "0"}
+                    %
+                  </span>
+                </div>
+                <p className="text-[10px] text-slate-400 font-sans pt-1 border-t border-slate-200">
+                  Total pendapatan dan surplus/defisit APBDes akan disinkronkan otomatis saat disimpan.
+                </p>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                <button
+                  type="button"
+                  onClick={() => setIsRevenueModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmittingApbdes}
+                  className="px-5 py-2.5 rounded-xl bg-[#009388] hover:bg-[#007b71] disabled:bg-slate-300 text-white text-xs font-bold shadow-md transition flex items-center gap-2"
+                >
+                  {isSubmittingApbdes ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      <span>Menyimpan...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Check className="w-4 h-4" />
+                      <span>Simpan Sumber Pendapatan</span>
                     </>
                   )}
                 </button>

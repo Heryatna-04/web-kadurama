@@ -7,9 +7,11 @@ export interface APBDesSector {
   realisasi: number;
   keterangan: string;
   subKegiatan: {
+    id?: string;
     nama: string;
     anggaran: number;
     realisasi?: number;
+    keterangan?: string;
     status?: string;
   }[];
 }
