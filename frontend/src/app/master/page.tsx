@@ -380,9 +380,30 @@ export default function MasterPanelPage() {
     setResidentPage(1);
   }, [residentDusunFilter, residentSearch]);
 
-  // Modals
+  // Modals & Override
   const [isSensusModalOpen, setIsSensusModalOpen] = useState(false);
   const [editingSensus, setEditingSensus] = useState<SensusKK | null>(null);
+  const [desilMode, setDesilMode] = useState<"auto" | "manual">("auto");
+  const [manualDesil, setManualDesil] = useState<number>(1);
+
+  // Modal Soft Delete Berdasar Alasan Resmi (Meninggal / Pindah / Lainnya)
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    type: "sensus" | "resident";
+    sensusItem: SensusKK | null;
+    residentItem: Resident | null;
+    reason: string;
+    customReason: string;
+    isSubmitting: boolean;
+  }>({
+    isOpen: false,
+    type: "resident",
+    sensusItem: null,
+    residentItem: null,
+    reason: "Meninggal Dunia",
+    customReason: "",
+    isSubmitting: false,
+  });
 
   const [isResidentModalOpen, setIsResidentModalOpen] = useState(false);
   const [isEditingResidentExisting, setIsEditingResidentExisting] = useState(false);
@@ -876,6 +897,8 @@ export default function MasterPanelPage() {
       }),
       catatanVerifikasi: "Data terverifikasi melalui survei lapangan aparatur dusun.",
     });
+    setDesilMode("auto");
+    setManualDesil(3);
     setIsSensusModalOpen(true);
   };
 
@@ -886,14 +909,15 @@ export default function MasterPanelPage() {
       return;
     }
 
-    // Auto scoring desil
-    const finalDesil = calculateDesil(
+    // Auto scoring desil vs penetapan manual aparatur desa
+    const autoDesil = calculateDesil(
       editingSensus.dinding,
       editingSensus.lantai,
       editingSensus.penghasilanBulanan,
       editingSensus.luasLantai,
       editingSensus.jumlahAnggota
     );
+    const finalDesil = desilMode === "manual" ? manualDesil : autoDesil;
 
     const isNew = !sensusList.some((s) => s.id === editingSensus.id);
     const payload = {
@@ -942,7 +966,7 @@ export default function MasterPanelPage() {
           action: "CREATE",
           entity_type: "sensus_kk",
           entity_id: editingSensus.noKk,
-          description: `Input data sensus KK ${editingSensus.noKk} (${editingSensus.namaKepalaKeluarga}) - Desil ${finalDesil} Dusun ${editingSensus.dusun}`,
+          description: `Input sensus KK ${editingSensus.noKk} (${editingSensus.namaKepalaKeluarga}) - Desil ${finalDesil} (${desilMode === "manual" ? "Penetapan Manual Apdes" : "Kalkulasi Otomatis"}) Dusun ${editingSensus.dusun}`,
           new_data: payload,
         });
       } else {
@@ -955,7 +979,7 @@ export default function MasterPanelPage() {
           action: "UPDATE",
           entity_type: "sensus_kk",
           entity_id: editingSensus.noKk,
-          description: `Memperbarui sensus KK ${editingSensus.noKk} (${editingSensus.namaKepalaKeluarga})`,
+          description: `Update sensus KK ${editingSensus.noKk} (${editingSensus.namaKepalaKeluarga}) - Desil ${finalDesil} (${desilMode === "manual" ? "Penetapan Manual Apdes" : "Kalkulasi Otomatis"}) Dusun ${editingSensus.dusun}`,
           old_data: oldItem,
           new_data: payload,
         });
@@ -969,42 +993,114 @@ export default function MasterPanelPage() {
     }
   };
 
-  const handleSoftDeleteSensus = async (item: SensusKK) => {
+  const openDeleteModal = (type: "sensus" | "resident", item: SensusKK | Resident) => {
     if (!currentUser) return;
     if (!canModify(item.dusun)) {
       alert(`Anda hanya berwenang mengelola data di Dusun ${currentUser.dusun}`);
       return;
     }
-
-    if (!confirm(`Hapus data sensus KK ${item.noKk} (${item.namaKepalaKeluarga})? Data akan dipindahkan ke arsip soft-delete.`)) {
-      return;
+    if (type === "sensus") {
+      setDeleteModal({
+        isOpen: true,
+        type: "sensus",
+        sensusItem: item as SensusKK,
+        residentItem: null,
+        reason: "Pindah Domisili / Keluar Desa",
+        customReason: "",
+        isSubmitting: false,
+      });
+    } else {
+      setDeleteModal({
+        isOpen: true,
+        type: "resident",
+        sensusItem: null,
+        residentItem: item as Resident,
+        reason: "Meninggal Dunia",
+        customReason: "",
+        isSubmitting: false,
+      });
     }
+  };
+
+  const handleSoftDeleteSensus = (item: SensusKK) => {
+    openDeleteModal("sensus", item);
+  };
+
+  const handleSoftDeleteResident = (res: Resident) => {
+    openDeleteModal("resident", res);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (!currentUser) return;
+    setDeleteModal((prev) => ({ ...prev, isSubmitting: true }));
+
+    const finalReason =
+      deleteModal.reason === "Lainnya"
+        ? (deleteModal.customReason.trim() || "Alasan lainnya")
+        : `${deleteModal.reason}${deleteModal.customReason.trim() ? ` - ${deleteModal.customReason.trim()}` : ""}`;
 
     try {
-      await supabase
-        .from("sensus_kk")
-        .update({
-          is_deleted: true,
-          deleted_at: new Date().toISOString(),
-          deleted_by: currentUser.email,
-        })
-        .eq("id", item.id);
+      if (deleteModal.type === "sensus" && deleteModal.sensusItem) {
+        const item = deleteModal.sensusItem;
+        await supabase
+          .from("sensus_kk")
+          .update({
+            is_deleted: true,
+            deleted_at: new Date().toISOString(),
+            deleted_by: currentUser.email,
+          })
+          .eq("id", item.id);
 
-      await recordAuditLog({
-        actor_email: currentUser.email,
-        actor_name: currentUser.nama,
-        actor_role: currentUser.role,
-        action: "DELETE",
-        entity_type: "sensus_kk",
-        entity_id: item.noKk,
-        description: `Soft-delete sensus KK ${item.noKk} (${item.namaKepalaKeluarga}) Dusun ${item.dusun}`,
-        old_data: item,
-      });
+        await recordAuditLog({
+          actor_email: currentUser.email,
+          actor_name: currentUser.nama,
+          actor_role: currentUser.role,
+          action: "DELETE",
+          entity_type: "sensus_kk",
+          entity_id: item.noKk,
+          description: `Soft-delete sensus KK ${item.noKk} (${item.namaKepalaKeluarga}) Dusun ${item.dusun} - Alasan: ${finalReason}`,
+          old_data: item,
+        });
 
-      showToast(`Data KK ${item.namaKepalaKeluarga} berhasil diarsipkan.`);
+        showToast(`Data KK ${item.namaKepalaKeluarga} berhasil diarsipkan (Alasan: ${deleteModal.reason}).`);
+      } else if (deleteModal.type === "resident" && deleteModal.residentItem) {
+        const res = deleteModal.residentItem;
+        const newStatus = deleteModal.reason.includes("Meninggal")
+          ? "Meninggal Dunia"
+          : deleteModal.reason.includes("Pindah")
+          ? "Pindah Keluar"
+          : "Nonaktif / Diarsipkan";
+
+        await supabase
+          .from("residents")
+          .update({
+            is_deleted: true,
+            deleted_at: new Date().toISOString(),
+            deleted_by: currentUser.email,
+            status: newStatus,
+          })
+          .eq("nik", res.nik);
+
+        await recordAuditLog({
+          actor_email: currentUser.email,
+          actor_name: currentUser.nama,
+          actor_role: currentUser.role,
+          action: "DELETE",
+          entity_type: "residents",
+          entity_id: res.nik,
+          description: `Soft-delete warga NIK ${res.nik} (${res.nama}) Dusun ${res.dusun} - Alasan: ${finalReason}`,
+          old_data: res,
+        });
+
+        showToast(`Data warga ${res.nama} berhasil diarsipkan (Alasan: ${deleteModal.reason}).`);
+      }
+
+      setDeleteModal((prev) => ({ ...prev, isOpen: false, isSubmitting: false }));
       fetchAllData();
-    } catch (err) {
-      alert("Gagal menghapus data.");
+    } catch (err: any) {
+      console.error(err);
+      alert(`Gagal mengarsipkan data: ${err.message || "Terjadi kesalahan koneksi"}`);
+      setDeleteModal((prev) => ({ ...prev, isSubmitting: false }));
     }
   };
 
@@ -1110,45 +1206,6 @@ export default function MasterPanelPage() {
     } catch (err: any) {
       console.error(err);
       alert(`Gagal menyimpan data kependudukan: ${err.message || "Terjadi kesalahan koneksi"}`);
-    }
-  };
-
-  const handleSoftDeleteResident = async (res: Resident) => {
-    if (!currentUser) return;
-    if (!canModify(res.dusun)) {
-      alert(`Anda hanya berwenang mengelola warga di Dusun ${currentUser.dusun}`);
-      return;
-    }
-
-    if (!confirm(`Hapus data warga NIK ${res.nik} (${res.nama})? Data akan diarsipkan di soft-delete.`)) {
-      return;
-    }
-
-    try {
-      await supabase
-        .from("residents")
-        .update({
-          is_deleted: true,
-          deleted_at: new Date().toISOString(),
-          deleted_by: currentUser.email,
-        })
-        .eq("nik", res.nik);
-
-      await recordAuditLog({
-        actor_email: currentUser.email,
-        actor_name: currentUser.nama,
-        actor_role: currentUser.role,
-        action: "DELETE",
-        entity_type: "residents",
-        entity_id: res.nik,
-        description: `Soft-delete warga NIK ${res.nik} (${res.nama}) Dusun ${res.dusun}`,
-        old_data: res,
-      });
-
-      showToast(`Data warga ${res.nama} berhasil diarsipkan.`);
-      fetchAllData();
-    } catch (err) {
-      alert("Gagal menghapus data warga.");
     }
   };
 
@@ -2679,18 +2736,13 @@ export default function MasterPanelPage() {
                                 >
                                   <Eye className="w-4 h-4 text-[#009388]" />
                                 </button>
-                                <button
-                                  onClick={() => setSelectedSensusForPdf(item)}
-                                  className="p-1.5 rounded-lg text-slate-500 hover:text-[#009388] hover:bg-[#e6f7f5] transition"
-                                  title="Cetak Profil Lembar KK"
-                                >
-                                  <Printer className="w-4 h-4" />
-                                </button>
                                 {canModify(item.dusun) ? (
                                   <>
                                     <button
                                       onClick={() => {
                                         setEditingSensus(item);
+                                        setDesilMode("manual");
+                                        setManualDesil(item.desil || 1);
                                         setIsSensusModalOpen(true);
                                       }}
                                       className="p-1.5 rounded-lg text-slate-500 hover:text-amber-600 hover:bg-amber-50 transition"
@@ -3777,6 +3829,63 @@ export default function MasterPanelPage() {
                             </>
                           ) : (
                             <>
+                              {/* Foto Fisik Kondisi Rumah */}
+                              <div className="rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 shadow-2xs">
+                                <div className="relative aspect-video w-full bg-slate-200 flex items-center justify-center overflow-hidden">
+                                  {selectedGraphEntity.data.foto_rumah_url ? (
+                                    <img
+                                      src={selectedGraphEntity.data.foto_rumah_url}
+                                      alt={`Foto Rumah ${selectedGraphEntity.data.namaKepalaKeluarga}`}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        (e.target as HTMLImageElement).src =
+                                          selectedGraphEntity.data.dusun === "Pahing"
+                                            ? "/dusun-pahing.jpg"
+                                            : selectedGraphEntity.data.dusun === "Wage"
+                                            ? "/dusun-wage.jpg"
+                                            : "/dusun-manis.jpg";
+                                      }}
+                                    />
+                                  ) : (
+                                    <div className="relative w-full h-full">
+                                      <img
+                                        src={
+                                          selectedGraphEntity.data.dusun === "Pahing"
+                                            ? "/dusun-pahing.jpg"
+                                            : selectedGraphEntity.data.dusun === "Wage"
+                                            ? "/dusun-wage.jpg"
+                                            : "/dusun-manis.jpg"
+                                        }
+                                        alt="Placeholder Rumah"
+                                        className="w-full h-full object-cover opacity-60"
+                                      />
+                                      <div className="absolute inset-0 bg-slate-900/30 flex flex-col items-center justify-center text-white text-center p-2">
+                                        <Camera className="w-5 h-5 mb-1" />
+                                        <span className="text-[10px] font-semibold">Foto Lapangan Belum Diunggah</span>
+                                        <span className="text-[9px] text-white/80">(Ilustrasi Dusun {selectedGraphEntity.data.dusun})</span>
+                                      </div>
+                                    </div>
+                                  )}
+                                  <div className="absolute top-2.5 right-2.5">
+                                    <span
+                                      className={`px-2 py-0.5 rounded-lg text-[10px] font-bold shadow-sm ${
+                                        selectedGraphEntity.data.kondisiRumah === "RTLH"
+                                          ? "bg-red-600 text-white"
+                                          : "bg-emerald-600 text-white"
+                                      }`}
+                                    >
+                                      {selectedGraphEntity.data.kondisiRumah || "Layak Huni"}
+                                    </span>
+                                  </div>
+                                </div>
+                                <div className="p-2.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-[11px]">
+                                  <span className="text-slate-500">Struktur Bangunan:</span>
+                                  <span className="font-semibold text-slate-800">
+                                    {selectedGraphEntity.data.dinding || "Tembok"} • {selectedGraphEntity.data.lantai || "Keramik"}
+                                  </span>
+                                </div>
+                              </div>
+
                               <div className="bg-slate-50 p-3 rounded-xl border border-slate-200">
                                 <span className="text-slate-400 text-[10px] block">Nomor Kartu Keluarga</span>
                                 <span className="font-mono font-bold text-slate-900 text-xs">
@@ -4818,24 +4927,105 @@ export default function MasterPanelPage() {
 
               {/* Bagian 2: Foto Rumah Warga (Bukti Fisik RTLH) */}
               <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-3">
-                <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center gap-2">
-                  <Camera className="w-4 h-4 text-[#009388]" />
-                  <span>2. Foto Fisik Rumah Warga (Verifikasi RTLH)</span>
+                <div className="font-bold text-slate-900 uppercase tracking-wider text-[11px] flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Camera className="w-4 h-4 text-[#009388]" />
+                    <span>2. Foto Fisik Rumah Warga (Verifikasi RTLH)</span>
+                  </div>
+                  <span className="text-[10px] text-slate-400 font-normal">Format Gambar / Foto Kamera</span>
                 </div>
+
+                {/* Pilihan Preset Placeholder Cepat */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-700 mb-1">
-                    URL Foto Rumah Tampak Depan
+                  <label className="block text-[11px] font-semibold text-slate-600 mb-1.5">
+                    Pilih Contoh / Placeholder Wilayah:
                   </label>
-                  <input
-                    type="text"
-                    value={editingSensus.foto_rumah_url || ""}
-                    onChange={(e) => setEditingSensus({ ...editingSensus, foto_rumah_url: e.target.value })}
-                    placeholder="https://... atau path berkas foto"
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs"
-                  />
-                  <span className="text-[10px] text-slate-400 mt-1 block">
-                    Masukkan URL gambar fisik tampak depan rumah untuk lampiran verifikasi RTLH.
-                  </span>
+                  <div className="flex flex-wrap gap-1.5">
+                    {[
+                      { label: "🏠 Permanen Layak (Manis)", url: "/dusun-manis.jpg" },
+                      { label: "🏡 Rumah Dusun (Pahing)", url: "/dusun-pahing.jpg" },
+                      { label: "🛖 Rumah Sederhana (Wage)", url: "/dusun-wage.jpg" },
+                      { label: "🏛️ Balai Pertemuan", url: "/og-image.jpg" },
+                    ].map((preset) => (
+                      <button
+                        key={preset.url}
+                        type="button"
+                        onClick={() => setEditingSensus({ ...editingSensus, foto_rumah_url: preset.url })}
+                        className={`px-2.5 py-1 rounded-lg text-[11px] font-semibold transition border ${
+                          editingSensus.foto_rumah_url === preset.url
+                            ? "bg-[#009388] text-white border-[#009388] shadow-xs"
+                            : "bg-white text-slate-700 border-slate-200 hover:bg-slate-100"
+                        }`}
+                      >
+                        {preset.label}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center pt-1">
+                  {/* Upload File atau URL */}
+                  <div className="sm:col-span-7 space-y-2.5">
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        1. Unggah Foto dari Kamera HP / Galeri
+                      </label>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            if (file.size > 3 * 1024 * 1024) {
+                              alert("Ukuran file foto maksimal 3MB!");
+                              return;
+                            }
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const result = event.target?.result as string;
+                              if (result) {
+                                setEditingSensus({ ...editingSensus, foto_rumah_url: result });
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full text-xs text-slate-600 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-[11px] file:font-bold file:bg-[#009388] file:text-white hover:file:bg-[#007b71] file:cursor-pointer cursor-pointer border border-slate-300 rounded-xl bg-white p-1"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-[11px] font-semibold text-slate-700 mb-1">
+                        2. Atau Masukkan URL / Path Gambar
+                      </label>
+                      <input
+                        type="text"
+                        value={editingSensus.foto_rumah_url || ""}
+                        onChange={(e) => setEditingSensus({ ...editingSensus, foto_rumah_url: e.target.value })}
+                        placeholder="/dusun-manis.jpg atau https://..."
+                        className="w-full px-3 py-2 rounded-xl border border-slate-300 bg-white font-mono text-xs text-slate-900 focus:outline-none focus:ring-2 focus:ring-[#009388]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Pratinjau Foto Standar Rasio 16:9 */}
+                  <div className="sm:col-span-5">
+                    <div className="relative w-full aspect-video rounded-xl overflow-hidden border-2 border-slate-300 bg-slate-200 shadow-inner group">
+                      <img
+                        src={editingSensus.foto_rumah_url || "/dusun-manis.jpg"}
+                        alt="Pratinjau Rumah Sensus"
+                        onError={(e) => {
+                          (e.target as HTMLImageElement).src = "/dusun-manis.jpg";
+                        }}
+                        className="w-full h-full object-cover"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end p-2">
+                        <span className="text-[10px] text-white font-medium truncate">
+                          {editingSensus.foto_rumah_url ? "Pratinjau Foto Tampak Depan" : "Placeholder Standar Dusun"}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -4921,22 +5111,103 @@ export default function MasterPanelPage() {
                 </div>
               </div>
 
-              {/* Indikator Auto-Desil Preview */}
-              <div className="p-3 bg-[#e6f7f5] rounded-xl border border-[#009388]/30 flex items-center justify-between text-xs text-[#003733]">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="w-4 h-4 text-[#009388]" />
-                  <span>Kalkulasi Otomatis Desil:</span>
+              {/* Indikator & Penetapan Desil (Auto vs Manual Apdes) */}
+              <div className="p-4 bg-gradient-to-br from-[#e6f7f5] to-emerald-50/50 rounded-2xl border border-[#009388]/30 space-y-3">
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-[#009388]" />
+                    <span className="font-bold text-slate-900 text-xs">Penetapan Desil Kesejahteraan</span>
+                  </div>
+                  {/* Toggle Mode */}
+                  <div className="flex items-center p-0.5 bg-white rounded-xl border border-slate-200 text-[11px] font-semibold">
+                    <button
+                      type="button"
+                      onClick={() => setDesilMode("auto")}
+                      className={`px-3 py-1 rounded-lg transition ${
+                        desilMode === "auto"
+                          ? "bg-[#009388] text-white shadow-2xs font-bold"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      ⚡ Otomatis Sistem
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setDesilMode("manual")}
+                      className={`px-3 py-1 rounded-lg transition ${
+                        desilMode === "manual"
+                          ? "bg-[#009388] text-white shadow-2xs font-bold"
+                          : "text-slate-600 hover:text-slate-900"
+                      }`}
+                    >
+                      🏛️ Penetapan Pemdes
+                    </button>
+                  </div>
                 </div>
-                <strong className="px-3 py-1 rounded-full bg-[#009388] text-white text-[11px] font-bold">
-                  Desil{" "}
-                  {calculateDesil(
-                    editingSensus.dinding,
-                    editingSensus.lantai,
-                    editingSensus.penghasilanBulanan,
-                    editingSensus.luasLantai,
-                    editingSensus.jumlahAnggota
-                  )}
-                </strong>
+
+                {desilMode === "auto" ? (
+                  <div className="flex items-center justify-between p-3 bg-white rounded-xl border border-[#009388]/20 text-xs">
+                    <div>
+                      <span className="text-slate-500 block text-[10px]">Kalkulasi Otomatis Algoritma:</span>
+                      <span className="font-bold text-slate-800">
+                        {(() => {
+                          const d = calculateDesil(
+                            editingSensus.dinding,
+                            editingSensus.lantai,
+                            editingSensus.penghasilanBulanan,
+                            editingSensus.luasLantai,
+                            editingSensus.jumlahAnggota
+                          );
+                          return d === 1
+                            ? "Sangat Miskin / Desil Ekstrem"
+                            : d === 2
+                            ? "Keluarga Miskin"
+                            : d === 3
+                            ? "Hampir Miskin / Rentan"
+                            : "Mampu / Sejahtera";
+                        })()}
+                      </span>
+                    </div>
+                    <strong className="px-3.5 py-1.5 rounded-xl bg-[#009388] text-white text-xs font-extrabold shadow-xs">
+                      Desil{" "}
+                      {calculateDesil(
+                        editingSensus.dinding,
+                        editingSensus.lantai,
+                        editingSensus.penghasilanBulanan,
+                        editingSensus.luasLantai,
+                        editingSensus.jumlahAnggota
+                      )}
+                    </strong>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-[11px] text-slate-600">
+                      Pilih klasifikasi desil berdasarkan hasil musyawarah desa (Musdes) atau verifikasi faktual aparatur:
+                    </p>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                      {[
+                        { val: 1, label: "Desil 1", desc: "Sangat Miskin (Ekstrem)", color: "border-red-500 bg-red-50 text-red-900" },
+                        { val: 2, label: "Desil 2", desc: "Keluarga Miskin", color: "border-amber-500 bg-amber-50 text-amber-900" },
+                        { val: 3, label: "Desil 3", desc: "Hampir Miskin", color: "border-blue-500 bg-blue-50 text-blue-900" },
+                        { val: 4, label: "Desil 4", desc: "Mampu / Sejahtera", color: "border-emerald-500 bg-emerald-50 text-emerald-900" },
+                      ].map((d) => (
+                        <button
+                          key={d.val}
+                          type="button"
+                          onClick={() => setManualDesil(d.val)}
+                          className={`p-2.5 rounded-xl border text-left transition flex flex-col justify-between ${
+                            manualDesil === d.val
+                              ? `${d.color} ring-2 ring-[#009388] shadow-xs font-bold`
+                              : "border-slate-200 bg-white hover:bg-slate-50 text-slate-700"
+                          }`}
+                        >
+                          <span className="text-xs font-extrabold">{d.label}</span>
+                          <span className="text-[10px] text-slate-500 mt-0.5">{d.desc}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
@@ -6666,6 +6937,170 @@ export default function MasterPanelPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* =================================================================== */}
+      {/* MODAL KONFIRMASI ARSIP & SOFT DELETE DATA (ALASAN RESMI)            */}
+      {/* =================================================================== */}
+      {deleteModal.isOpen && (
+        <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 animate-in fade-in zoom-in-95 duration-150">
+            <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+              <div className="w-10 h-10 rounded-2xl bg-red-100 text-red-600 flex items-center justify-center shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-slate-900">
+                  Konfirmasi Pengarsipan / Hapus Data
+                </h3>
+                <p className="text-xs text-slate-500">
+                  {deleteModal.type === "sensus"
+                    ? "Arsip data Sensus Kartu Keluarga ke status nonaktif"
+                    : "Arsip data Kependudukan Warga ke status nonaktif"}
+                </p>
+              </div>
+            </div>
+
+            {/* Target Card Info */}
+            <div className="my-4 p-3.5 bg-slate-50 rounded-2xl border border-slate-200 text-xs space-y-1.5">
+              {deleteModal.type === "sensus" && deleteModal.sensusItem ? (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Nomor KK:</span>
+                    <span className="font-mono font-bold text-slate-800">{deleteModal.sensusItem.noKk}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Kepala Keluarga:</span>
+                    <span className="font-bold text-slate-900">{deleteModal.sensusItem.namaKepalaKeluarga}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Wilayah:</span>
+                    <span className="font-semibold text-slate-700">
+                      Dusun {deleteModal.sensusItem.dusun} RT {deleteModal.sensusItem.rt} / RW {deleteModal.sensusItem.rw}
+                    </span>
+                  </div>
+                </>
+              ) : deleteModal.residentItem ? (
+                <>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">NIK Warga:</span>
+                    <span className="font-mono font-bold text-slate-800">{deleteModal.residentItem.nik}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Nama Lengkap:</span>
+                    <span className="font-bold text-slate-900">{deleteModal.residentItem.nama}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Nomor KK / Wilayah:</span>
+                    <span className="font-semibold text-slate-700">
+                      KK: {deleteModal.residentItem.noKk} (Dusun {deleteModal.residentItem.dusun})
+                    </span>
+                  </div>
+                </>
+              ) : null}
+            </div>
+
+            {/* Form Alasan */}
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-800 mb-1.5">
+                  Pilih Alasan Penghapusan / Pengarsipan <span className="text-red-500">*</span>
+                </label>
+                <div className="grid grid-cols-1 gap-2">
+                  {(deleteModal.type === "resident"
+                    ? [
+                        { id: "Meninggal Dunia", label: "Meninggal Dunia (Surat/Akta Kematian)", icon: "🕊️" },
+                        { id: "Pindah Domisili / Keluar Desa", label: "Pindah Domisili / Keluar Desa (SKPWNI)", icon: "🚗" },
+                        { id: "Pecah KK / Perubahan Administrasi", label: "Perubahan Administrasi / Pecah KK", icon: "📋" },
+                        { id: "Kesalahan Input Data / Duplikasi", label: "Kesalahan Input Data / Duplikasi", icon: "⚠️" },
+                        { id: "Lainnya", label: "Lainnya (Tuliskan Keterangan Khusus)", icon: "✍️" },
+                      ]
+                    : [
+                        { id: "Pindah Domisili / Keluar Desa", label: "Keluarga Pindah Domisili Keluar Desa", icon: "🚗" },
+                        { id: "Kepala Keluarga Meninggal / Reorganisasi KK", label: "Kepala Keluarga Meninggal / Reorganisasi KK", icon: "🕊️" },
+                        { id: "Penggabungan / Pecah KK", label: "Penggabungan atau Pecah Kartu Keluarga", icon: "📋" },
+                        { id: "Kesalahan Input Data / Duplikasi", label: "Kesalahan Input Data / Duplikasi", icon: "⚠️" },
+                        { id: "Lainnya", label: "Lainnya (Tuliskan Keterangan Khusus)", icon: "✍️" },
+                      ]
+                  ).map((opt) => (
+                    <label
+                      key={opt.id}
+                      className={`flex items-center gap-2.5 p-2.5 rounded-xl border cursor-pointer transition ${
+                        deleteModal.reason === opt.id
+                          ? "border-red-500 bg-red-50/50 text-red-950 font-semibold"
+                          : "border-slate-200 hover:bg-slate-50 text-slate-700"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="deleteReason"
+                        value={opt.id}
+                        checked={deleteModal.reason === opt.id}
+                        onChange={(e) => setDeleteModal({ ...deleteModal, reason: e.target.value })}
+                        className="text-red-600 focus:ring-red-500"
+                      />
+                      <span>{opt.icon}</span>
+                      <span>{opt.label}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-800 mb-1">
+                  Keterangan Tambahan / Catatan Alasan
+                  {deleteModal.reason === "Lainnya" && <span className="text-red-500"> (Wajib Diisi)</span>}
+                </label>
+                <textarea
+                  rows={2}
+                  value={deleteModal.customReason}
+                  onChange={(e) => setDeleteModal({ ...deleteModal, customReason: e.target.value })}
+                  placeholder="Contoh: Pindah ke Kabupaten Cirebon, SKPWNI No. 474/12/2026 atau Meninggal dunia tanggal 14 Sep 2026..."
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-xs focus:ring-2 focus:ring-red-500 bg-white"
+                />
+              </div>
+
+              <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-amber-900 text-[11px] flex items-start gap-2">
+                <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span>
+                  Data tidak akan dihapus permanen melainkan diarsipkan (soft-delete) untuk riwayat audit kependudukan desa.
+                </span>
+              </div>
+            </div>
+
+            <div className="mt-5 pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
+              <button
+                type="button"
+                onClick={() => setDeleteModal((prev) => ({ ...prev, isOpen: false }))}
+                disabled={deleteModal.isSubmitting}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold hover:bg-slate-50 transition"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={
+                  deleteModal.isSubmitting ||
+                  (deleteModal.reason === "Lainnya" && !deleteModal.customReason.trim())
+                }
+                className="px-5 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 disabled:bg-slate-300 text-white text-xs font-bold shadow-md transition flex items-center gap-1.5"
+              >
+                {deleteModal.isSubmitting ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    <span>Mengarsipkan...</span>
+                  </>
+                ) : (
+                  <>
+                    <Trash2 className="w-4 h-4" />
+                    <span>Konfirmasi & Arsipkan</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       )}
