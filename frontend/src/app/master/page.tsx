@@ -22,9 +22,6 @@ import {
   UserCheck,
   Network,
   GitFork,
-  Share2,
-  ZoomIn,
-  ZoomOut,
   Heart,
   PieChart,
   Newspaper,
@@ -262,12 +259,11 @@ export default function MasterPanelPage() {
   >("sensus");
 
   // State Peta Relasi KK & KTP (Civic Knowledge Graph)
-  const [relasiSubView, setRelasiSubView] = useState<"tree" | "matrix" | "cluster">("tree");
+  const [relasiSubView, setRelasiSubView] = useState<"tree" | "matrix">("tree");
   const [selectedRelasiKkNo, setSelectedRelasiKkNo] = useState<string>("");
   const [relasiSearch, setRelasiSearch] = useState<string>("");
   const [relasiDusunFilter, setRelasiDusunFilter] = useState<string>("all");
   const [selectedGraphEntity, setSelectedGraphEntity] = useState<{ type: "KTP" | "KK"; data: any } | null>(null);
-  const [clusterZoom, setClusterZoom] = useState<number>(1);
 
   // --------------------------------------------------------------------------
   // DATA DARI SUPABASE (DENGAN REFRESH REAL-TIME)
@@ -3275,17 +3271,6 @@ export default function MasterPanelPage() {
                         <FileText className="w-3.5 h-3.5" />
                         <span>Matriks Anggota</span>
                       </button>
-                      <button
-                        onClick={() => setRelasiSubView("cluster")}
-                        className={`px-3.5 py-1.5 rounded-lg font-bold transition flex items-center gap-1.5 ${
-                          relasiSubView === "cluster"
-                            ? "bg-[#009388] text-white shadow-xs"
-                            : "text-slate-600 hover:text-slate-900 font-semibold"
-                        }`}
-                      >
-                        <Share2 className="w-3.5 h-3.5" />
-                        <span>Graf Makro Dusun</span>
-                      </button>
                     </div>
                   </div>
                 </div>
@@ -3737,132 +3722,7 @@ export default function MasterPanelPage() {
                   </div>
                 )}
 
-                {/* ============================================================== */}
-                {/* SUB-VIEW 3: GRAF MAKRO DUSUN (OFF-WHITE / CREAM DOT GRID)     */}
-                {/* ============================================================== */}
-                {relasiSubView === "cluster" && (
-                  <div className="bg-white rounded-3xl border border-slate-200 p-6 shadow-sm">
-                    <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-4 border-b border-slate-100">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <span className="w-2.5 h-2.5 rounded-full bg-[#009388] animate-pulse"></span>
-                          <h3 className="font-extrabold text-slate-900 text-sm tracking-tight">
-                            Graf Konstelasi Relasi Kependudukan 3 Dusun Kadurama
-                          </h3>
-                        </div>
-                        <p className="text-[11px] text-slate-500 mt-0.5">
-                          Kanvas off-white dot-grid keterhubungan Dusun Manis, Pahing, dan Wage dengan pusat Kartu Keluarga dan warga.
-                        </p>
-                      </div>
 
-                      <div className="flex items-center gap-2">
-                        <div className="hidden xl:flex items-center gap-2 bg-slate-50 px-3 py-1.5 rounded-xl border border-slate-200 text-[10px] font-semibold text-slate-600">
-                          <span className="flex items-center gap-1">
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#009388]"></span>Dusun
-                          </span>
-                          <span className="text-slate-300">•</span>
-                          <span className="flex items-center gap-1">
-                            <span className="w-2.5 h-2.5 rounded-md bg-[#d97706]"></span>Hub KK
-                          </span>
-                          <span className="text-slate-300">•</span>
-                          <span className="flex items-center gap-1">
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#2563eb]"></span>Kepala (L)
-                          </span>
-                          <span className="text-slate-300">•</span>
-                          <span className="flex items-center gap-1">
-                            <span className="w-2.5 h-2.5 rounded-full bg-[#db2777]"></span>Istri (P)
-                          </span>
-                        </div>
-
-                        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
-                          <button
-                            onClick={() => setClusterZoom((prev) => Math.min(prev + 0.2, 2.5))}
-                            className="p-1.5 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow-2xs text-xs font-bold"
-                            title="Perbesar"
-                          >
-                            <ZoomIn className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setClusterZoom((prev) => Math.max(prev - 0.2, 0.5))}
-                            className="p-1.5 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow-2xs text-xs font-bold"
-                            title="Perkecil"
-                          >
-                            <ZoomOut className="w-3.5 h-3.5" />
-                          </button>
-                          <button
-                            onClick={() => setClusterZoom(1)}
-                            className="px-2.5 py-1.5 rounded-lg bg-white text-slate-700 hover:bg-slate-50 shadow-2xs text-xs font-bold flex items-center gap-1"
-                            title="Reset Skala"
-                          >
-                            <RefreshCw className="w-3.5 h-3.5 text-[#009388]" />
-                            <span>100%</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Canvas Area with Dot Grid */}
-                    <div className="relative overflow-hidden rounded-2xl canvas-dot-grid border border-[#e6e0d5] shadow-inner h-[540px] flex items-center justify-center">
-                      <div
-                        style={{ transform: `scale(${clusterZoom})`, transition: "transform 0.3s ease-out" }}
-                        className="w-full h-full flex items-center justify-around p-8 relative"
-                      >
-                        {/* 3 Dusun Clusters */}
-                        {(["Pahing", "Wage", "Manis"] as const).map((dusunName) => {
-                          const dusunKks = sensusList.filter((s) => s.dusun === dusunName).slice(0, 3);
-                          return (
-                            <div key={dusunName} className="flex flex-col items-center gap-6">
-                              {/* Dusun Node */}
-                              <div className="bg-[#009388] text-white px-5 py-3 rounded-2xl shadow-lg border-2 border-[#006d64] text-center font-bold text-xs tracking-wide">
-                                DUSUN {dusunName.toUpperCase()}
-                                <span className="block text-[9px] font-normal text-emerald-100 mt-0.5">
-                                  {sensusList.filter((s) => s.dusun === dusunName).length} Kepala Keluarga
-                                </span>
-                              </div>
-
-                              {/* KK Satellite Nodes */}
-                              <div className="space-y-3">
-                                {dusunKks.map((kk) => {
-                                  const kkMembers = residentsList.filter((r) => r.noKk === kk.noKk);
-                                  return (
-                                    <div
-                                      key={kk.noKk}
-                                      onClick={() => {
-                                        setSelectedRelasiKkNo(kk.noKk);
-                                        setSelectedGraphEntity({ type: "KK", data: kk });
-                                      }}
-                                      className="cursor-pointer bg-[#fffbeb] border-2 border-[#d97706] hover:border-amber-600 p-3 rounded-xl shadow-xs hover:shadow-md transition text-left w-52 group"
-                                    >
-                                      <div className="flex items-center justify-between">
-                                        <span className="text-[9px] font-bold text-amber-800 bg-amber-200/80 px-1.5 py-0.5 rounded">
-                                          Desil {kk.desil}
-                                        </span>
-                                        <span className="text-[9px] text-slate-500 font-mono">RT {kk.rt}</span>
-                                      </div>
-                                      <div className="font-bold text-xs text-slate-900 mt-1 truncate group-hover:text-amber-900">
-                                        {kk.namaKepalaKeluarga}
-                                      </div>
-                                      <div className="text-[10px] text-slate-500 mt-0.5 flex items-center justify-between">
-                                        <span>{kkMembers.length} Jiwa</span>
-                                        <span className="text-amber-800 font-bold underline text-[9px]">Pohon Relasi →</span>
-                                      </div>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Helper Note Overlay */}
-                      <div className="absolute bottom-4 left-4 bg-white/95 backdrop-blur-xs border border-slate-200/80 px-3 py-1.5 rounded-xl shadow-xs text-[10px] text-slate-600 flex items-center gap-2">
-                        <Info className="w-3.5 h-3.5 text-[#009388]" />
-                        <span>Klik salah satu kartu KK di atas untuk memeriksa silsilah keluarga lengkap</span>
-                      </div>
-                    </div>
-                  </div>
-                )}
 
                 {/* ============================================================== */}
                 {/* SLIDE-OVER INSPECTOR DRAWER (DETAIL KTP / KK)                 */}
