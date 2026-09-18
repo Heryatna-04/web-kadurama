@@ -2466,21 +2466,21 @@ export default function MasterPanelPage() {
     e.preventDefault();
     setIsSubmittingApbdes(true);
     try {
-      const pendapatan = Number(summaryForm.total_pendapatan) || 0;
-      const belanja = Number(summaryForm.total_belanja) || 0;
-      const realisasi = Number(summaryForm.total_realisasi_belanja) || 0;
-      const persen = belanja > 0 ? Number(((realisasi / belanja) * 100).toFixed(1)) : 0;
-      const surplus = pendapatan - belanja;
       const silpa = Number(summaryForm.silpa_tahun_lalu) || 0;
 
       const payload = {
         tahun: Number(summaryForm.tahun) || 2026,
-        total_pendapatan: pendapatan,
-        total_belanja: belanja,
-        total_realisasi_belanja: realisasi,
-        persen_realisasi_belanja: persen,
-        surplus_defisit: surplus,
+        total_pendapatan: Number(apbdesSummary.total_pendapatan) || 0,
+        total_belanja: Number(apbdesSummary.total_belanja) || 0,
+        total_realisasi_belanja: Number(apbdesSummary.total_realisasi_belanja) || 0,
+        persen_realisasi_belanja: Number(apbdesSummary.persen_realisasi_belanja) || 0,
+        surplus_defisit: Number(apbdesSummary.surplus_defisit) || 0,
         silpa_tahun_lalu: silpa,
+        tahap_anggaran: summaryForm.tahap_anggaran || "APBDes Murni",
+        periode_pelaporan: summaryForm.periode_pelaporan || "Realisasi Semester I (Januari - Juni)",
+        nomor_perdes: summaryForm.nomor_perdes || "Peraturan Desa Kadurama No. 04 Tahun 2025",
+        tanggal_penetapan: summaryForm.tanggal_penetapan || "30 Desember 2025",
+        catatan_keuangan: summaryForm.catatan_keuangan || "",
         updated_at: new Date().toISOString(),
       };
 
@@ -2494,11 +2494,6 @@ export default function MasterPanelPage() {
       setApbdesSummary((prev: any) => ({
         ...prev,
         ...payload,
-        tahap_anggaran: summaryForm.tahap_anggaran || "APBDes Murni",
-        periode_pelaporan: summaryForm.periode_pelaporan || "Semester I (Januari - Juni)",
-        nomor_perdes: summaryForm.nomor_perdes || "Peraturan Desa Kadurama No. 04 Tahun 2025",
-        tanggal_penetapan: summaryForm.tanggal_penetapan || "30 Desember 2025",
-        catatan_keuangan: summaryForm.catatan_keuangan || "",
       }));
 
       await recordAuditLog({
@@ -2508,14 +2503,14 @@ export default function MasterPanelPage() {
         action: "UPDATE",
         entity_type: "apbdes_sectors",
         entity_id: "apbdes-summary-2026",
-        description: `Pembaruan APBDes TA ${summaryForm.tahun || 2026} (${summaryForm.tahap_anggaran || "APBDes Murni"} • ${summaryForm.periode_pelaporan || "Semester I"}): Pendapatan Rp ${pendapatan.toLocaleString("id-ID")}, Belanja Rp ${belanja.toLocaleString("id-ID")}, Realisasi ${persen}%`,
+        description: `Pembaruan Ketetapan Perdes TA ${summaryForm.tahun || 2026}: ${summaryForm.nomor_perdes} (${summaryForm.tahap_anggaran} • ${summaryForm.periode_pelaporan})`,
       });
 
       setIsEditSummaryModalOpen(false);
-      showToast("Ringkasan APBDes berhasil diperbarui!");
+      showToast("Ketetapan Perdes & periode APBDes berhasil diperbarui!");
       await fetchAllData();
     } catch (err: any) {
-      alert(`Gagal memperbarui ringkasan APBDes: ${err.message || err}`);
+      alert(`Gagal memperbarui ketetapan APBDes: ${err.message || err}`);
     } finally {
       setIsSubmittingApbdes(false);
     }
@@ -6083,42 +6078,25 @@ export default function MasterPanelPage() {
                       {apbdesSummary.periode_pelaporan || "Semester I (Januari - Juni)"}
                     </span>
                   </div>
-                  <p className="text-xs text-slate-500">
-                    Dasar Hukum: <strong className="text-slate-700">{apbdesSummary.nomor_perdes || "Perdes No. 04 Tahun 2025"}</strong> • Ditetapkan: {apbdesSummary.tanggal_penetapan || "30 Desember 2025"}
-                  </p>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <span>
+                      Dasar Hukum: <strong className="text-slate-700">{apbdesSummary.nomor_perdes || "Perdes No. 04 Tahun 2025"}</strong> • Ditetapkan: {apbdesSummary.tanggal_penetapan || "30 Desember 2025"}
+                    </span>
+                    {canManageApbdes && (
+                      <button
+                        type="button"
+                        onClick={handleOpenEditSummary}
+                        className="inline-flex items-center gap-1 text-[11px] text-[#009388] hover:text-[#007b71] font-bold underline transition ml-1"
+                        title="Atur nomor Perdes, tanggal pengesahan, atau periode pelaporan"
+                      >
+                        <Edit3 className="w-3 h-3" />
+                        <span>Ubah Ketetapan Perdes</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex flex-wrap items-center gap-2.5">
-                  {/* Mode Toggle: Buat Pagu vs Catat Realisasi */}
-                  <div className="flex items-center p-1 bg-slate-100 rounded-2xl border border-slate-200">
-                    <button
-                      type="button"
-                      onClick={() => setApbdesInputMode("pagu")}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                        apbdesInputMode === "pagu"
-                          ? "bg-amber-500 text-white shadow-xs"
-                          : "text-slate-600 hover:text-slate-900"
-                      }`}
-                      title="Fokus pada penganggaran plafon pagu belanja desa"
-                    >
-                      <Layers className="w-3.5 h-3.5" />
-                      <span>Mode Pagu Anggaran</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setApbdesInputMode("realisasi")}
-                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition flex items-center gap-1.5 ${
-                        apbdesInputMode === "realisasi"
-                          ? "bg-[#009388] text-white shadow-xs"
-                          : "text-slate-600 hover:text-slate-900"
-                      }`}
-                      title="Fokus pada pencatatan kas keluar / serapan belanja berjalan"
-                    >
-                      <TrendingUp className="w-3.5 h-3.5" />
-                      <span>Mode Catat Realisasi</span>
-                    </button>
-                  </div>
-
                   <button
                     type="button"
                     onClick={exportApbdesOfficialExcel}
@@ -6137,16 +6115,6 @@ export default function MasterPanelPage() {
                     <span>Buka Transparansi</span>
                     <ChevronRight className="w-3.5 h-3.5" />
                   </Link>
-
-                  {canManageApbdes && (
-                    <button
-                      onClick={handleOpenEditSummary}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs shadow-sm transition"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>Edit Ringkasan Fiskal</span>
-                    </button>
-                  )}
                 </div>
               </div>
 
@@ -6308,29 +6276,12 @@ export default function MasterPanelPage() {
                               {canManageApbdes && (
                                 <button
                                   type="button"
-                                  onClick={() => handleOpenEditSector(sec, apbdesInputMode)}
-                                  className={`px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition border shadow-2xs ${
-                                    apbdesInputMode === "pagu"
-                                      ? "bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300"
-                                      : "bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border-emerald-300"
-                                  }`}
-                                  title={
-                                    apbdesInputMode === "pagu"
-                                      ? "Atur Plafon Pagu Anggaran Bidang Ini"
-                                      : "Catat Kas Keluar / Realisasi Berjalan"
-                                  }
+                                  onClick={() => handleOpenAddSubKegiatan(sec)}
+                                  className="px-3 py-2 rounded-xl text-xs font-bold flex items-center gap-1.5 transition bg-[#009388] hover:bg-[#007b71] text-white shadow-2xs shrink-0"
+                                  title="Tambah pos rincian kegiatan baru pada bidang ini"
                                 >
-                                  {apbdesInputMode === "pagu" ? (
-                                    <>
-                                      <Layers className="w-3.5 h-3.5 text-amber-600" />
-                                      <span>Atur Pagu</span>
-                                    </>
-                                  ) : (
-                                    <>
-                                      <TrendingUp className="w-3.5 h-3.5 text-emerald-600" />
-                                      <span>+ Catat Realisasi</span>
-                                    </>
-                                  )}
+                                  <Plus className="w-3.5 h-3.5" />
+                                  <span>+ Tambah Kegiatan</span>
                                 </button>
                               )}
                             </div>
@@ -9065,15 +9016,15 @@ export default function MasterPanelPage() {
           <div className="bg-white rounded-3xl max-w-xl w-full p-6 sm:p-8 shadow-2xl border border-slate-200 flex flex-col max-h-[92vh] overflow-y-auto">
             <div className="flex items-start justify-between pb-4 border-b border-slate-100">
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-700 flex items-center justify-center border border-emerald-200 shrink-0">
-                  <PieChart className="w-5 h-5" />
+                <div className="w-10 h-10 rounded-xl bg-[#009388]/10 text-[#009388] flex items-center justify-center border border-[#009388]/20 shrink-0">
+                  <FileText className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-bold text-base text-slate-950">
-                    Edit Siklus & Ringkasan Fiskal APBDes 2026
+                    Ketetapan Legalitas & Periode APBDes 2026
                   </h3>
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Permendagri No. 20/2018 tentang Pengelolaan Keuangan Desa.
+                    Dasar hukum Peraturan Desa, tahap penganggaran, dan catatan pelaporan.
                   </p>
                 </div>
               </div>
@@ -9086,6 +9037,45 @@ export default function MasterPanelPage() {
             </div>
 
             <form onSubmit={handleSaveApbdesSummary} className="py-5 space-y-4">
+              {/* Ringkasan Akumulasi Otomatis (Bottom-Up) */}
+              <div className="p-4 rounded-2xl bg-slate-50 border border-slate-200/80 space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-700">Akumulasi Angka APBDes (Otomatis)</span>
+                  <span className="text-[10px] font-medium text-[#009388] bg-[#009388]/10 px-2 py-0.5 rounded-md font-mono">
+                    Auto Bottom-Up
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-500 leading-relaxed">
+                  Angka pendapatan dan pagu belanja dihitung otomatis dari rincian pos pendapatan dan sub-kegiatan di bawah. Pengeluaran kas dicatat langsung per kegiatan.
+                </p>
+                <div className="grid grid-cols-2 gap-2 pt-1 font-mono text-xs">
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                    <span className="block text-[10px] font-sans font-medium text-slate-500">Pendapatan Desa</span>
+                    <span className="font-bold text-emerald-700">
+                      Rp {(Number(summaryForm.total_pendapatan) || 0).toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                    <span className="block text-[10px] font-sans font-medium text-slate-500">Pagu Belanja Desa</span>
+                    <span className="font-bold text-slate-800">
+                      Rp {(Number(summaryForm.total_belanja) || 0).toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                    <span className="block text-[10px] font-sans font-medium text-slate-500">Realisasi Kas Keluar</span>
+                    <span className="font-bold text-[#009388]">
+                      Rp {(Number(summaryForm.total_realisasi_belanja) || 0).toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                  <div className="bg-white p-2.5 rounded-xl border border-slate-200">
+                    <span className="block text-[10px] font-sans font-medium text-slate-500">Surplus / Defisit</span>
+                    <span className={`font-bold ${(Number(summaryForm.total_pendapatan || 0) - Number(summaryForm.total_belanja || 0)) >= 0 ? "text-emerald-700" : "text-rose-600"}`}>
+                      Rp {(Number(summaryForm.total_pendapatan || 0) - Number(summaryForm.total_belanja || 0)).toLocaleString("id-ID")}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
               {/* Siklus & Tahap Anggaran */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
                 <div>
@@ -9145,73 +9135,20 @@ export default function MasterPanelPage() {
                 </div>
               </div>
 
-              {/* Pendapatan & Pagu Belanja */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Total Pendapatan Desa (Rp)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={summaryForm.total_pendapatan || 0}
-                    onChange={(e) => setSummaryForm({ ...summaryForm, total_pendapatan: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
-                  />
-                  <p className="mt-1 text-[11px] font-mono text-slate-500 truncate">
-                    Terbaca: <span className="font-semibold text-emerald-700">Rp {(Number(summaryForm.total_pendapatan) || 0).toLocaleString("id-ID")}</span>
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Total Pagu Belanja Desa (Rp)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={summaryForm.total_belanja || 0}
-                    onChange={(e) => setSummaryForm({ ...summaryForm, total_belanja: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
-                  />
-                  <p className="mt-1 text-[11px] font-mono text-slate-500 truncate">
-                    Terbaca: <span className="font-semibold text-slate-700">Rp {(Number(summaryForm.total_belanja) || 0).toLocaleString("id-ID")}</span>
-                  </p>
-                </div>
-              </div>
-
-              {/* Realisasi & SiLPA */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    Total Realisasi Belanja Berjalan (Rp)
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={summaryForm.total_realisasi_belanja || 0}
-                    onChange={(e) => setSummaryForm({ ...summaryForm, total_realisasi_belanja: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
-                  />
-                  <p className="mt-1 text-[11px] font-mono text-slate-500 truncate">
-                    Terbaca: <span className="font-semibold text-[#009388]">Rp {(Number(summaryForm.total_realisasi_belanja) || 0).toLocaleString("id-ID")}</span>
-                  </p>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">
-                    SiLPA Tahun Anggaran Lalu (Rp)
-                  </label>
-                  <input
-                    type="number"
-                    value={summaryForm.silpa_tahun_lalu || 0}
-                    onChange={(e) => setSummaryForm({ ...summaryForm, silpa_tahun_lalu: Number(e.target.value) })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
-                  />
-                  <p className="mt-1 text-[11px] font-mono text-slate-500 truncate">
-                    Terbaca: <span className="font-semibold text-slate-700">Rp {(Number(summaryForm.silpa_tahun_lalu) || 0).toLocaleString("id-ID")}</span>
-                  </p>
-                </div>
+              {/* SiLPA Tahun Anggaran Lalu */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 mb-1">
+                  SiLPA Tahun Anggaran Lalu (Rp)
+                </label>
+                <input
+                  type="number"
+                  value={summaryForm.silpa_tahun_lalu || 0}
+                  onChange={(e) => setSummaryForm({ ...summaryForm, silpa_tahun_lalu: Number(e.target.value) })}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 font-mono text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
+                />
+                <p className="mt-1 text-[11px] font-mono text-slate-500 truncate">
+                  Terbaca: <span className="font-semibold text-slate-700">Rp {(Number(summaryForm.silpa_tahun_lalu) || 0).toLocaleString("id-ID")}</span>
+                </p>
               </div>
 
               {/* Catatan Pelaporan */}
@@ -9223,33 +9160,9 @@ export default function MasterPanelPage() {
                   rows={2}
                   value={summaryForm.catatan_keuangan || ""}
                   onChange={(e) => setSummaryForm({ ...summaryForm, catatan_keuangan: e.target.value })}
-                  placeholder="Catatan realisasi per triwulan atau progres penyerapan Dana Desa / PADes..."
+                  placeholder="Catatan realisasi per semester atau progres penyerapan Dana Desa / PADes..."
                   className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 text-xs text-slate-900 focus:ring-2 focus:ring-[#009388]"
                 />
-              </div>
-
-              {/* Kalkulasi Otomatis */}
-              <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5 font-mono">
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Estimasi Surplus / Defisit:</span>
-                  <span className="font-bold text-emerald-700">
-                    Rp {(Number(summaryForm.total_pendapatan || 0) - Number(summaryForm.total_belanja || 0)).toLocaleString("id-ID")}
-                  </span>
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-slate-500">Persentase Serapan Belanja:</span>
-                  <span className="font-bold text-[#009388]">
-                    {Number(summaryForm.total_belanja || 0) > 0
-                      ? ((Number(summaryForm.total_realisasi_belanja || 0) / Number(summaryForm.total_belanja || 1)) * 100).toFixed(1)
-                      : "0"}%
-                  </span>
-                </div>
-                <div className="flex justify-between items-center pt-1 border-t border-slate-200">
-                  <span className="text-slate-500">Sisa Pagu Belanja Belum Terserap:</span>
-                  <span className="font-bold text-slate-700">
-                    Rp {Math.max(0, Number(summaryForm.total_belanja || 0) - Number(summaryForm.total_realisasi_belanja || 0)).toLocaleString("id-ID")}
-                  </span>
-                </div>
               </div>
 
               <div className="pt-4 border-t border-slate-100 flex items-center justify-end gap-2.5">
@@ -9273,7 +9186,7 @@ export default function MasterPanelPage() {
                   ) : (
                     <>
                       <Check className="w-4 h-4" />
-                      <span>Simpan Perubahan Fiskal</span>
+                      <span>Simpan Ketetapan Perdes</span>
                     </>
                   )}
                 </button>
